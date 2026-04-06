@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Stunning Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 8px;
+  border: 2px solid #F1F5F9;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Excel Cell Editing - Premium */
+.cell-editing {
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: -1px;
+  background-color: #EFF6FF !important;
+  z-index: 10;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.15) !important;
+  transition: all 0.2s ease;
+}
+
+/* Premium Excel Table Styles */
+.excel-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  width: 100%;
+}
+
+.excel-table th {
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  color: #F8FAFC;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: 10px 8px;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 2px solid #3B82F6;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.excel-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #E2E8F0;
+  border-right: 1px solid #F1F5F9;
+  height: 36px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+  transition: background-color 0.15s ease;
+}
+
+.excel-table tbody tr:hover td {
+  background-color: #F8FAFC;
+}
+
+/* First column (Row number) */
+.excel-row-number {
+  background: #F1F5F9 !important;
+  color: #64748B;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  width: 40px;
+  min-width: 40px;
+  border-right: 2px solid #E2E8F0 !important;
+  cursor: default;
+  user-select: none;
+}
+
+/* Status badges - Soft & Beautiful */
+.status-confirmado { color: #059669; font-weight: 500; }
+.status-previsto { color: #64748B; font-style: italic; }
+.status-cancelado { color: #94A3B8; text-decoration: line-through; }
+
+/* Subtle Row colors */
+.row-entrada { background-color: #F0FDF4; }
+.row-saida { background-color: #FEF2F2; }
+
+/* Sticky footer row */
+.excel-footer-row td {
+  background: #0F172A !important;
+  color: #F8FAFC !important;
+  font-weight: 700;
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  border-color: #1E293B !important;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Input styles for inline edit */
+.inline-input, .inline-select {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+/* Glass panel components */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.02);
+  border-radius: 12px;
+}
