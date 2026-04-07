@@ -29,7 +29,7 @@ const CORES = [
   { cor: '#3B82F6', nome: 'Azul Itaú / Visa' },
   { cor: '#10B981', nome: 'Verde Sicredi' },
   { cor: '#F59E0B', nome: 'Amarelo BB' },
-  { cor: '#1E293B', nome: 'Preto Black/Infinite' },
+  { cor: '#27272a', nome: 'Preto Black/Infinite' },
 ];
 
 export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
@@ -84,13 +84,13 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#020617]/80 backdrop-blur-md">
-      <div className="bg-[#0F172A] border border-slate-800/80 w-full max-w-md rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col max-h-screen">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/60 shrink-0">
-          <h2 className="text-lg font-black text-slate-100 tracking-tight">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-md">
+      <div className="bg-[#18181b] border border-zinc-800/80 w-full max-w-md rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col max-h-screen">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/60 shrink-0">
+          <h2 className="text-lg font-black text-zinc-100 tracking-tight">
             {conta?.id ? "Editar Conta/Cartão" : "Nova Conta/Cartão"}
           </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 rounded-xl transition-colors">
+          <button onClick={onClose} className="p-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -100,14 +100,14 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
            <div className="grid grid-cols-2 gap-3 mb-6">
               <button 
                 onClick={() => setTipo('Cartão de Crédito')}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${tipo === 'Cartão de Crédito' ? 'border-purple-500 bg-purple-900/20 text-purple-400 font-bold shadow-[0_0_15px_rgba(147,51,234,0.15)]' : 'border-slate-800 text-slate-500 hover:bg-slate-800/50'}`}
+                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${tipo === 'Cartão de Crédito' ? 'border-violet-500 bg-violet-900/20 text-violet-400 font-bold shadow-[0_0_15px_rgba(147,51,234,0.15)]' : 'border-zinc-800 text-zinc-500 hover:bg-zinc-800/50'}`}
               >
                  <CreditCard className="w-6 h-6"/>
                  <span className="text-xs">Cartão de Crédito</span>
               </button>
               <button 
                 onClick={() => setTipo('Conta Corrente')}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${tipo === 'Conta Corrente' ? 'border-emerald-500 bg-emerald-900/20 text-emerald-400 font-bold shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-800 text-slate-500 hover:bg-slate-800/50'}`}
+                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${tipo === 'Conta Corrente' ? 'border-emerald-500 bg-emerald-900/20 text-emerald-400 font-bold shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-zinc-800 text-zinc-500 hover:bg-zinc-800/50'}`}
               >
                  <Landmark className="w-6 h-6"/>
                  <span className="text-xs">Conta Corrente</span>
@@ -115,24 +115,24 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
            </div>
 
            <div>
-              <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Nome do Cartão/Banco</label>
+              <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Nome do Cartão/Banco</label>
               <input 
                 type="text" value={nome} onChange={e => setNome(e.target.value)}
                 placeholder="Ex: Nubank, Azul Visa Infinite..."
-                className="w-full mt-1.5 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] transition-all shadow-inner"
+                className="w-full mt-1.5 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-zinc-900/50 focus:bg-[#09090b] transition-all shadow-inner"
               />
            </div>
 
            <div>
-              <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">
+              <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider">
                 {tipo === 'Cartão de Crédito' ? "Limite Total do Cartão" : "Saldo Atual da Conta"}
               </label>
               <div className="relative mt-1.5">
-                 <span className="absolute left-4 top-2.5 text-slate-400 font-bold">R$</span>
+                 <span className="absolute left-4 top-2.5 text-zinc-400 font-bold">R$</span>
                  <input 
                    type="number" value={limite} onChange={e => setLimite(e.target.value)}
                    placeholder="0.00"
-                   className="w-full border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] shadow-inner font-mono transition-all"
+                   className="w-full border border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-zinc-900/50 focus:bg-[#09090b] shadow-inner font-mono transition-all"
                  />
               </div>
            </div>
@@ -140,30 +140,30 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
            {tipo === 'Cartão de Crédito' && (
              <div className="grid grid-cols-2 gap-4">
                 <div>
-                   <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Dia Fechamento</label>
+                   <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Dia Fechamento</label>
                    <input 
                      type="number" value={diaFechamento} onChange={e => setDiaFechamento(e.target.value)} placeholder="Ex: 5"
-                     className="w-full mt-1.5 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] shadow-inner font-mono text-center transition-all"
+                     className="w-full mt-1.5 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-zinc-900/50 focus:bg-[#09090b] shadow-inner font-mono text-center transition-all"
                    />
                 </div>
                 <div>
-                   <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Dia Vencimento</label>
+                   <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Dia Vencimento</label>
                    <input 
                      type="number" value={diaVencimento} onChange={e => setDiaVencimento(e.target.value)} placeholder="Ex: 15"
-                     className="w-full mt-1.5 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] shadow-inner font-mono text-center transition-all"
+                     className="w-full mt-1.5 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-zinc-900/50 focus:bg-[#09090b] shadow-inner font-mono text-center transition-all"
                    />
                 </div>
              </div>
            )}
 
            <div>
-              <label className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-2 block">Cor de Identificação</label>
+              <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider mb-2 block">Cor de Identificação</label>
               <div className="flex flex-wrap gap-2">
                  {CORES.map(c => (
                     <button 
                       key={c.cor}
                       onClick={() => setCor(c.cor)}
-                      className={`w-8 h-8 rounded-full border-2 transition-transform ${cor === c.cor ? 'border-white shadow-[0_0_15px_currentColor] scale-110' : 'border-slate-800 hover:scale-105 opacity-60 hover:opacity-100'}`}
+                      className={`w-8 h-8 rounded-full border-2 transition-transform ${cor === c.cor ? 'border-white shadow-[0_0_15px_currentColor] scale-110' : 'border-zinc-800 hover:scale-105 opacity-60 hover:opacity-100'}`}
                       style={{ backgroundColor: c.cor, color: c.cor }}
                       title={c.nome}
                     />
@@ -173,11 +173,11 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
 
         </div>
         
-        <div className="p-4 border-t border-slate-800/80 bg-slate-900/30 flex gap-3 shrink-0 rounded-b-2xl">
-          <button onClick={onClose} className="flex-1 py-3 bg-transparent border border-slate-700 text-slate-300 font-bold rounded-xl text-sm hover:bg-slate-800 transition-colors">
+        <div className="p-4 border-t border-zinc-800/80 bg-zinc-900/30 flex gap-3 shrink-0 rounded-b-2xl">
+          <button onClick={onClose} className="flex-1 py-3 bg-transparent border border-zinc-700 text-zinc-300 font-bold rounded-xl text-sm hover:bg-zinc-800 transition-colors">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-purple-600 text-white font-bold rounded-xl text-sm flex items-center justify-center hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)]">
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-violet-600 text-white font-bold rounded-xl text-sm flex items-center justify-center hover:bg-violet-500 transition-colors shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)]">
             {saving ? "Salvando..." : <><Save className="w-4 h-4 mr-2" /> Salvar</>}
           </button>
         </div>

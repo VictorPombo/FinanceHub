@@ -317,7 +317,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
 
     return (
       <td 
-        className={`border-b border-slate-800/20 ${isEditing ? "bg-slate-800/80 ring-1 ring-purple-500/50 z-10 relative rounded shadow-sm" : ""} transition-colors ${field === "valor_digitado" ? "font-mono" : ""} cursor-pointer`}
+        className={`border-b border-zinc-800/20 ${isEditing ? "bg-zinc-800/80 ring-1 ring-purple-500/50 z-10 relative rounded shadow-sm" : ""} transition-colors ${field === "valor_digitado" ? "font-mono" : ""} cursor-pointer`}
         style={{ width, minWidth: width, maxWidth: width }}
         onDoubleClick={() => canEdit && setEditingCell({ id: item.id, field })}
         onClick={() => {
@@ -329,19 +329,19 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
           type === "select" ? (
             <select
               ref={inputRef as React.RefObject<HTMLSelectElement>}
-              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-slate-200"
+              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-zinc-200"
               defaultValue={editValue}
               onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
               onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
             >
-              <option value="" disabled className="bg-slate-900 text-slate-200">Selecionar...</option>
-              {options?.map(opt => <option key={opt} value={opt} className="bg-slate-900 text-slate-200">{opt}</option>)}
+              <option value="" disabled className="bg-zinc-900 text-zinc-200">Selecionar...</option>
+              {options?.map(opt => <option key={opt} value={opt} className="bg-zinc-900 text-zinc-200">{opt}</option>)}
             </select>
           ) : (
             <input
               ref={inputRef as React.RefObject<HTMLInputElement>}
               type={type}
-              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-slate-200 placeholder-slate-600"
+              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-zinc-200 placeholder-slate-600"
               defaultValue={editValue}
               onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
               onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
@@ -350,7 +350,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
           )
         ) : (
           <div className={`w-full h-full px-2 py-2 truncate flex items-center ${field === 'valor_digitado' ? 'justify-end font-mono' : ''}`}>
-             <span className={`truncate text-slate-300 text-[13px] ${field === 'valor_digitado' && item.valor < 0 ? 'text-red-400' : ''} ${field === 'valor_digitado' && item.valor > 0 ? 'text-emerald-400' : ''}`}>
+             <span className={`truncate text-zinc-300 text-[13px] ${field === 'valor_digitado' && item.valor < 0 ? 'text-red-400' : ''} ${field === 'valor_digitado' && item.valor > 0 ? 'text-emerald-400' : ''}`}>
                 {displayValue}
              </span>
           </div>
@@ -363,12 +363,12 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     const rowClass = item.tipo === "Entrada" ? "bg-emerald-950/5 hover:bg-emerald-900/10" : "bg-red-950/5 hover:bg-red-900/10";
 
     return (
-      <tr key={item.id} className={`${rowClass} transition-colors group align-middle border-b border-slate-800/30`}>
-        <td className="sticky left-0 z-10 bg-[#020617] group-hover:bg-[#060b18] text-center text-xs font-medium text-slate-500 w-[50px] px-1 relative transition-colors border-b border-slate-800/30">
+      <tr key={item.id} className={`${rowClass} transition-colors group align-middle border-b border-zinc-800/30`}>
+        <td className="sticky left-0 z-10 bg-[#09090b] group-hover:bg-[#060b18] text-center text-xs font-medium text-zinc-500 w-[50px] px-1 relative transition-colors border-b border-zinc-800/30">
            <div className="relative flex items-center justify-center w-full h-full min-h-[28px]">
               <button 
                  onClick={() => deleteItem(item.id)} 
-                 className="absolute opacity-0 group-hover:opacity-100 text-red-500 shadow rounded-lg p-1.5 z-50 hover:text-red-400 hover:bg-slate-800 transition-all"
+                 className="absolute opacity-0 group-hover:opacity-100 text-red-500 shadow rounded-lg p-1.5 z-50 hover:text-red-400 hover:bg-zinc-800 transition-all"
                  title="Apagar linha"
               >
                  <Trash2 className="w-3.5 h-3.5"/>
@@ -379,7 +379,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
         {renderCell(item, "descricao", "250px")}
         {renderCell(item, "valor_digitado", "130px", "number")}
         {renderCell(item, "parcelamento", "120px", "select", PARCELAMENTO_OPTIONS)}
-        <td className="border-b border-slate-800/20 px-2 py-2 text-xs text-slate-500 text-center bg-slate-900/20" style={{width: '70px'}}>
+        <td className="border-b border-zinc-800/20 px-2 py-2 text-xs text-zinc-500 text-center bg-zinc-900/20" style={{width: '70px'}}>
            {item.parcela || ""}
         </td>
         {renderCell(item, "data", "110px", "date")}
@@ -409,19 +409,19 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     };
 
     return (
-      <tr className="bg-slate-900/30 border-b border-slate-800/40 opacity-80 hover:opacity-100 transition-opacity">
-        <td className="sticky left-0 z-10 bg-[#020617] text-center w-[50px] border-b border-slate-800/40">
-           <button onClick={submit} className="p-1 rounded bg-purple-600/20 text-purple-400 hover:bg-purple-600/40 transition flex items-center justify-center mx-auto" title="Salvar Linha">
+      <tr className="bg-zinc-900/30 border-b border-zinc-800/40 opacity-80 hover:opacity-100 transition-opacity">
+        <td className="sticky left-0 z-10 bg-[#09090b] text-center w-[50px] border-b border-zinc-800/40">
+           <button onClick={submit} className="p-1 rounded bg-violet-600/20 text-violet-400 hover:bg-violet-600/40 transition flex items-center justify-center mx-auto" title="Salvar Linha">
               <Plus className="w-3.5 h-3.5" />
            </button>
         </td>
-        <td className="px-2 border-b border-slate-800/20"><input type="text" placeholder="Adicionar descrição..." value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none placeholder-slate-600 py-2" /></td>
-        <td className="px-2 border-b border-slate-800/20"><input type="number" step="0.01" placeholder="0.00" value={form.valor} onChange={e => setForm({...form, valor: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none placeholder-slate-600 text-right font-mono py-2" /></td>
-        <td className="px-2 border-b border-slate-800/20"><select value={form.parcelamento} onChange={e => setForm({...form, parcelamento: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2"><option disabled value="">Parc...</option>{PARCELAMENTO_OPTIONS.map(o => <option key={o} value={o} className="bg-slate-900 text-slate-200">{o}</option>)}</select></td>
-        <td className="px-2 border-b border-slate-800/20 bg-slate-900/20 text-center"><span className="text-xs text-slate-600">-</span></td>
-        <td className="px-2 border-b border-slate-800/20"><input type="date" value={form.data} onChange={e => setForm({...form, data: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-xs text-slate-200 outline-none border-none py-2" /></td>
-        <td className="px-2 border-b border-slate-800/20"><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2"><option value="Pago" className="bg-slate-900 text-slate-200">Pago</option><option value="Em aberto" className="bg-slate-900 text-slate-200">Em aberto</option></select></td>
-        <td className="px-2 border-b border-slate-800/20"><select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2">{(userCategories && userCategories.length > 0 ? userCategories : []).map(c => <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>)}</select></td>
+        <td className="px-2 border-b border-zinc-800/20"><input type="text" placeholder="Adicionar descrição..." value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none placeholder-slate-600 py-2" /></td>
+        <td className="px-2 border-b border-zinc-800/20"><input type="number" step="0.01" placeholder="0.00" value={form.valor} onChange={e => setForm({...form, valor: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none placeholder-slate-600 text-right font-mono py-2" /></td>
+        <td className="px-2 border-b border-zinc-800/20"><select value={form.parcelamento} onChange={e => setForm({...form, parcelamento: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2"><option disabled value="">Parc...</option>{PARCELAMENTO_OPTIONS.map(o => <option key={o} value={o} className="bg-zinc-900 text-zinc-200">{o}</option>)}</select></td>
+        <td className="px-2 border-b border-zinc-800/20 bg-zinc-900/20 text-center"><span className="text-xs text-zinc-600">-</span></td>
+        <td className="px-2 border-b border-zinc-800/20"><input type="date" value={form.data} onChange={e => setForm({...form, data: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-xs text-zinc-200 outline-none border-none py-2" /></td>
+        <td className="px-2 border-b border-zinc-800/20"><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2"><option value="Pago" className="bg-zinc-900 text-zinc-200">Pago</option><option value="Em aberto" className="bg-zinc-900 text-zinc-200">Em aberto</option></select></td>
+        <td className="px-2 border-b border-zinc-800/20"><select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2">{(userCategories && userCategories.length > 0 ? userCategories : []).map(c => <option key={c} value={c} className="bg-zinc-900 text-zinc-200">{c}</option>)}</select></td>
       </tr>
     );
   };
@@ -430,18 +430,18 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
   const saidas = initialData.filter(d => d.tipo === "Saída");
 
   return (
-    <div className="w-full h-full flex flex-col font-sans bg-[#020617] pb-24 md:pb-10 relative">
+    <div className="w-full h-full flex flex-col font-sans bg-[#09090b] pb-24 md:pb-10 relative">
       
       {/* MOBILE FULL-SCREEN LIST VIEW */}
       <div className="md:hidden flex flex-col gap-3 px-3 py-2 overflow-auto relative">
          {initialData.length === 0 && (
-            <div className="text-center py-20 text-slate-500">Nenhum lançamento no mês.</div>
+            <div className="text-center py-20 text-zinc-500">Nenhum lançamento no mês.</div>
          )}
          {initialData.map(item => (
            <div 
              key={item.id} 
              onClick={() => openMobileEdit(item)}
-             className={`flex flex-col bg-slate-900/80 backdrop-blur-md rounded-xl shadow-lg border p-4 active:scale-95 transition-transform ${item.tipo === 'Entrada' ? 'border-emerald-900/50' : 'border-red-900/50'}`}
+             className={`flex flex-col bg-zinc-900/80 backdrop-blur-md rounded-xl shadow-lg border p-4 active:scale-95 transition-transform ${item.tipo === 'Entrada' ? 'border-emerald-900/50' : 'border-red-900/50'}`}
            >
               <div className="flex justify-between items-start mb-2">
                  <div className="flex items-center gap-2">
@@ -449,8 +449,8 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
                        {item.tipo === 'Entrada' ? <ArrowUpRight className="w-4 h-4"/> : <ArrowDownRight className="w-4 h-4"/>}
                     </div>
                     <div>
-                       <h4 className="font-bold text-slate-200 leading-tight">{item.descricao}</h4>
-                       <span className="text-[10px] uppercase font-bold text-slate-500">{item.categoria}</span>
+                       <h4 className="font-bold text-zinc-200 leading-tight">{item.descricao}</h4>
+                       <span className="text-[10px] uppercase font-bold text-zinc-500">{item.categoria}</span>
                     </div>
                  </div>
                  <div className="text-right">
@@ -459,11 +459,11 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
                     </span>
                  </div>
               </div>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/50">
-                 <span className="text-xs text-slate-500">{new Date(item.data + "T00:00:00").toLocaleDateString('pt-BR')}</span>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-800/50">
+                 <span className="text-xs text-zinc-500">{new Date(item.data + "T00:00:00").toLocaleDateString('pt-BR')}</span>
                  <div className="flex items-center gap-2">
                     {item.parcela && item.parcela !== "1/1" && (
-                       <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">
+                       <span className="bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded text-[10px] font-bold">
                           {item.parcela}
                        </span>
                     )}
@@ -479,17 +479,17 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
       {/* MOBILE MULTIPLE ADD FAB */}
       <button 
         onClick={openMobileAdd}
-        className="md:hidden fixed bottom-[84px] right-4 w-14 h-14 bg-purple-600 hover:bg-purple-700 rounded-full flex items-center justify-center text-white shadow-[0_8px_25px_rgb(147,51,234,0.4)] active:scale-95 transition-all z-50"
+        className="md:hidden fixed bottom-[84px] right-4 w-14 h-14 bg-violet-600 hover:bg-violet-700 rounded-full flex items-center justify-center text-white shadow-[0_8px_25px_rgb(147,51,234,0.4)] active:scale-95 transition-all z-50"
       >
          <Plus className="w-7 h-7" />
       </button>
 
       {/* DESKTOP TABLE VIEW */}
-      <div className="hidden md:block flex-1 w-full overflow-auto relative bg-[#020617] rounded-xl border border-slate-800/50 shadow-2xl mb-4">
+      <div className="hidden md:block flex-1 w-full overflow-auto relative bg-[#09090b] rounded-xl border border-zinc-800/50 shadow-2xl mb-4">
         <table className="w-max min-w-full border-collapse font-sans">
           <thead>
-            <tr className="bg-[#020617] text-slate-400 text-xs font-semibold uppercase tracking-widest border-b border-slate-800/60 sticky top-0 z-30 shadow-sm">
-              <th className="sticky left-0 bg-[#020617] w-[50px] py-3.5 border-b border-slate-800/60"></th>
+            <tr className="bg-[#09090b] text-zinc-400 text-xs font-semibold uppercase tracking-widest border-b border-zinc-800/60 sticky top-0 z-30 shadow-sm">
+              <th className="sticky left-0 bg-[#09090b] w-[50px] py-3.5 border-b border-zinc-800/60"></th>
               <th className="py-3.5 px-3 text-left font-semibold" style={{width: '250px'}}>Descrição</th>
               <th className="py-3.5 px-3 text-right font-semibold" style={{width: '130px'}}>Valor (R$)</th>
               <th className="py-3.5 px-3 text-left font-semibold" style={{width: '120px'}}>Parcelamento</th>
@@ -501,7 +501,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
           </thead>
           <tbody>
             <tr>
-               <td className="sticky left-0 bg-[#020617] z-20 pt-4"></td>
+               <td className="sticky left-0 bg-[#09090b] z-20 pt-4"></td>
                <td colSpan={7} className="px-4 py-2 pt-5">
                   <div className="flex items-center gap-2">
                     <span className="text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest bg-emerald-950/30 border border-emerald-900/50 shadow-sm">
@@ -514,7 +514,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
             <DesktopAddRow tipo="Entrada" />
 
             <tr>
-               <td className="sticky left-0 bg-[#020617] z-20 pt-6"></td>
+               <td className="sticky left-0 bg-[#09090b] z-20 pt-6"></td>
                <td colSpan={7} className="px-4 py-2 pt-8">
                   <div className="flex items-center gap-2">
                     <span className="text-red-400 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest bg-red-950/30 border border-red-900/50 shadow-sm">
@@ -532,47 +532,47 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
 
       {/* MOBILE ADD/EDIT MODAL FORMS */}
       {mobileModalOpen && (
-        <div className="md:hidden fixed inset-0 z-[200] flex flex-col justify-end bg-slate-950/60 backdrop-blur-sm animate-in fade-in">
-           <div className="bg-[#0f172a] border-t border-slate-800 rounded-t-3xl shadow-2xl p-6 px-5 flex flex-col gap-4 animate-in slide-in-from-bottom max-h-[90vh] overflow-auto">
+        <div className="md:hidden fixed inset-0 z-[200] flex flex-col justify-end bg-zinc-950/60 backdrop-blur-sm animate-in fade-in">
+           <div className="bg-[#0f172a] border-t border-zinc-800 rounded-t-3xl shadow-2xl p-6 px-5 flex flex-col gap-4 animate-in slide-in-from-bottom max-h-[90vh] overflow-auto">
               <div className="flex justify-between items-center mb-2">
-                 <h2 className="text-xl font-bold text-slate-200">{mobileForm.id ? "Editar Lançamento" : "Novo Lançamento"}</h2>
-                 <button onClick={() => setMobileModalOpen(false)} className="p-2 bg-slate-800 rounded-full active:scale-95 text-slate-400 hover:text-slate-200">
+                 <h2 className="text-xl font-bold text-zinc-200">{mobileForm.id ? "Editar Lançamento" : "Novo Lançamento"}</h2>
+                 <button onClick={() => setMobileModalOpen(false)} className="p-2 bg-zinc-800 rounded-full active:scale-95 text-zinc-400 hover:text-zinc-200">
                     <X className="w-5 h-5" />
                  </button>
               </div>
 
-              <div className="flex bg-slate-900 rounded-lg p-1 gap-1">
-                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Saída"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Saída" ? "bg-slate-800 shadow text-red-500" : "text-slate-500"}`}>Despesa</button>
-                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Entrada"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Entrada" ? "bg-slate-800 shadow text-emerald-400" : "text-slate-500"}`}>Receita</button>
+              <div className="flex bg-zinc-900 rounded-lg p-1 gap-1">
+                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Saída"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Saída" ? "bg-zinc-800 shadow text-red-500" : "text-zinc-500"}`}>Despesa</button>
+                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Entrada"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Entrada" ? "bg-zinc-800 shadow text-emerald-400" : "text-zinc-500"}`}>Receita</button>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Valor (R$)</label>
+                <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Valor (R$)</label>
                 <input type="number" step="0.01" value={mobileForm.valor} onChange={(e) => setMobileForm({...mobileForm, valor: e.target.value})} placeholder="0.00" className={`w-full text-3xl font-black font-mono bg-transparent border-b-2 py-2 outline-none ${mobileForm.tipo === "Saída" ? "border-red-900/50 text-red-500 focus:border-red-500" : "border-emerald-900/50 text-emerald-400 focus:border-emerald-500"}`} />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Descrição</label>
-                <input type="text" value={mobileForm.descricao} onChange={(e) => setMobileForm({...mobileForm, descricao: e.target.value})} placeholder="Ex: Mercado" className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50" />
+                <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Descrição</label>
+                <input type="text" value={mobileForm.descricao} onChange={(e) => setMobileForm({...mobileForm, descricao: e.target.value})} placeholder="Ex: Mercado" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 outline-none focus:border-violet-500 focus:ring-1 focus:ring-purple-500/50" />
               </div>
 
               <div className="flex gap-3">
                  <div className="flex-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Categoria</label>
-                    <select value={mobileForm.categoria} onChange={(e) => setMobileForm({...mobileForm, categoria: e.target.value})} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-purple-500">
+                    <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Categoria</label>
+                    <select value={mobileForm.categoria} onChange={(e) => setMobileForm({...mobileForm, categoria: e.target.value})} className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 outline-none focus:border-violet-500">
                        {(userCategories && userCategories.length > 0 ? userCategories : []).map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                  </div>
                  <div className="flex-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Data</label>
-                    <input type="date" value={mobileForm.data} onChange={(e) => setMobileForm({...mobileForm, data: e.target.value})} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 cursor-text outline-none focus:border-purple-500" style={{colorScheme: 'dark'}} />
+                    <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Data</label>
+                    <input type="date" value={mobileForm.data} onChange={(e) => setMobileForm({...mobileForm, data: e.target.value})} className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 cursor-text outline-none focus:border-violet-500" style={{colorScheme: 'dark'}} />
                  </div>
               </div>
 
               {!mobileForm.id && (
                 <div>
-                   <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Parcelamento (Motor Inteligente)</label>
-                   <select value={mobileForm.parcelamento} onChange={(e) => setMobileForm({...mobileForm, parcelamento: e.target.value})} className="w-full bg-slate-800 border border-purple-900/50 rounded-xl px-4 py-3 text-purple-400 font-bold outline-none focus:border-purple-500">
+                   <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Parcelamento (Motor Inteligente)</label>
+                   <select value={mobileForm.parcelamento} onChange={(e) => setMobileForm({...mobileForm, parcelamento: e.target.value})} className="w-full bg-zinc-800 border border-violet-900/50 rounded-xl px-4 py-3 text-violet-400 font-bold outline-none focus:border-violet-500">
                       {PARCELAMENTO_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                    </select>
                 </div>
@@ -584,7 +584,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
                        <Trash2 className="w-6 h-6" />
                     </button>
                  )}
-                 <button onClick={handleMobileSave} className="flex-1 flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-4 font-bold active:bg-purple-800 transition-colors shadow-lg shadow-purple-900/20">
+                 <button onClick={handleMobileSave} className="flex-1 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-4 font-bold active:bg-violet-800 transition-colors shadow-lg shadow-violet-900/20">
                     <Save className="w-5 h-5"/> SALVAR
                  </button>
               </div>

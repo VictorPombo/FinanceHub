@@ -141,8 +141,8 @@ function ContaCard({
             {conta.tipo === "Cartão de Crédito" ? <CreditCard className="w-5 h-5" /> : <Landmark className="w-5 h-5" />}
           </div>
           <div className="mr-2">
-            <h3 className="font-black text-slate-200 text-base tracking-tight truncate">{conta.nome}</h3>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{conta.tipo}</span>
+            <h3 className="font-black text-zinc-200 text-base tracking-tight truncate">{conta.nome}</h3>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{conta.tipo}</span>
           </div>
         </div>
         
@@ -169,41 +169,41 @@ function ContaCard({
       </div>
 
       {/* Corpo */}
-      <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800/40 flex-1 flex flex-col justify-center mb-4 relative">
+      <div className="bg-zinc-950/50 rounded-xl p-4 border border-zinc-800/40 flex-1 flex flex-col justify-center mb-4 relative">
         
         {conta.tipo === "Cartão de Crédito" ? (
           <>
             {/* Seletor Mês a Mês */}
-            <div className="flex items-center justify-center gap-3 mb-4 bg-[#020617] p-1.5 rounded-lg border border-slate-800/60">
-               <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white"><ChevronLeft className="w-4 h-4"/></button>
-               <span className="text-xs font-bold font-mono tracking-widest text-slate-300 min-w-[70px] text-center">{getMonthName(selectedMonth)}</span>
-               <button onClick={() => changeMonth(1)} className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white"><ChevronRight className="w-4 h-4"/></button>
+            <div className="flex items-center justify-center gap-3 mb-4 bg-[#09090b] p-1.5 rounded-lg border border-zinc-800/60">
+               <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-zinc-800 rounded transition-colors text-zinc-400 hover:text-white"><ChevronLeft className="w-4 h-4"/></button>
+               <span className="text-xs font-bold font-mono tracking-widest text-zinc-300 min-w-[70px] text-center">{getMonthName(selectedMonth)}</span>
+               <button onClick={() => changeMonth(1)} className="p-1 hover:bg-zinc-800 rounded transition-colors text-zinc-400 hover:text-white"><ChevronRight className="w-4 h-4"/></button>
             </div>
 
-            <div className="flex justify-between items-end mb-4 pb-4 border-b border-slate-800/50">
+            <div className="flex justify-between items-end mb-4 pb-4 border-b border-zinc-800/50">
               <div className="w-full">
-                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1.5">Fatura Mês Selecionado</p>
+                <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1.5">Fatura Mês Selecionado</p>
                 {isEditingValor ? (
                    <div className="flex items-center gap-2">
-                       <span className="text-slate-400 font-bold">R$</span>
+                       <span className="text-zinc-400 font-bold">R$</span>
                        <input 
                           type="number" 
                           autoFocus
                           value={tempValor}
                           onChange={(e) => setTempValor(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && confirmEditValue()}
-                          className="bg-slate-900 border border-purple-500 text-slate-100 font-black text-lg px-2 py-1 rounded w-full outline-none"
+                          className="bg-zinc-900 border border-violet-500 text-zinc-100 font-black text-lg px-2 py-1 rounded w-full outline-none"
                        />
-                       <button onClick={confirmEditValue} className="p-2 bg-purple-600 hover:bg-purple-500 rounded text-white"><Save className="w-4 h-4"/></button>
+                       <button onClick={confirmEditValue} className="p-2 bg-violet-600 hover:bg-violet-500 rounded text-white"><Save className="w-4 h-4"/></button>
                    </div>
                 ) : (
                    <div className="flex items-center gap-2 group cursor-pointer w-max" onClick={startEditing}>
                       <span className={`text-2xl font-black tracking-tight transition-colors ${
-                         isAtrasado ? 'text-red-400' : isPago ? 'text-emerald-400 opacity-80' : 'text-slate-200'
+                         isAtrasado ? 'text-red-400' : isPago ? 'text-emerald-400 opacity-80' : 'text-zinc-200'
                       }`}>
                          {formatCurrency(currentFatura.valor)}
                       </span>
-                      <Edit2 className="w-3.5 h-3.5 text-slate-600 group-hover:text-purple-400 transition-colors" />
+                      <Edit2 className="w-3.5 h-3.5 text-zinc-600 group-hover:text-violet-400 transition-colors" />
                    </div>
                 )}
               </div>
@@ -213,31 +213,31 @@ function ContaCard({
             <div className="flex flex-col gap-3">
                <div>
                   <div className="flex justify-between items-center mb-1.5">
-                     <p className="text-[9px] text-slate-500 font-bold uppercase">Limite Contratado</p>
-                     <p className="font-mono text-xs font-bold text-slate-300">{formatCurrency(conta.saldo_limite)}</p>
+                     <p className="text-[9px] text-zinc-500 font-bold uppercase">Limite Contratado</p>
+                     <p className="font-mono text-xs font-bold text-zinc-300">{formatCurrency(conta.saldo_limite)}</p>
                   </div>
                   {/* Progress Bar de Limite Usado Geral */}
-                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                     <div className="h-full bg-purple-500 rounded-full transition-all duration-500" style={{ width: `${percentUsado}%` }}></div>
+                  <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                     <div className="h-full bg-violet-500 rounded-full transition-all duration-500" style={{ width: `${percentUsado}%` }}></div>
                   </div>
                </div>
 
                <div className="grid grid-cols-3 gap-2 mt-2">
                  <div>
-                   <p className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Disponível</p>
+                   <p className="text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Disponível</p>
                    <p className="font-mono text-[11px] font-black text-emerald-400 truncate">{formatCurrency(disponivel)}</p>
                  </div>
                  <div>
-                   <p className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Fecha / Vence</p>
-                   <p className="font-mono text-[11px] font-bold text-slate-400">{conta.dia_fechamento || '--'} / {conta.dia_vencimento || '--'}</p>
+                   <p className="text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Fecha / Vence</p>
+                   <p className="font-mono text-[11px] font-bold text-zinc-400">{conta.dia_fechamento || '--'} / {conta.dia_vencimento || '--'}</p>
                  </div>
                </div>
             </div>
           </>
         ) : (
           <div className="flex flex-col justify-center items-center py-6">
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2">Saldo / Limite Geral</p>
-            <span className="text-2xl font-black text-slate-200 tracking-tight">{formatCurrency(conta.saldo_limite)}</span>
+            <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-2">Saldo / Limite Geral</p>
+            <span className="text-2xl font-black text-zinc-200 tracking-tight">{formatCurrency(conta.saldo_limite)}</span>
           </div>
         )}
       </div>
@@ -245,18 +245,18 @@ function ContaCard({
       {/* Ações */}
       <div className="flex items-center gap-2 mt-auto">
         {conta.tipo === "Cartão de Crédito" && (
-           <div className="flex-1 flex gap-1 bg-slate-900/50 p-1 rounded-xl border border-slate-700/50">
+           <div className="flex-1 flex gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-700/50">
               <button 
                  onClick={() => saveFatura(currentFatura.valor, isPago ? 'Pendente' : 'Pago')}
                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1
-                 ${isPago ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'text-slate-400 hover:bg-emerald-500/20 hover:text-emerald-400'}`}
+                 ${isPago ? 'bg-emerald-500 text-zinc-950 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'text-zinc-400 hover:bg-emerald-500/20 hover:text-emerald-400'}`}
               >
                  {isPago ? 'Reverter' : 'Pagar'}
               </button>
               <button 
                  onClick={() => saveFatura(currentFatura.valor, isAtrasado ? 'Pendente' : 'Atrasado')}
                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1
-                 ${isAtrasado ? 'bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'text-slate-400 hover:bg-red-500/20 hover:text-red-400'}`}
+                 ${isAtrasado ? 'bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'text-zinc-400 hover:bg-red-500/20 hover:text-red-400'}`}
               >
                  {isAtrasado ? 'Normalizar' : 'Atrasar'}
               </button>
@@ -264,13 +264,13 @@ function ContaCard({
         )}
         <button
           onClick={() => onEditConta(conta)}
-          className="w-9 h-9 shrink-0 flex items-center justify-center bg-slate-800/50 border border-slate-700/50 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-purple-900/20 transition-colors"
+          className="w-9 h-9 shrink-0 flex items-center justify-center bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-zinc-400 hover:text-violet-400 hover:bg-violet-900/20 transition-colors"
         >
           <Edit2 className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onDelete(conta.id)}
-          className="w-9 h-9 shrink-0 flex items-center justify-center bg-slate-800/50 border border-slate-700/50 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+          className="w-9 h-9 shrink-0 flex items-center justify-center bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-zinc-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -311,13 +311,13 @@ export default function ContasClient({ initialData, userId }: Props) {
     <div className="flex flex-col gap-5 max-w-[1400px] mx-auto w-full pb-20 md:pb-0 font-sans">
       {/* CONTROLS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 glass-card p-4 shadow-xl">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900/80 rounded-xl w-full md:w-max">
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-900/80 rounded-xl w-full md:w-max">
           <button
             onClick={() => setActiveTab("Ativa")}
             className={`flex-1 md:flex-none px-5 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "Ativa"
-                ? "bg-purple-600/15 text-purple-400 border border-purple-500/25"
-                : "text-slate-500 hover:text-slate-300"
+                ? "bg-violet-600/15 text-violet-400 border border-violet-500/25"
+                : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Ativas
@@ -326,8 +326,8 @@ export default function ContasClient({ initialData, userId }: Props) {
             onClick={() => setActiveTab("Arquivada")}
             className={`flex-1 md:flex-none px-5 py-2 rounded-lg text-sm font-bold transition-all ${
               activeTab === "Arquivada"
-                ? "bg-purple-600/15 text-purple-400 border border-purple-500/25"
-                : "text-slate-500 hover:text-slate-300"
+                ? "bg-violet-600/15 text-violet-400 border border-violet-500/25"
+                : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
             Arquivadas
@@ -339,7 +339,7 @@ export default function ContasClient({ initialData, userId }: Props) {
             setEditingConta(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] text-sm w-full md:w-max"
+          className="flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] text-sm w-full md:w-max"
         >
           <Plus className="w-4 h-4" /> Nova Conta / Cartão
         </button>
@@ -359,10 +359,10 @@ export default function ContasClient({ initialData, userId }: Props) {
       </div>
 
       {filteredData.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 glass-card border-dashed border-slate-700/50">
-          <CreditCard className="w-12 h-12 text-slate-700 mb-4 opacity-70" />
-          <p className="text-base font-bold text-slate-400">Nenhuma conta encontrada</p>
-          <p className="text-slate-600 text-xs mt-1">
+        <div className="flex flex-col items-center justify-center py-20 glass-card border-dashed border-zinc-700/50">
+          <CreditCard className="w-12 h-12 text-zinc-700 mb-4 opacity-70" />
+          <p className="text-base font-bold text-zinc-400">Nenhuma conta encontrada</p>
+          <p className="text-zinc-600 text-xs mt-1">
             Clique em &quot;Nova Conta / Cartão&quot; para adicionar.
           </p>
         </div>

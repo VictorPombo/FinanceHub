@@ -238,37 +238,37 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
     const diff = ((current - previous) / Math.abs(previous)) * 100;
     if (diff > 2) return <span className="flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold"><ArrowUpRight className="w-3 h-3"/> +{diff.toFixed(0)}%</span>;
     if (diff < -2) return <span className="flex items-center gap-0.5 text-[10px] text-red-400 font-bold"><ArrowDownRight className="w-3 h-3"/> {diff.toFixed(0)}%</span>;
-    return <span className="flex items-center gap-0.5 text-[10px] text-slate-500 font-bold"><Minus className="w-3 h-3"/> Estável</span>;
+    return <span className="flex items-center gap-0.5 text-[10px] text-zinc-500 font-bold"><Minus className="w-3 h-3"/> Estável</span>;
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#020617] overflow-y-auto w-full pb-20 md:pb-0">
+    <div className="flex flex-col h-full bg-[#09090b] overflow-y-auto w-full pb-20 md:pb-0">
       {/* HEADER */}
-      <div className="bg-gradient-to-b from-[#0F172A] to-transparent p-6 pb-4 w-full shrink-0 relative z-20">
+      <div className="bg-gradient-to-b from-[#18181b] to-transparent p-6 pb-4 w-full shrink-0 relative z-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-7xl mx-auto">
            <div>
               <h1 className="text-white font-black text-xl md:text-2xl flex items-center gap-3 tracking-tight">
-                <Gauge className="w-6 h-6 text-purple-400"/>
+                <Gauge className="w-6 h-6 text-violet-400"/>
                 Consultor Financeiro IA
               </h1>
-              <p className="text-slate-500 text-xs md:text-sm mt-1 font-medium">Análise cognitiva em tempo real · <span className={classifColor}>{periodoLabel}</span></p>
+              <p className="text-zinc-500 text-xs md:text-sm mt-1 font-medium">Análise cognitiva em tempo real · <span className={classifColor}>{periodoLabel}</span></p>
            </div>
            
            <div className="flex items-center gap-2 flex-wrap">
-             <div className="flex items-center bg-slate-900/80 rounded-xl p-1 border border-slate-800 shadow-inner">
+             <div className="flex items-center bg-zinc-900/80 rounded-xl p-1 border border-zinc-800 shadow-inner">
                 <select 
                   value={selectedMonth} 
                   onChange={e => setSelectedMonth(Number(e.target.value))}
                   className={`bg-transparent font-bold outline-none px-2 py-1.5 text-sm cursor-pointer transition-colors ${
                     selectedMonth === realMonth && selectedYear === realYear 
-                      ? 'text-purple-400' 
-                      : 'text-slate-200'
+                      ? 'text-violet-400' 
+                      : 'text-zinc-200'
                   }`}
                 >
-                  <option value={0} className="bg-slate-900">Todos</option>
+                  <option value={0} className="bg-zinc-900">Todos</option>
                   {meses.map((m, i) => {
                     const isCurrent = realMonth === i + 1 && selectedYear === realYear;
-                    return <option key={i} value={i+1} className="bg-slate-900">
+                    return <option key={i} value={i+1} className="bg-zinc-900">
                       {m} {isCurrent ? '(Atual) 📍' : ''}
                     </option>;
                   })}
@@ -276,9 +276,9 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
                 <select 
                   value={selectedYear} 
                   onChange={e => setSelectedYear(Number(e.target.value))}
-                  className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1.5 text-sm border-l border-slate-700 cursor-pointer"
+                  className="bg-transparent text-zinc-200 font-bold outline-none px-2 py-1.5 text-sm border-l border-zinc-700 cursor-pointer"
                 >
-                  {[2024,2025,2026,2027].map(y => <option key={y} value={y} className="bg-slate-900">{y}</option>)}
+                  {[2024,2025,2026,2027].map(y => <option key={y} value={y} className="bg-zinc-900">{y}</option>)}
                 </select>
              </div>
            </div>
@@ -293,12 +293,12 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
             <button 
               key={tab.key}
               onClick={() => setActiveTab(tab.key)} 
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === tab.key ? 'bg-purple-600/15 text-purple-400 border border-purple-500/30 shadow-[0_0_15px_rgba(147,51,234,0.15)]' : 'text-slate-500 bg-slate-900/50 border border-transparent hover:text-slate-300'}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === tab.key ? 'bg-violet-600/15 text-violet-400 border border-violet-500/30 shadow-[0_0_15px_rgba(147,51,234,0.15)]' : 'text-zinc-500 bg-zinc-900/50 border border-transparent hover:text-zinc-300'}`}
             >
               {tab.icon} {tab.label}
             </button>
           ))}
-          <span className="text-[10px] text-slate-600 font-medium ml-2 whitespace-nowrap">
+          <span className="text-[10px] text-zinc-600 font-medium ml-2 whitespace-nowrap">
             {totalTransacoes} transações · {periodoLabel}
           </span>
         </div>
@@ -310,7 +310,7 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
         <div className="w-full xl:w-80 flex flex-col gap-4 shrink-0 z-10 relative">
           {/* Score */}
           <div className="glass-card p-6 md:p-8 flex flex-col items-center justify-center text-center xl:sticky top-6">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Termômetro Financeiro</h3>
+            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-1">Termômetro Financeiro</h3>
             
             <div className={`text-6xl md:text-7xl font-black font-mono mb-2 mt-4 tracking-tighter ${classifColor}`}>
               {score}
@@ -320,50 +320,50 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
               {classifText}
             </div>
 
-            <div className="w-full bg-slate-900 rounded-full h-3 relative overflow-hidden shadow-inner border border-slate-800">
+            <div className="w-full bg-zinc-900 rounded-full h-3 relative overflow-hidden shadow-inner border border-zinc-800">
               <div className={`h-full rounded-full transition-all duration-1000 ease-out ${barColor}`} style={{ width: `${score}%` }}></div>
             </div>
-            <div className="w-full flex justify-between text-[10px] uppercase font-bold text-slate-600 mt-2 tracking-wider">
+            <div className="w-full flex justify-between text-[10px] uppercase font-bold text-zinc-600 mt-2 tracking-wider">
               <span>Crítico</span>
               <span>Excelente</span>
             </div>
 
-            <button onClick={handleAskFinn} disabled={loadingFinn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 mt-5 rounded-xl transition-colors flex items-center justify-center gap-2">
+            <button onClick={handleAskFinn} disabled={loadingFinn} className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 mt-5 rounded-xl transition-colors flex items-center justify-center gap-2">
                {loadingFinn ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Bot className="w-4 h-4" />}
                <span className="text-sm">Análise Detalhada (AI)</span>
             </button>
             
             {finnResponse && (
-               <div className="mt-4 text-left p-4 bg-[#0F172A] border border-purple-500/30 rounded-xl shadow-lg relative">
-                 <div className="absolute -top-3 left-4 bg-[#020617] border border-slate-700 px-2 py-0.5 rounded text-[10px] font-black text-purple-400">FINN IA</div>
-                 <p className="text-xs text-slate-300 leading-relaxed font-medium whitespace-pre-wrap mt-2">{finnResponse}</p>
-                 <button onClick={() => setFinnResponse(null)} className="text-[10px] text-slate-500 hover:text-slate-300 uppercase tracking-widest font-black mt-3 block w-full text-center">Fechar</button>
+               <div className="mt-4 text-left p-4 bg-[#18181b] border border-violet-500/30 rounded-xl shadow-lg relative">
+                 <div className="absolute -top-3 left-4 bg-[#09090b] border border-zinc-700 px-2 py-0.5 rounded text-[10px] font-black text-violet-400">FINN IA</div>
+                 <p className="text-xs text-zinc-300 leading-relaxed font-medium whitespace-pre-wrap mt-2">{finnResponse}</p>
+                 <button onClick={() => setFinnResponse(null)} className="text-[10px] text-zinc-500 hover:text-zinc-300 uppercase tracking-widest font-black mt-3 block w-full text-center">Fechar</button>
                </div>
             )}
           </div>
 
           {/* Quick stats */}
           <div className="glass-card p-4 flex flex-col gap-3">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">⚡ Métricas Rápidas</h3>
+            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.15em]">⚡ Métricas Rápidas</h3>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400 font-medium">Taxa de Poupança</span>
+              <span className="text-xs text-zinc-400 font-medium">Taxa de Poupança</span>
               <span className={`text-xs font-mono font-black ${taxaPoupanca >= 20 ? 'text-emerald-400' : taxaPoupanca >= 0 ? 'text-amber-400' : 'text-red-400'}`}>{taxaPoupanca.toFixed(1)}%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400 font-medium">Média Diária (Gastos)</span>
+              <span className="text-xs text-zinc-400 font-medium">Média Diária (Gastos)</span>
               <span className="text-xs font-mono font-black text-red-400">{formatCurrency(mediaDiaria)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400 font-medium">Fixos vs Variáveis</span>
-              <span className="text-xs font-mono font-black text-slate-200">{percRecorrente.toFixed(0)}% / {(100 - percRecorrente).toFixed(0)}%</span>
+              <span className="text-xs text-zinc-400 font-medium">Fixos vs Variáveis</span>
+              <span className="text-xs font-mono font-black text-zinc-200">{percRecorrente.toFixed(0)}% / {(100 - percRecorrente).toFixed(0)}%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400 font-medium">Transações</span>
-              <span className="text-xs font-mono font-bold text-slate-300">{transacoesEntrada}↑ {transacoesSaida}↓</span>
+              <span className="text-xs text-zinc-400 font-medium">Transações</span>
+              <span className="text-xs font-mono font-bold text-zinc-300">{transacoesEntrada}↑ {transacoesSaida}↓</span>
             </div>
             {selectedMonth !== 0 && (
               <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400 font-medium">vs Mês Anterior</span>
+                <span className="text-xs text-zinc-400 font-medium">vs Mês Anterior</span>
                 <TrendArrow current={sobra} previous={sobraPrev} />
               </div>
             )}
@@ -375,7 +375,7 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             
             <div className={`glass-card p-4 md:p-5 border-l-4 ${sobra >= 0 ? 'border-l-emerald-500' : 'border-l-rose-500'}`}>
-               <h3 className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-2">Situação {selectedMonth === 0 ? 'Anual' : 'do Mês'}</h3>
+               <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Situação {selectedMonth === 0 ? 'Anual' : 'do Mês'}</h3>
                <span className={`text-xl md:text-2xl font-black font-mono tracking-tight ${sobra >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                  {formatCurrency(sobra)}
                </span>
@@ -383,9 +383,9 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
             </div>
 
             <div className={`glass-card p-4 md:p-5 border-l-4 ${percComprometida < 50 ? 'border-l-emerald-500' : percComprometida <= 70 ? 'border-l-amber-500' : 'border-l-rose-500'}`}>
-               <h3 className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-2">Renda Comprometida</h3>
-               <span className="text-xl md:text-2xl font-black font-mono tracking-tight text-slate-200">{percComprometida.toFixed(1)}%</span>
-               <p className="text-[10px] text-slate-400 mt-1.5 font-bold">
+               <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Renda Comprometida</h3>
+               <span className="text-xl md:text-2xl font-black font-mono tracking-tight text-zinc-200">{percComprometida.toFixed(1)}%</span>
+               <p className="text-[10px] text-zinc-400 mt-1.5 font-bold">
                  {percComprometida < 50 && "🟢 Saudável"}
                  {percComprometida >= 50 && percComprometida <= 70 && "🟡 Atenção"}
                  {percComprometida > 70 && "🔴 Alerta"}
@@ -393,39 +393,39 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
             </div>
 
             <div className="glass-card p-4 md:p-5 border-l-4 border-l-blue-500">
-               <h3 className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-2">Maior Saída</h3>
+               <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Maior Saída</h3>
                {maiorGasto ? (
                  <>
-                  <span className="text-sm font-bold text-slate-300 truncate block mb-1">{maiorGasto.descricao}</span>
+                  <span className="text-sm font-bold text-zinc-300 truncate block mb-1">{maiorGasto.descricao}</span>
                   <span className="text-red-400 font-mono font-black text-lg">{formatCurrency(Math.abs(Number(maiorGasto.valor)))}</span>
                  </>
-               ) : <span className="text-slate-500 italic text-sm">Sem registros</span>}
+               ) : <span className="text-zinc-500 italic text-sm">Sem registros</span>}
             </div>
 
             <div className="glass-card p-4 md:p-5 border-l-4 border-l-purple-500">
-               <h3 className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-2">Maior Entrada</h3>
+               <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Maior Entrada</h3>
                {maiorEntrada ? (
                  <>
-                  <span className="text-sm font-bold text-slate-300 truncate block mb-1">{maiorEntrada.descricao}</span>
+                  <span className="text-sm font-bold text-zinc-300 truncate block mb-1">{maiorEntrada.descricao}</span>
                   <span className="text-emerald-400 font-mono font-black text-lg">{formatCurrency(Math.abs(Number(maiorEntrada.valor)))}</span>
                  </>
-               ) : <span className="text-slate-500 italic text-sm">Sem registros</span>}
+               ) : <span className="text-zinc-500 italic text-sm">Sem registros</span>}
             </div>
 
             <div className="glass-card p-4 md:p-5 border-l-4 border-l-indigo-500">
-               <h3 className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-2">Evolução</h3>
-               <span className="text-sm font-black text-slate-200 leading-tight block mt-1">
+               <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Evolução</h3>
+               <span className="text-sm font-black text-zinc-200 leading-tight block mt-1">
                  {selectedMonth !== 0 ? ((sobra - sobraPrev) > 0 ? `+${formatCurrency(sobra - sobraPrev)}` : formatCurrency(sobra - sobraPrev)) : formatCurrency(sobra)}
                </span>
-               <p className="text-[10px] text-slate-500 mt-1 font-medium">
+               <p className="text-[10px] text-zinc-500 mt-1 font-medium">
                  {selectedMonth !== 0 ? "vs mês anterior" : "resultado líquido do ano"}
                </p>
             </div>
 
             <div className="glass-card p-4 md:p-5 border-l-4 border-l-teal-500">
-               <h3 className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-2">Fechamento Previsto</h3>
-               <span className="text-xl font-black font-mono tracking-tight text-slate-200">{formatCurrency(projecaoFinal)}</span>
-               <p className="text-[10px] text-slate-500 font-medium mt-0.5">{projecaoFinal > 0 ? "No azul" : "Atenção máxima"}</p>
+               <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Fechamento Previsto</h3>
+               <span className="text-xl font-black font-mono tracking-tight text-zinc-200">{formatCurrency(projecaoFinal)}</span>
+               <p className="text-[10px] text-zinc-500 font-medium mt-0.5">{projecaoFinal > 0 ? "No azul" : "Atenção máxima"}</p>
             </div>
             
           </div>
@@ -433,7 +433,7 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
           {/* TOP 5 GASTOS */}
           {top5Gastos.length > 0 && (
             <div>
-              <div className="bg-slate-900/60 px-5 py-3 rounded-t-xl border border-slate-800/60 border-b-0 flex items-center gap-2">
+              <div className="bg-zinc-900/60 px-5 py-3 rounded-t-xl border border-zinc-800/60 border-b-0 flex items-center gap-2">
                 <ListOrdered className="w-4 h-4 text-red-400"/>
                 <h2 className="text-white font-black text-xs uppercase tracking-[0.15em]">Top 5 Maiores Gastos</h2>
               </div>
@@ -441,10 +441,10 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
                 {top5Gastos.map((g, i) => (
                   <div key={i} className="flex items-center justify-between px-5 py-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-xs font-black text-slate-600 w-5">{i+1}.</span>
+                      <span className="text-xs font-black text-zinc-600 w-5">{i+1}.</span>
                       <div className="min-w-0">
-                        <span className="text-sm font-bold text-slate-200 truncate block">{g.descricao}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">{g.data} · {g.categoria || 'Outros'}</span>
+                        <span className="text-sm font-bold text-zinc-200 truncate block">{g.descricao}</span>
+                        <span className="text-[10px] text-zinc-500 font-medium">{g.data} · {g.categoria || 'Outros'}</span>
                       </div>
                     </div>
                     <span className="text-red-400 font-mono font-black text-sm whitespace-nowrap ml-3">{formatCurrency(Math.abs(Number(g.valor)))}</span>
@@ -457,8 +457,8 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
           {/* CATEGORY BREAKDOWN */}
           {categoriasMap.length > 0 && (
             <div>
-              <div className="bg-slate-900/60 px-5 py-3 rounded-t-xl border border-slate-800/60 border-b-0 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-purple-400"/>
+              <div className="bg-zinc-900/60 px-5 py-3 rounded-t-xl border border-zinc-800/60 border-b-0 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-violet-400"/>
                 <h2 className="text-white font-black text-xs uppercase tracking-[0.15em]">Gastos por Categoria</h2>
               </div>
               <div className="glass-card rounded-t-none p-4">
@@ -468,14 +468,14 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
                     return (
                       <div key={i}>
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-bold text-slate-300">{cat.nome}</span>
+                          <span className="text-xs font-bold text-zinc-300">{cat.nome}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-slate-500 font-bold">{pct.toFixed(1)}%</span>
+                            <span className="text-[10px] text-zinc-500 font-bold">{pct.toFixed(1)}%</span>
                             <span className="text-xs font-mono font-black text-red-400">{formatCurrency(cat.saidas)}</span>
                           </div>
                         </div>
-                        <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
-                          <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                        <div className="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden">
+                          <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%` }}></div>
                         </div>
                       </div>
                     );
@@ -487,17 +487,17 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
 
           {/* CONSELHOS */}
           <div>
-            <div className="bg-slate-900/60 px-5 py-3 rounded-t-xl border border-slate-800/60 border-b-0 flex items-center gap-2">
+            <div className="bg-zinc-900/60 px-5 py-3 rounded-t-xl border border-zinc-800/60 border-b-0 flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-400"/>
               <h2 className="text-white font-black text-xs uppercase tracking-[0.15em]">💡 Avaliação de Riscos ({conselhos.length})</h2>
             </div>
             <div className="flex flex-col gap-3 mt-0">
               {conselhos.map((c, i) => (
                 <div key={i} className={`glass-card p-4 border-l-4 ${c.color} flex items-start gap-3`}>
-                  <div className="p-2 bg-slate-800/50 rounded-xl shadow-inner mt-0.5 shrink-0">{c.icon}</div>
+                  <div className="p-2 bg-zinc-800/50 rounded-xl shadow-inner mt-0.5 shrink-0">{c.icon}</div>
                   <div className="min-w-0">
-                    <h4 className="font-extrabold text-slate-200 text-sm mb-0.5 tracking-tight">{c.title}</h4>
-                    <p className="text-slate-400 text-xs leading-relaxed">{c.desc}</p>
+                    <h4 className="font-extrabold text-zinc-200 text-sm mb-0.5 tracking-tight">{c.title}</h4>
+                    <p className="text-zinc-400 text-xs leading-relaxed">{c.desc}</p>
                   </div>
                 </div>
               ))}

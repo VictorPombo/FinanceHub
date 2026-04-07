@@ -243,13 +243,13 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#020617]">
+    <div className="flex flex-col h-full w-full bg-[#09090b]">
       
       {/* ====== PERSISTENT AI LOADING BANNER ====== */}
       {isParsingText && (
-        <div className="bg-gradient-to-r from-purple-900/90 via-indigo-900/90 to-purple-900/90 border-b border-purple-500/40 px-4 py-3 flex items-center justify-center gap-3 shrink-0 z-50 shadow-[0_4px_20px_rgba(147,51,234,0.3)]">
-          <div className="w-4 h-4 border-2 border-purple-300 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-purple-100 text-sm font-bold tracking-wide">{parsingStatusMsg}</span>
+        <div className="bg-gradient-to-r from-violet-900/90 via-indigo-900/90 to-violet-900/90 border-b border-violet-500/40 px-4 py-3 flex items-center justify-center gap-3 shrink-0 z-50 shadow-[0_4px_20px_rgba(147,51,234,0.3)]">
+          <div className="w-4 h-4 border-2 border-violet-300 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-violet-100 text-sm font-bold tracking-wide">{parsingStatusMsg}</span>
         </div>
       )}
       
@@ -259,14 +259,14 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
       />
       
       {/* YEAR, MONTHS TABS AND FILTERS */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 px-3 py-1.5 shrink-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+      <div className="bg-zinc-900/50 backdrop-blur-xl border-b border-zinc-800 px-3 py-1.5 shrink-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
         
-        <div className="flex items-center bg-slate-900/50 rounded-lg p-0.5 w-full md:w-auto justify-between md:justify-start border border-slate-800/60">
-           <button onClick={() => setCurrentYear(y => y - 1)} className="p-1.5 md:p-1 hover:bg-slate-800 rounded transition-all text-slate-400">
+        <div className="flex items-center bg-zinc-900/50 rounded-lg p-0.5 w-full md:w-auto justify-between md:justify-start border border-zinc-800/60">
+           <button onClick={() => setCurrentYear(y => y - 1)} className="p-1.5 md:p-1 hover:bg-zinc-800 rounded transition-all text-zinc-400">
              <ChevronLeft className="w-4 h-4 md:w-3.5 md:h-3.5"/>
            </button>
-           <span className="font-bold text-slate-200 px-4 md:px-3 text-base md:text-sm">{currentYear}</span>
-           <button onClick={() => setCurrentYear(y => y + 1)} className="p-1.5 md:p-1 hover:bg-slate-800 rounded transition-all text-slate-400">
+           <span className="font-bold text-zinc-200 px-4 md:px-3 text-base md:text-sm">{currentYear}</span>
+           <button onClick={() => setCurrentYear(y => y + 1)} className="p-1.5 md:p-1 hover:bg-zinc-800 rounded transition-all text-zinc-400">
              <ChevronRight className="w-4 h-4 md:w-3.5 md:h-3.5"/>
            </button>
         </div>
@@ -276,7 +276,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
              <button
                 key={idx}
                 onClick={() => setCurrentMonthIndex(idx)}
-                className={`px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-bold rounded-lg transition-all shrink-0 ${currentMonthIndex === idx ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'bg-transparent text-slate-500 hover:bg-slate-800 hover:text-slate-300'}`}
+                className={`px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-bold rounded-lg transition-all shrink-0 ${currentMonthIndex === idx ? 'bg-violet-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'bg-transparent text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'}`}
              >
                 {monthStr}
              </button>
@@ -287,7 +287,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
           <select 
             value={filterStatus} 
             onChange={e => setFilterStatus(e.target.value)}
-            className="flex-1 md:flex-none text-xs border border-slate-800 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-slate-900/80 text-slate-200"
+            className="flex-1 md:flex-none text-xs border border-zinc-800 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-zinc-900/80 text-zinc-200"
           >
             <option value="Todos">Todos Status</option>
             <option value="Pago">Pago</option>
@@ -302,7 +302,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                 placeholder="Buscar..." 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full md:w-32 lg:w-48 pl-7 pr-2 py-1.5 border border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 bg-slate-900/80 text-slate-200 placeholder-slate-500 transition-all"
+                className="w-full md:w-32 lg:w-48 pl-7 pr-2 py-1.5 border border-zinc-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 bg-zinc-900/80 text-zinc-200 placeholder-slate-500 transition-all"
               />
             </div>
             
@@ -350,7 +350,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                     }}
                   />
                   <Bot className="w-4 h-4"/>
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                     Scanner IA
                   </div>
                 </label>
@@ -358,10 +358,10 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                 <button 
                   onClick={() => setAiTextModalOpen(true)}
                   disabled={isParsingText}
-                  className={`flex items-center justify-center w-8 h-[28px] text-white rounded cursor-pointer transition-colors shadow-sm relative group ${isParsingText ? 'bg-purple-900 animate-pulse' : 'bg-purple-600 hover:bg-purple-700'}`}
+                  className={`flex items-center justify-center w-8 h-[28px] text-white rounded cursor-pointer transition-colors shadow-sm relative group ${isParsingText ? 'bg-violet-900 animate-pulse' : 'bg-violet-600 hover:bg-violet-700'}`}
                 >
                   <MessageSquareText className="w-4 h-4"/>
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                     {isParsingText ? 'Processando...' : 'Texto IA'}
                   </div>
                 </button>
@@ -408,19 +408,19 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
 
       {/* AI TEXT PARSING MODAL */}
       {aiTextModalOpen && (
-         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-            <div className="bg-[#0f172a] border border-slate-700 rounded-3xl shadow-2xl p-6 w-full max-w-2xl flex flex-col gap-4">
+         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4">
+            <div className="bg-[#0f172a] border border-zinc-700 rounded-3xl shadow-2xl p-6 w-full max-w-2xl flex flex-col gap-4">
                <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-3">
-                     <div className="p-2 bg-purple-600/20 text-purple-400 rounded-xl">
+                     <div className="p-2 bg-violet-600/20 text-violet-400 rounded-xl">
                         <MessageSquareText className="w-5 h-5"/>
                      </div>
                      <div>
-                       <h2 className="text-xl font-black text-slate-200">Importação via Texto (IA)</h2>
-                       <p className="text-xs text-slate-400 font-medium mt-1">Cole textos financeiros. A IA extrairá todas as transações automaticamente.</p>
+                       <h2 className="text-xl font-black text-zinc-200">Importação via Texto (IA)</h2>
+                       <p className="text-xs text-zinc-400 font-medium mt-1">Cole textos financeiros. A IA extrairá todas as transações automaticamente.</p>
                      </div>
                   </div>
-                  <button onClick={() => setAiTextModalOpen(false)} className="p-2 bg-slate-800/50 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all">
+                  <button onClick={() => setAiTextModalOpen(false)} className="p-2 bg-zinc-800/50 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-all">
                      <X className="w-5 h-5" />
                   </button>
                </div>
@@ -429,13 +429,13 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                   value={aiTextInput}
                   onChange={(e) => setAiTextInput(e.target.value)}
                   placeholder={`Exemplo:\n\nEntradas:\nJoão da Silva R$350,00 12/05\nPiscina R$ 100,00 05/05\n\nSaídas:\nAluguel R$ 1.200,00 10/04\niFood R$ 45,90 03/04`}
-                  className="w-full h-64 bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-slate-300 text-sm font-mono outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 resize-none no-scrollbar"
+                  className="w-full h-64 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-zinc-300 text-sm font-mono outline-none focus:border-violet-500 focus:ring-1 focus:ring-purple-500/50 resize-none no-scrollbar"
                />
 
                <div className="flex justify-end gap-3 mt-2">
                   <button 
                      onClick={handleTextoIA}
-                     className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl px-6 py-3 font-bold shadow-lg shadow-purple-900/20 active:scale-95 transition-all"
+                     className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl px-6 py-3 font-bold shadow-lg shadow-violet-900/20 active:scale-95 transition-all"
                   >
                      <Bot className="w-5 h-5"/> GERAR LANÇAMENTOS
                   </button>

@@ -27,30 +27,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${outfit.variable} ${jetbrains.variable} font-sans antialiased bg-[#020617] text-slate-200 selection:bg-purple-500/30`}>
+      <body className={`${outfit.variable} ${jetbrains.variable} font-sans antialiased bg-[#09090b] text-zinc-200 selection:bg-violet-500/30`}>
         <Toaster
           position="top-center"
           toastOptions={{
             duration: 3500,
             style: {
-              borderRadius: "14px",
+              borderRadius: "16px",
               fontSize: "13px",
               fontFamily: "var(--font-outfit)",
               fontWeight: "600",
-              background: "#0F172A",
-              color: "#F1F5F9",
+              background: "rgba(24, 24, 27, 0.95)",
+              backdropFilter: "blur(12px)",
+              color: "#fafafa",
               border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 20px 40px -10px rgba(0,0,0,0.6), 0 0 20px rgba(139,92,246,0.1)",
-              padding: "12px 20px",
+              boxShadow: "0 24px 48px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.05)",
+              padding: "14px 22px",
             },
             success: {
-              iconTheme: { primary: '#10B981', secondary: '#020617' },
+              iconTheme: { primary: '#34d399', secondary: '#09090b' },
             },
             error: {
-              iconTheme: { primary: '#EF4444', secondary: '#020617' },
+              iconTheme: { primary: '#f87171', secondary: '#09090b' },
             },
             loading: {
-              iconTheme: { primary: '#A855F7', secondary: '#020617' },
+              iconTheme: { primary: '#a78bfa', secondary: '#09090b' },
             },
           }}
         />
