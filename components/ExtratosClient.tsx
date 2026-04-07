@@ -59,22 +59,25 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
            valor: finalValor,
            tipo: finalTipo,
            data: safeDate,
-           categoria: (item.categoria || "Outros").substring(0, 100),
-           status: "Pago",
-           recorrencia: "Única",
-           parcela: "1/1",
-           origem: "Extrato"
+           categoria: (item.categoria || "Outros").substring(0, 100)
         };
      });
      
-     const { data: inserted, error } = await supabase.from('ia_lancamentos').insert(payload).select();
-     if (error) {
-        console.error("Supabase Insert Error:", error);
-        toast.error(`Erro: ${error.message || "Falha ao salvar."}`, { id: toastId, duration: 6000 });
-     } else {
-        toast.success("Importação concluída!", { id: toastId });
-        setHistory([...(inserted || []), ...history].slice(0, 100));
-        setPreviewItems(null);
+     try {
+       for (let i = 0; i < payload.length; i += 100) {
+          const chunk = payload.slice(i, i + 100);
+          const { error } = await supabase.from('ia_lancamentos').insert(chunk);
+          if (error) {
+             console.error("Supabase Insert Error chunk", i, error);
+             toast.error(`Erro no chunk ${i}: ${error.message}`, { id: toastId, duration: 6000 });
+             return;
+          }
+       }
+       toast.success("Importação concluída!", { id: toastId });
+       setPreviewItems(null);
+       setTimeout(() => window.location.reload(), 1000);
+     } catch(err: any) {
+        toast.error("Erro interno ao inserir:" + err.message, { id: toastId });
      }
   };
 

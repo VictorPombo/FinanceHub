@@ -80,6 +80,7 @@ create table if not exists public.contas (
     saldo_limite numeric not null default 0,
     dia_fechamento integer,
     dia_vencimento integer,
+    faturas jsonb default '[]'::jsonb,
     status text not null check (status in ('Ativa', 'Arquivada')) default 'Ativa',
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
