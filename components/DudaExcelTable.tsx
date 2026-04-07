@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { formatCurrency } from "@/lib/types";
+import { useEffect, useRef, useState } from "react";
+import jspreadsheet from "jspreadsheet-ce";
+import "jspreadsheet-ce/dist/jspreadsheet.css";
+import "jsuites/dist/jsuites.css";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
@@ -15,469 +17,190 @@ interface Props {
   tableName?: string;
 }
 
-interface ColDef {
-  id: string;
-  field: string;
-  defaultLabel: string;
-  width: string;
-}
-
-const DEFAULT_LEFT_COLS: ColDef[] = [
-  { id: 'L1', field: 'descricao', defaultLabel: 'A', width: '140px' },
-  { id: 'L2', field: 'categoria', defaultLabel: 'B', width: '140px' },
-  { id: 'L3', field: 'valor', defaultLabel: 'C', width: '100px' },
-];
-
-const DEFAULT_RIGHT_COLS: ColDef[] = [
-  { id: 'R1', field: 'descricao', defaultLabel: 'G', width: '180px' },
-  { id: 'R2', field: 'valor', defaultLabel: 'H', width: '100px' },
-];
-
 export default function DudaExcelTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear, tableName }: Props) {
-  const [editingCell, setEditingCell] = useState<{ side: 'left' | 'right', index: number, field: string } | null>(null);
-  const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
+  const leftRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  const leftInstance = useRef<any>(null);
+  const rightInstance = useRef<any>(null);
   const supabase = createClient();
   const dbTable = tableName || "duda_lancamentos";
 
-  // Column Orders
-  const [leftCols, setLeftCols] = useState(DEFAULT_LEFT_COLS);
-  const [rightCols, setRightCols] = useState(DEFAULT_RIGHT_COLS);
+  // Organize Data
+  const entradas = initialData.filter(d => d.tipo === "Entrada").sort((a,b) => a.ordem - b.ordem);
+  const saidas = initialData.filter(d => d.tipo === "Saída").sort((a,b) => a.ordem - b.ordem);
 
-  // Row Orders (locally sorted by `ordem`)
-  const [entradas, setEntradas] = useState<any[]>([]);
-  const [saidas, setSaidas] = useState<any[]>([]);
+  const getColName = (x: number) => {
+    if (x === 1) return 'data';
+    if (x === 2) return 'descricao';
+    if (x === 3) return 'categoria';
+    if (x === 4) return 'valor';
+    return null;
+  };
 
-  useEffect(() => {
-    // Initial Hydration focusing on the `ordem` column
-    const sortedEntradas = initialData.filter(d => d.tipo === "Entrada").sort((a,b) => (a.ordem || 0) - (b.ordem || 0));
-    const sortedSaidas = initialData.filter(d => d.tipo === "Saída").sort((a,b) => (a.ordem || 0) - (b.ordem || 0));
-    setEntradas(sortedEntradas);
-    setSaidas(sortedSaidas);
-  }, [initialData]);
+  const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
 
-  useEffect(() => {
-    if (editingCell && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [editingCell]);
-
-  // DRAG AND DROP STATE
-  const [draggedCol, setDraggedCol] = useState<{ side: 'left'|'right', index: number } | null>(null);
-  const [draggedRow, setDraggedRow] = useState<{ type: 'Entrada'|'Saída', index: number } | null>(null);
-  const [draggedCell, setDraggedCell] = useState<{ isEntrada: boolean, index: number, field: string } | null>(null);
-
-  const updateItem = async (isEntrada: boolean, index: number, field: string, value: any) => {
+  // Internal Synchronization Function
+  const handleCellChange = async (isEntrada: boolean, instance: any, cell: any, x: string, y: string, value: string) => {
     const list = isEntrada ? entradas : saidas;
-    const item = list[index];
-    const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
+    const rowIndex = parseInt(y);
+    const colIndex = parseInt(x);
+    const colName = getColName(colIndex);
 
-    const updatePayload: any = {};
-    if (field === "valor") {
-        const valNum = Math.abs(Number(String(value).replace(',', '.')));
-        updatePayload.valor = isEntrada ? valNum : -valNum;
-    } else {
-        updatePayload[field] = value;
-    }
+    if (!colName) return;
 
-    // Ghost insertion - Here we use Blank ("") instead of "Outros" for categories!
+    const item = list[rowIndex];
+
+    // Se a linha não existe no banco, mas editamos ela (nova linha rolando final do excel)
     if (!item) {
-        if (!value) return; 
+        // Criar Fantasma
         const payloadToInsert = {
             user_id: userId,
             data: defaultDate,
-            descricao: isEntrada && field === 'descricao' ? value : "",
-            categoria: isEntrada && field === 'categoria' ? value : "", // FIXED: Replaced "Outros" with ""
+            descricao: colName === 'descricao' ? value : "",
+            categoria: colName === 'categoria' ? value : "Outros",
             tipo: isEntrada ? "Entrada" : "Saída",
             recorrencia: "Única",
             parcela: "1/1",
-            valor: field === 'valor' ? (updatePayload.valor || 0) : 0,
+            valor: colName === 'valor' ? Math.abs(Number(value) || 0) * (isEntrada ? 1 : -1) : 0,
             status: "Em aberto",
-            ordem: list.length // Put at bottom
+            ordem: list.length
         };
+
         const { data, error } = await supabase.from(dbTable).insert([payloadToInsert]).select().single();
         if (data) {
-            onDataChange([...initialData, data]); 
+           onDataChange([...initialData, data]); 
+           // Inject raw ID back into the grid so future edits hit the right row
+           instance.jspreadsheet.setValueFromCoords(0, rowIndex, data.id, true);
         }
     } else {
+        // Update linha Existente
+        const updatePayload: any = {};
+        if (colName === 'valor') {
+           updatePayload.valor = Math.abs(Number(value) || 0) * (isEntrada ? 1 : -1);
+        } else {
+           updatePayload[colName] = value;
+        }
+
         const optimisticData = initialData.map(d => d.id === item.id ? { ...d, ...updatePayload } : d);
-        onDataChange(optimisticData);
+        onDataChange(optimisticData); // update global state slightly
         
-        const { error } = await supabase.from(dbTable).update(updatePayload).eq("id", item.id);
-        if (error) toast.error("Erro ao salvar");
-    }
-    setEditingCell(null);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent, isEntrada: boolean, index: number, field: string) => {
-    if (e.key === "Escape") setEditingCell(null);
-    if (e.key === "Enter") {
-      updateItem(isEntrada, index, field, (e.target as HTMLInputElement).value);
+        await supabase.from(dbTable).update(updatePayload).eq("id", item.id);
     }
   };
 
-  // ---------------------------------------------
-  // DND HANDLERS - COLUMNS
-  // ---------------------------------------------
-  const handleColDrop = (side: 'left'|'right', targetIndex: number) => {
-      if(!draggedCol || draggedCol.side !== side || draggedCol.index === targetIndex) return;
-      const srcIdx = draggedCol.index;
-      if (side === 'left') {
-         const newList = [...leftCols];
-         const [removed] = newList.splice(srcIdx, 1);
-         newList.splice(targetIndex, 0, removed);
-         setLeftCols(newList);
-      } else {
-         const newList = [...rightCols];
-         const [removed] = newList.splice(srcIdx, 1);
-         newList.splice(targetIndex, 0, removed);
-         setRightCols(newList);
+  const initGrid = (ref: any, instanceRef: any, dataItems: any[], isEntrada: boolean) => {
+    if (ref.current) {
+      if (instanceRef.current) {
+        instanceRef.current.destroy();
       }
-      setDraggedCol(null);
-  };
 
-  // ---------------------------------------------
-  // DND HANDLERS - ROWS
-  // ---------------------------------------------
-  const handleRowDrop = async (type: 'Entrada'|'Saída', targetIndex: number) => {
-      if (!draggedRow || draggedRow.type !== type || draggedRow.index === targetIndex) return;
-      
-      const srcIdx = draggedRow.index;
-      const setter = type === 'Entrada' ? setEntradas : setSaidas;
-      const currentList = type === 'Entrada' ? [...entradas] : [...saidas];
-      
-      const [removed] = currentList.splice(srcIdx, 1);
-      currentList.splice(targetIndex, 0, removed);
-      
-      // Update ordems
-      const updatedList = currentList.map((item, idx) => ({ ...item, ordem: idx }));
-      setter(updatedList);
-      setDraggedRow(null);
+      // Format Data into 2D Array
+      // Adding empty rows at the bottom for Excel UX
+      const gridData = dataItems.map(d => [
+        d.id,
+        d.data,
+        d.descricao,
+        d.categoria,
+        Math.abs(d.valor)
+      ]);
 
-      // Async DB Sync - We do it in background without blocking
-      updatedList.forEach(item => {
-         if (item.id) {
-             supabase.from(dbTable).update({ ordem: item.ordem }).eq("id", item.id).then();
-         }
-      });
-  };
+      // Fill with up to 10 empty rows
+      for(let i=0; i<15; i++) {
+        gridData.push(["", "", "", "", ""]);
+      }
 
-  // ---------------------------------------------
-  // DND HANDLERS - CELLS
-  // ---------------------------------------------
-  const handleCellDrop = async (isEntrada: boolean, targetIndex: number, colDefField: string) => {
-    if (!draggedCell || draggedCell.isEntrada !== isEntrada || draggedCell.field !== colDefField) return;
-    if (draggedCell.index === targetIndex) {
-        setDraggedCell(null);
-        return;
-    }
-
-    const list = isEntrada ? [...entradas] : [...saidas];
-    const setter = isEntrada ? setEntradas : setSaidas;
-    
-    const srcItemOrig = list[draggedCell.index];
-    if (!srcItemOrig || !srcItemOrig.id) { 
-        setDraggedCell(null); 
-        return; 
-    }
-
-    // Clonando para não mutar estado diretamente
-    const srcItem = { ...srcItemOrig };
-    const targetItem = list[targetIndex] ? { ...list[targetIndex] } : null;
-
-    const srcVal = srcItem[colDefField];
-    const emptyVal = colDefField === 'valor' ? 0 : "";
-    
-    setDraggedCell(null);
-
-    // 1. Limpa a Célula de Origem (Mover)
-    srcItem[colDefField] = emptyVal;
-    list[draggedCell.index] = srcItem;
-    
-    // 2. Preenche a Célula de Destino
-    let targetPayloadToInsert = null;
-    const targetId = targetItem?.id;
-    
-    if (targetItem && targetItem.id) {
-       targetItem[colDefField] = colDefField === 'valor' ? (isEntrada ? Math.abs(Number(srcVal)) : -Math.abs(Number(srcVal))) : srcVal;
-       list[targetIndex] = targetItem;
-    } else {
-       // Criaçao de linha Fantasma (Ghost row)
-       const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
-       
-       let finalFormatedVal = srcVal;
-       if (colDefField === 'valor') finalFormatedVal = isEntrada ? Math.abs(Number(srcVal)) : -Math.abs(Number(srcVal));
-
-       targetPayloadToInsert = {
-           user_id: userId,
-           data: defaultDate,
-           descricao: isEntrada && colDefField === 'descricao' ? srcVal : "",
-           categoria: isEntrada && colDefField === 'categoria' ? srcVal : "",
-           tipo: isEntrada ? "Entrada" : "Saída",
-           recorrencia: "Única",
-           parcela: "1/1",
-           valor: colDefField === 'valor' ? finalFormatedVal : 0,
-           status: "Em aberto",
-           ordem: list.length
-       };
-    }
-
-    setter(list); // Atualização Otimista na Interface
-    toast.success("Quadrado movido!");
-
-    // Atualização Assíncrona no Banco (Background)
-    await supabase.from(dbTable).update({ [colDefField]: colDefField === 'valor' ? 0 : emptyVal }).eq("id", srcItem.id);
-    
-    if (targetItem && targetId) {
-        let finalValToSave = srcVal;
-        if (colDefField === 'valor') finalValToSave = isEntrada ? Math.abs(Number(srcVal)) : -Math.abs(Number(srcVal));
-        await supabase.from(dbTable).update({ [colDefField]: finalValToSave }).eq("id", targetId);
-    } else if (targetPayloadToInsert) {
-        const { data } = await supabase.from(dbTable).insert([targetPayloadToInsert]).select().single();
-        if (data) {
-           list[targetIndex] = data;
-           setter([...list]);
-           // Atualiza array global silenciosamente
-           onDataChange([...initialData, data]);
+      instanceRef.current = jspreadsheet(ref.current, {
+        data: gridData,
+        columns: [
+          { type: 'hidden', title: 'ID' },
+          { type: 'calendar', title: 'Data', options: { format: 'YYYY-MM-DD' }, width: 100 },
+          { type: 'text', title: 'Descrição', width: 180 },
+          { type: 'dropdown', title: 'Categoria', source: ['Outros', ...userCategories], autocomplete: true, width: 120 },
+          { type: 'numeric', title: 'Valor (R$)', mask: 'U$ #.##,00', decimal: ',', width: 100 },
+        ],
+        allowInsertColumn: false,
+        allowInsertRow: true,
+        allowDeleteRow: true,
+        allowDeleteColumn: false,
+        contextMenu: function(obj, x, y, e) {
+             const items = [];
+             if (y != null) {
+                 const rowIdx = parseInt(y.toString());
+                 items.push({
+                     title: 'Inserir Linha acima',
+                     onclick: function() { obj.insertRow(1, rowIdx, 1); }
+                 });
+                 items.push({
+                     title: 'Inserir Linha abaixo',
+                     onclick: function() { obj.insertRow(1, rowIdx); }
+                 });
+                 items.push({
+                     title: 'Deletar Linha',
+                     onclick: function() { obj.deleteRow(rowIdx, 1); }
+                 });
+             }
+             return items;
+        },
+        // @ts-ignore
+        onchange: function(instance: any, cell: any, x: string|number, y: string|number, value: string) {
+          handleCellChange(isEntrada, instance, cell, x.toString(), y.toString(), value);
+        },
+        // @ts-ignore
+        ondeleterow: async function(instance: any, y: any, numOfRows: any, rowDOMElements: any, rowData: any[]) {
+          // rowData contains the data of deleted rows
+          const promises = rowData.map(r => {
+             const id = r[0]; // first column is hidden ID
+             if (id) return supabase.from(dbTable).delete().eq("id", id);
+             return null;
+          }).filter(Boolean);
+          
+          await Promise.all(promises);
+          toast.success("Linha(s) apagada(s)", { position: 'bottom-center' });
+        },
+        text: {
+           insertANewRowBefore: 'Inserir nova linha acima',
+           insertANewRowAfter: 'Inserir nova linha abaixo',
+           deleteSelectedRows: 'Apagar linha selecionada',
+           copy: 'Copiar',
+           paste: 'Colar',
         }
+      });
     }
   };
 
-  // ---------------------------------------------
-  // RENDER CELLS
-  // ---------------------------------------------
-  const renderCellLeft = (index: number, colDef: ColDef) => {
-    const item = entradas[index];
-    const isEditing = editingCell?.side === 'left' && editingCell?.index === index && editingCell?.field === colDef.field;
-    
-    let displayValue = item ? item[colDef.field] : "";
-    if (colDef.field === "valor" && item) displayValue = item.valor !== 0 ? formatCurrency(item.valor) : "";
-    
-    let editValue = item ? item[colDef.field] : "";
-    if (colDef.field === "valor" && item) editValue = item.valor !== 0 ? Math.abs(item.valor).toString() : "";
-
-    const type = colDef.field === "valor" ? "number" : "text";
-
-    return (
-      <td 
-        key={`L-${index}-${colDef.id}`}
-        className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4] hover:bg-purple-50`}
-        style={{ width: colDef.width, minWidth: colDef.width, maxWidth: colDef.width }}
-        onDoubleClick={() => setEditingCell({ side: 'left', index, field: colDef.field })}
-        onClick={() => { if(!item) setEditingCell({ side: 'left', index, field: colDef.field }) }}
-        draggable={!isEditing && !!item}
-        onDragStart={() => setDraggedCell({ isEntrada: true, index, field: colDef.field })}
-        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-        onDrop={() => handleCellDrop(true, index, colDef.field)}
-        title={item ? "Arraste e Solte este quadrado" : ""}
-      >
-        {isEditing ? (
-          <input
-            ref={inputRef as React.RefObject<HTMLInputElement>}
-            type={type}
-            className="duda-inline-input"
-            defaultValue={editValue}
-            placeholder={!item && colDef.field === 'descricao' ? 'Cliente' : ''}
-            onBlur={(e) => updateItem(true, index, colDef.field, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, true, index, colDef.field)}
-            step={type === "number" ? "0.01" : undefined}
-          />
-        ) : (
-          <div className={`truncate px-1 relative ${colDef.field === 'valor' ? 'text-right' : ''}`}>
-             <span>{displayValue}</span>
-          </div>
-        )}
-      </td>
-    );
-  };
-
-  const renderCellRight = (index: number, colDef: ColDef) => {
-     const dataIndex = index - 1; // Row offset
-     const item = saidas[dataIndex];
-     
-     // G1 is reserved visually "SAIDAS" (When G is the field 'descricao')
-     if (index === 0 && colDef.field === 'descricao') {
-        return (
-           <td key={`R-${index}-${colDef.id}`} className="border border-[#D4D4D4] text-red-600 font-bold px-2 relative" style={{ width: colDef.width, minWidth: colDef.width, maxWidth: colDef.width }}>
-               SAIDAS
-           </td>
-        );
-     }
-     if (index === 0) {
-         return <td key={`R-${index}-${colDef.id}`} className="border border-[#D4D4D4]" style={{ width: colDef.width, minWidth: colDef.width, maxWidth: colDef.width }}></td>;
-     }
-
-     const isEditing = editingCell?.side === 'right' && editingCell?.index === dataIndex && editingCell?.field === colDef.field;
-     
-     let displayValue = item ? item[colDef.field] : "";
-     if (colDef.field === "valor" && item) displayValue = item.valor !== 0 ? formatCurrency(Math.abs(item.valor)) : "";
-     
-     let editValue = item ? item[colDef.field] : "";
-     if (colDef.field === "valor" && item) editValue = item.valor !== 0 ? Math.abs(item.valor).toString() : "";
- 
-     const type = colDef.field === "valor" ? "number" : "text";
- 
-     return (
-       <td 
-         key={`R-${index}-${colDef.id}`}
-         className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4] hover:bg-purple-50`}
-         style={{ width: colDef.width, minWidth: colDef.width, maxWidth: colDef.width }}
-         onDoubleClick={() => setEditingCell({ side: 'right', index: dataIndex, field: colDef.field })}
-         onClick={() => { if(!item) setEditingCell({ side: 'right', index: dataIndex, field: colDef.field }) }}
-         draggable={!isEditing && !!item}
-         onDragStart={() => setDraggedCell({ isEntrada: false, index: dataIndex, field: colDef.field })}
-         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-         onDrop={() => handleCellDrop(false, dataIndex, colDef.field)}
-         title={item ? "Arraste e Solte este quadrado" : ""}
-       >
-         {isEditing ? (
-           <input
-             ref={inputRef as React.RefObject<HTMLInputElement>}
-             type={type}
-             className="duda-inline-input"
-             defaultValue={editValue}
-             placeholder={!item && colDef.field === 'descricao' ? 'Descrição saída' : ''}
-             onBlur={(e) => updateItem(false, dataIndex, colDef.field, e.target.value)}
-             onKeyDown={(e) => handleKeyDown(e, false, dataIndex, colDef.field)}
-             step={type === "number" ? "0.01" : undefined}
-           />
-         ) : (
-           <div className={`truncate px-1 relative ${colDef.field === 'valor' ? 'text-right' : ''}`}>
-              <span>{displayValue}</span>
-           </div>
-         )}
-       </td>
-     );
-  };
-
-  const totalEntradas = entradas.reduce((acc, curr) => acc + Number(curr.valor), 0);
-  const totalSaidas = saidas.reduce((acc, curr) => acc + Number(curr.valor), 0);
-  const caixaLivre = totalEntradas + totalSaidas;
-  const maxRowsCount = Math.max(entradas.length + 5, saidas.length + 6, 60);
-
-  const tableRows = [];
-  
-  // Row loops
-  for (let i = 0; i < maxRowsCount; i++) {
-     const isEntradaSumRow = i === entradas.length + 2;
-     const isSaidaSumRow = i === saidas.length + 3;
-
-     // Row drag handling
-     // Only allow dragging real data rows, not sum rows or ghost rows
-     const isDraggableEntrada = i < entradas.length;
-     const isDraggableSaida = i > 0 && i <= saidas.length;
-
-     tableRows.push(
-        <tr key={i} className="h-6">
-           <td className="duda-row-number bg-[#E6E6E6] border-r border-b border-[#C0C0C0] text-center text-[10px] text-gray-500">{i + 1}</td>
-           
-           {/* LEFT SIDE: Entradas */}
-           <td 
-             className="border border-[#D4D4D4] w-[14px] bg-[#F3F4F6] cursor-grab hover:bg-[#E5E7EB] drag-handle transition-colors"
-             draggable={isDraggableEntrada}
-             onDragStart={() => isDraggableEntrada && setDraggedRow({ type: 'Entrada', index: i })}
-             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-             onDrop={() => isDraggableEntrada && handleRowDrop('Entrada', i)}
-             title={isDraggableEntrada ? "Arraste para mover linha" : ""}
-           >
-              {isDraggableEntrada && <div className="w-1.5 h-3 border-l-2 border-r-2 border-slate-400 mx-auto opacity-50"></div>}
-           </td>
-
-           {leftCols.map(colDef => {
-              if (isEntradaSumRow && colDef.field === 'valor') {
-                 return <td key={`sumL-${colDef.field}`} className="border border-[#D4D4D4] px-1 text-right font-bold bg-yellow-200">{formatCurrency(totalEntradas)}</td>;
-              }
-              if (isEntradaSumRow) return <td key={`sumL-${colDef.field}`} className="border border-[#D4D4D4]"></td>;
-              return renderCellLeft(i, colDef);
-           })}
-           
-           {/* MIDDLE SPACERS */}
-           <td className="border border-[#D4D4D4] w-[80px]"></td>
-           <td className="border border-[#D4D4D4] w-[80px]"></td>
-           <td className="border border-[#D4D4D4] w-[80px]"></td>
-
-           {/* RIGHT SIDE: Saídas */}
-           <td 
-             className="border border-[#D4D4D4] w-[14px] bg-[#F3F4F6] cursor-grab hover:bg-[#E5E7EB] drag-handle transition-colors"
-             draggable={isDraggableSaida}
-             onDragStart={() => isDraggableSaida && setDraggedRow({ type: 'Saída', index: i - 1 })}
-             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-             onDrop={() => isDraggableSaida && handleRowDrop('Saída', i - 1)}
-             title={isDraggableSaida ? "Arraste para mover linha" : ""}
-           >
-              {isDraggableSaida && <div className="w-1.5 h-3 border-l-2 border-r-2 border-slate-400 mx-auto opacity-50"></div>}
-           </td>
-
-           {rightCols.map(colDef => {
-              if (isSaidaSumRow && colDef.field === 'valor') {
-                 return <td key={`sumR-${colDef.field}`} className="border border-[#D4D4D4] px-1 text-right font-bold bg-yellow-200 text-red-600">{formatCurrency(Math.abs(totalSaidas))}</td>;
-              }
-              if (isSaidaSumRow) return <td key={`sumR-${colDef.field}`} className="border border-[#D4D4D4]"></td>;
-              return renderCellRight(i, colDef);
-           })}
-
-           {/* END SPACERS */}
-           <td className="border border-[#D4D4D4] w-[80px]"></td>
-           <td className="border border-[#D4D4D4] w-[80px]"></td>
-           <td className="border border-[#D4D4D4] w-[80px]"></td>
-
-           {i === 0 ? <td className="border border-[#D4D4D4] px-2 font-semibold">Caixa &quot;Livre&quot;</td> : <td className="border border-[#D4D4D4] w-[100px]"></td>}
-           {i === 0 ? <td className="border border-[#D4D4D4] px-2 text-right">{totalEntradas > 0 || totalSaidas < 0 ? caixaLivre.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ""}</td> : <td className="border border-[#D4D4D4] w-[100px]"></td>}
-        </tr>
-     );
-  }
+  useEffect(() => {
+    // Only init if we are on client (useEffect ensures this)
+    // Avoid double init in StrictMode
+    const timer = setTimeout(() => {
+      initGrid(leftRef, leftInstance, entradas, true);
+      initGrid(rightRef, rightInstance, saidas, false);
+    }, 100);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData.length, currentTabMonth, currentTabYear]); // We re-render full grid if month changes
 
   return (
-    <div className="w-full overflow-x-auto relative mt-2 bg-white min-h-[700px] border border-[#d4d4d4] shadow-sm flex pb-28 md:pb-6">
-       <table className="duda-excel-table border-collapse table-fixed w-max text-[#000000] text-[12px] font-sans">
-          <thead>
-            <tr className="bg-[#E6E6E6] text-center border-b border-[#C0C0C0] text-[11px] text-[#333] select-none h-6">
-                <th className="font-normal border-r border-[#C0C0C0] w-[40px]"></th>
-                
-                <th className="font-normal border-r border-[#C0C0C0] w-[14px] bg-[#d9d9d9]" title="Handle Linhas (Esquerda)">↕</th>
-                {leftCols.map((col, idx) => (
-                    <th 
-                      key={col.id} 
-                      className="font-normal border-r border-[#C0C0C0] cursor-grab active:cursor-grabbing hover:bg-[#d0d0d0] transition-colors"
-                      draggable
-                      onDragStart={() => setDraggedCol({ side: 'left', index: idx })}
-                      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-                      onDrop={() => handleColDrop('left', idx)}
-                      title={`Coluna ${col.defaultLabel} (${col.field}) - Arraste para mover`}
-                    >
-                        {col.defaultLabel}
-                    </th>
-                ))}
-                
-                <th className="font-normal border-r border-[#C0C0C0]">Mkt</th>
-                <th className="font-normal border-r border-[#C0C0C0]">Imp</th>
-                <th className="font-normal border-r border-[#C0C0C0]">Custo</th>
-
-                <th className="font-normal border-r border-[#C0C0C0] w-[14px] bg-[#d9d9d9]" title="Handle Linhas (Direita)">↕</th>
-                {rightCols.map((col, idx) => (
-                    <th 
-                      key={col.id} 
-                      className="font-normal border-r border-[#C0C0C0] cursor-grab active:cursor-grabbing hover:bg-[#d0d0d0] transition-colors"
-                      draggable
-                      onDragStart={() => setDraggedCol({ side: 'right', index: idx })}
-                      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-                      onDrop={() => handleColDrop('right', idx)}
-                      title={`Coluna ${col.defaultLabel} (${col.field}) - Arraste para mover`}
-                    >
-                        {col.defaultLabel}
-                    </th>
-                ))}
-
-                <th className="font-normal border-r border-[#C0C0C0]">S1</th>
-                <th className="font-normal border-r border-[#C0C0C0]">S2</th>
-                <th className="font-normal border-r border-[#C0C0C0]">S3</th>
-                <th className="font-normal border-r border-[#C0C0C0]">cx</th>
-                <th className="font-normal border-r border-[#C0C0C0]">val</th>
-            </tr>
-          </thead>
-          <tbody>
-             {tableRows}
-          </tbody>
-       </table>
+    <div className="flex flex-col md:flex-row w-full h-full gap-2 p-2 pb-24 overflow-x-auto bg-[#e6e6e6]">
+      {/* Lado Esquerdo - Entradas */}
+      <div className="flex-1 bg-white border border-[#D4D4D4] shadow-sm rounded-sm min-w-[500px]">
+         <div className="bg-emerald-900/10 text-emerald-800 font-bold border-b border-[#D4D4D4] px-4 py-2 text-sm flex justify-between">
+           <span>ENTRADAS</span>
+           <span>JSpreadsheet Engine</span>
+         </div>
+         <div className="jspreadsheet-wrapper overflow-auto">
+            <div ref={leftRef}></div>
+         </div>
+      </div>
+      
+      {/* Lado Direito - Saídas */}
+      <div className="flex-1 bg-white border border-[#D4D4D4] shadow-sm rounded-sm min-w-[500px]">
+         <div className="bg-red-900/10 text-red-800 font-bold border-b border-[#D4D4D4] px-4 py-2 text-sm">
+           SAÍDAS
+         </div>
+         <div className="jspreadsheet-wrapper overflow-auto">
+            <div ref={rightRef}></div>
+         </div>
+      </div>
     </div>
   );
 }
