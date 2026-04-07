@@ -21,6 +21,10 @@ type TabType = "Geral" | "Lançamentos" | "Uploads IA";
 
 export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancamentos, dividas, config, lancPrevistos }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>("Geral");
+  
+  const dataDeHoje = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(dataDeHoje.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(dataDeHoje.getFullYear());
 
   const l = useMemo(() => {
     switch(activeTab) {
@@ -33,13 +37,13 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
   const d = dividas || [];
   const saldo_inicial = config?.saldo_inicial || 0;
 
-  // Calculos de datas
-  const dataAtual = new Date();
-  const dataPrevia = new Date(dataAtual);
-  dataPrevia.setMonth(dataPrevia.getMonth() - 1);
+  // Usa o filtro do usuário
+  const currentMesKey = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
   
-  const currentMesKey = getMesAnoKey(dataAtual.toISOString());
-  const prevMesKey = getMesAnoKey(dataPrevia.toISOString());
+  // Calcula o mês anterior com base no selecionado
+  const dataPrevia = new Date(selectedYear, selectedMonth - 1, 1);
+  dataPrevia.setMonth(dataPrevia.getMonth() - 1);
+  const prevMesKey = `${dataPrevia.getFullYear()}-${String(dataPrevia.getMonth() + 1).padStart(2, '0')}`;
 
   // === DADOS MÊS ATUAL ===
   const lancAtual = l.filter(x => getMesAnoKey(x.data) === currentMesKey);
@@ -48,7 +52,7 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
   const sobraAtual = entradasAtual - saidasAtual;
   const percComprometida = entradasAtual > 0 ? (saidasAtual / entradasAtual) * 100 : 0;
   
-  const maiorGasto = lancAtual.filter(x => x.tipo === 'Saída').sort((a,b) => Math.abs(Number(b.valor)) - Math.abs(Number(a.valor)))[0] || null;
+  const maiorGasto = [...lancAtual].filter(x => x.tipo === 'Saída').sort((a,b) => Math.abs(Number(b.valor)) - Math.abs(Number(a.valor)))[0] || null;
   const rendaExtraCount = lancAtual.filter(x => x.tipo === 'Entrada' && x.recorrencia === 'Única').reduce((a,b) => a + Number(b.valor), 0);
   const gastosUnicosMesCount = lancAtual.filter(x => x.tipo === 'Saída' && x.recorrencia === 'Única').length;
 
@@ -64,7 +68,7 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
   const acumuladoGeral = Number(saldo_inicial) + totalEntradasAll - totalSaidasAll;
 
   // Gastos com Alimentação mês atual
-  const gastosAli = Math.abs(lancAtual.filter(x => x.categoria === 'Alimentação').reduce((a,b) => a + Number(b.valor), 0));
+  const gastosAli = Math.abs(lancAtual.filter(x => x.categoria?.toLowerCase() === 'alimentação').reduce((a,b) => a + Number(b.valor), 0));
   const percAlimentacao = entradasAtual > 0 ? (gastosAli / entradasAtual) * 100 : 0;
 
   // Gastos Fixos
@@ -153,10 +157,35 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
   return (
     <div className="flex flex-col h-full bg-[#020617] overflow-y-auto w-full">
       <div className="bg-gradient-to-r from-[#0F172A] to-[#1E293B] p-6 pb-4 w-full shrink-0 border-b border-[#3B82F6]/30 shadow-lg relative z-20">
-        <h1 className="text-white font-extrabold text-2xl flex items-center gap-3 tracking-wide uppercase">
-          🤖 Consultor de Telemetria Financeira
-        </h1>
-        <p className="text-blue-100/60 text-sm mt-1 font-medium tracking-wide">Análise estrita baseada em regras cognitivas em tempo real</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+           <div>
+              <h1 className="text-white font-extrabold text-2xl flex items-center gap-3 tracking-wide uppercase">
+                🤖 Consultor de Telemetria Financeira
+              </h1>
+              <p className="text-blue-100/60 text-sm mt-1 font-medium tracking-wide">Análise estrita baseada em regras cognitivas em tempo real</p>
+           </div>
+           
+           <div className="flex items-center bg-slate-900/50 rounded-xl p-1 border border-slate-800 shadow-inner max-w-fit">
+              <select 
+                value={selectedMonth} 
+                onChange={e => setSelectedMonth(Number(e.target.value))}
+                className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1 text-sm cursor-pointer"
+              >
+                  <option value={1}>Jan</option><option value={2}>Fev</option><option value={3}>Mar</option>
+                  <option value={4}>Abr</option><option value={5}>Mai</option><option value={6}>Jun</option>
+                  <option value={7}>Jul</option><option value={8}>Ago</option><option value={9}>Set</option>
+                  <option value={10}>Out</option><option value={11}>Nov</option><option value={12}>Dez</option>
+              </select>
+              <select 
+                value={selectedYear} 
+                onChange={e => setSelectedYear(Number(e.target.value))}
+                className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1 text-sm border-l border-slate-700 cursor-pointer"
+              >
+                  <option value={2024}>2024</option><option value={2025}>2025</option>
+                  <option value={2026}>2026</option><option value={2027}>2027</option>
+              </select>
+           </div>
+        </div>
         
         {/* TABS */}
         <div className="flex items-center gap-2 mt-6 overflow-x-auto pb-2 scrollbar-none">
