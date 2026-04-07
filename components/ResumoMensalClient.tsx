@@ -20,7 +20,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
   const [saldoInicialStr, setSaldoInicialStr] = useState(config?.saldo_inicial?.toString() || "0");
   const [origemFilter, setOrigemFilter] = useState<"Upload IA" | "Manual">("Manual");
   const dataAtual = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(dataAtual.getMonth() + 1);
+  const [selectedMonth, setSelectedMonth] = useState<number>(0);
   const [selectedYear, setSelectedYear] = useState<number>(dataAtual.getFullYear());
   const supabase = createClient();
 
@@ -69,13 +69,18 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
 
   const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-  const mesKeySelecionado = getMesAno(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`);
-  const currentMonthData = processedData.find(d => d.mes === mesKeySelecionado);
+  const isAllMonths = selectedMonth === 0;
+  const mesKeySelecionado = isAllMonths ? null : getMesAno(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`);
+  const currentMonthData = isAllMonths ? null : processedData.find(d => d.mes === mesKeySelecionado);
 
   // Compute real pago/a receber from raw data
   const currentMonthRaw = rawData.filter((item: any) => {
-    const isCorrectMonth = getMesAnoKey(item.data) === `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
     const isCorrectOrigin = origemFilter === "Upload IA" ? item.origem === "Upload IA" : item.origem !== "Upload IA";
+    if (isAllMonths) {
+      const itemYear = new Date(item.data + 'T00:00:00').getFullYear();
+      return itemYear === selectedYear && isCorrectOrigin;
+    }
+    const isCorrectMonth = getMesAnoKey(item.data) === `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
     return isCorrectMonth && isCorrectOrigin;
   });
 
@@ -84,18 +89,23 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
   const saidasPagas = Math.abs(currentMonthRaw.filter((r: any) => r.tipo === 'Saída' && r.status === 'Pago').reduce((a: number, b: any) => a + Number(b.valor), 0));
   const saidasAPagar = Math.abs(currentMonthRaw.filter((r: any) => r.tipo === 'Saída' && r.status !== 'Pago').reduce((a: number, b: any) => a + Number(b.valor), 0));
 
-  const currentTotals = { 
-     entradas: currentMonthData?.entradas || 0, 
-     saidas: currentMonthData?.saidas || 0, 
-     sobra: currentMonthData?.sobra || 0,
-     acumulado: currentMonthData?.acumulado || Number(saldoInicialStr) || 0
-  };
-
   const tableTotals = processedData.reduce((acc, curr) => ({
     entradas: acc.entradas + curr.entradas,
     saidas: acc.saidas + curr.saidas,
     sobra: acc.sobra + curr.sobra
   }), { entradas: 0, saidas: 0, sobra: 0 });
+
+  const currentTotals = isAllMonths ? {
+     entradas: tableTotals.entradas,
+     saidas: tableTotals.saidas,
+     sobra: tableTotals.sobra,
+     acumulado: (Number(saldoInicialStr) || 0) + tableTotals.sobra
+  } : { 
+     entradas: currentMonthData?.entradas || 0, 
+     saidas: currentMonthData?.saidas || 0, 
+     sobra: currentMonthData?.sobra || 0,
+     acumulado: currentMonthData?.acumulado || Number(saldoInicialStr) || 0
+  };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto w-full bg-[#020617] text-slate-100 pb-20 md:pb-0">
@@ -114,6 +124,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
           <div className="flex items-center bg-slate-900/80 rounded-xl p-1 border border-slate-800 shadow-inner">
              <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}
                className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1.5 text-sm cursor-pointer">
+                <option value={0} className="bg-slate-900">Todos</option>
                 {meses.map((m, i) => <option key={i} value={i+1} className="bg-slate-900">{m}</option>)}
              </select>
              <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
@@ -144,7 +155,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
           <div className="glass-card p-5 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center justify-between text-slate-400 mb-3">
-               <span className="font-bold text-[10px] tracking-[0.15em] uppercase">Caixa no Mês</span>
+               <span className="font-bold text-[10px] tracking-[0.15em] uppercase">{isAllMonths ? 'Caixa Anual' : 'Caixa no Mês'}</span>
                <Wallet className="w-4 h-4 text-purple-400"/>
             </div>
             <div className="text-2xl md:text-3xl font-black text-slate-50 tracking-tighter font-mono mb-4">
