@@ -137,21 +137,40 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
          </div>
        ) : (
          <>
-           {/* UPLOAD ZONE */}
+       {/* UPLOAD ZONE */}
        {!previewItems && (
-         <div className="glass-card p-8 text-center flex flex-col items-center justify-center">
-            <div className="w-14 h-14 bg-purple-900/30 text-purple-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
-               <UploadCloud className="w-7 h-7"/>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* OPTION 1: Direto do Banco */}
+            <div className="glass-card p-8 text-center flex flex-col items-center justify-center border border-purple-500/20 hover:border-purple-500/40 transition-all">
+               <div className="w-14 h-14 bg-purple-900/30 text-purple-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
+                  <UploadCloud className="w-7 h-7"/>
+               </div>
+               <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Leitura de PDF</h2>
+               <p className="text-slate-500 text-xs max-w-[250px] mx-auto mb-5">
+                  Suba o <b>PDF original do seu banco</b>. Recomendado: fragmentos de <b>até 30 dias</b> para evitar bloqueios de peso (Limites da Vercel).
+               </p>
+               
+               <label className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                  {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Anexar O PDF (Banco)</>}
+                  <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
+               </label>
             </div>
-            <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Importar Extrato</h2>
-            <p className="text-slate-500 text-xs max-w-md mx-auto mb-5">
-               Arraste sua foto ou PDF do extrato bancário. A IA lerá todas as linhas e categorizará automaticamente.
-            </p>
-            
-            <label className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] flex items-center gap-2 text-sm">
-               {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</> : <><FileText className="w-4 h-4" /> Selecionar Arquivo</>}
-               <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
-            </label>
+
+            {/* OPTION 2: Extrato Comprimido */}
+            <div className="glass-card p-8 text-center flex flex-col items-center justify-center border border-emerald-500/20 hover:border-emerald-500/40 transition-all">
+               <div className="w-14 h-14 bg-emerald-900/30 text-emerald-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+                  <FileText className="w-7 h-7"/>
+               </div>
+               <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Leitura Comprimida (Ilimitado)</h2>
+               <p className="text-slate-500 text-xs max-w-[250px] mx-auto mb-5">
+                  Suba o extrato em formato <b>texto/CSV</b> (já comprimido via ChatGPT/Claude). Sem riscos de limite de peso. Ilimitado para +90 dias.
+               </p>
+               
+               <label className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                  {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Anexar Extrato (.txt/.csv)</>}
+                  <input type="file" accept=".txt,.csv" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
+               </label>
+            </div>
          </div>
        )}
 
