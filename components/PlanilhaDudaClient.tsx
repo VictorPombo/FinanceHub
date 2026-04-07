@@ -91,7 +91,7 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
         <div className="bg-white flex items-center px-1 border-b border-[#D4D4D4] h-[26px]">
            <div className="w-10 text-center font-semibold text-gray-500 text-xs border-r border-[#D4D4D4] h-full flex items-center justify-center">fx</div>
            <div className="flex-1 px-3 text-gray-400 text-xs italic">
-             Planilha Duda Oficial
+             Planilha Excel Oficial
            </div>
         </div>
       </div>
@@ -112,48 +112,52 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
         />
       </div>
 
-      {/* EXCEL BOTTOM TABS (MONTHS) */}
-      <div className="h-[30px] bg-[#F3F3F3] border-t border-[#D4D4D4] flex items-center shrink-0 w-full overflow-x-auto no-scrollbar px-2 shadow-inner">
-         <div className="flex items-center gap-2 mr-4 text-gray-500">
-           <button className="hover:text-black">◀</button>
-           <button className="hover:text-black">▶</button>
-         </div>
-         <div className="flex items-end h-full pt-1">
-           {MONTHS.map((monthStr, idx) => {
-             const isActive = currentMonthIndex === idx;
-             return (
-               <button
-                 key={idx}
-                 onClick={() => setCurrentMonthIndex(idx)}
-                 className={`
-                    px-4 py-1 text-xs font-semibold border-t border-l border-r border-[#D4D4D4]
-                    ${isActive 
-                      ? "bg-white text-[#217346] border-b-transparent shadow-[0_-2px_0_#217346_inset] h-[26px]" 
-                      : "bg-[#E6E6E6] text-gray-600 hover:bg-[#F3F3F3] h-[24px] mt-[2px]"}
-                    rounded-t-sm mx-[1px] transition-colors whitespace-nowrap
-                 `}
-                 style={{ zIndex: isActive ? 10 : 1, marginBottom: isActive ? '-1px' : '0' }}
-               >
-                 {monthStr} ({currentYear})
-               </button>
-             );
-           })}
-           <button className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 ml-1 rounded">➕</button>
-         </div>
-      </div>
-      
-      {/* EXCEL STATUS BAR */}
-      <div className="h-[22px] bg-[#217346] text-white flex items-center justify-between px-4 text-[11px] shrink-0">
-        <div className="flex items-center gap-4">
-           <span>PRONTO</span>
-        </div>
-        <div className="flex items-center gap-4">
-           {/* Add dynamic counts or anything if desired */}
-           <span>100%</span>
-           <div className="flex gap-1 w-16 bg-white/20 h-1.5 mt-0.5 items-center">
-             <div className="w-2 h-3 bg-white ml-8 shadow-sm"></div>
+      {/* EXCEL BOTTOM TABS & STATUS WRAPPER - STICKY TO VP */}
+      <div className="sticky bottom-16 md:bottom-0 z-50 flex flex-col w-full shadow-[0_-5px_20px_rgba(0,0,0,0.15)] md:shadow-none">
+        
+        {/* EXCEL BOTTOM TABS (MONTHS) */}
+        <div className="h-[30px] bg-[#F3F3F3] border-t border-[#D4D4D4] flex items-center shrink-0 w-full overflow-x-auto no-scrollbar px-2 shadow-inner">
+           <div className="flex items-center gap-2 mr-4 text-gray-500">
+             <button className="hover:text-black">◀</button>
+             <button className="hover:text-black">▶</button>
+           </div>
+           <div className="flex items-end h-full pt-1">
+             {MONTHS.map((monthStr, idx) => {
+               const isActive = currentMonthIndex === idx;
+               return (
+                 <button
+                   key={idx}
+                   onClick={() => setCurrentMonthIndex(idx)}
+                   className={`
+                      px-4 py-1 text-xs font-semibold border-t border-l border-r border-[#D4D4D4]
+                      ${isActive 
+                        ? "bg-white text-[#217346] border-b-transparent shadow-[0_-2px_0_#217346_inset] h-[26px]" 
+                        : "bg-[#E6E6E6] text-gray-600 hover:bg-[#F3F3F3] h-[24px] mt-[2px]"}
+                      rounded-t-sm mx-[1px] transition-colors whitespace-nowrap
+                   `}
+                   style={{ zIndex: isActive ? 10 : 1, marginBottom: isActive ? '-1px' : '0' }}
+                 >
+                   {monthStr} ({currentYear})
+                 </button>
+               );
+             })}
+             <button className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 ml-1 rounded">➕</button>
            </div>
         </div>
+        
+        {/* EXCEL STATUS BAR */}
+        <div className="h-[22px] bg-[#217346] text-white flex items-center justify-between px-4 text-[11px] shrink-0 pb-safe md:pb-0">
+          <div className="flex items-center gap-4">
+             <span>PRONTO</span>
+          </div>
+          <div className="flex items-center gap-4">
+             <span>100%</span>
+             <div className="flex gap-1 w-16 bg-white/20 h-1.5 mt-0.5 items-center">
+               <div className="w-2 h-3 bg-white ml-8 shadow-sm"></div>
+             </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
