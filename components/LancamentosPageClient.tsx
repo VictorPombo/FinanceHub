@@ -184,6 +184,29 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                 </button>
               </>
             )}
+            
+            <button 
+              onClick={async () => {
+                 if(!window.confirm(`ATENÇÃO: Você tem certeza absoluta que deseja APAGAR TODOS os dados desta aba inteira?`)) return;
+                 const toastId = toast.loading("Arrasando tabela...");
+                 const { createClient } = await import('@/lib/supabase/client');
+                 const supabase = createClient();
+                 const targetTable = tableName || 'lancamentos';
+                 const { error } = await supabase.from(targetTable).delete().eq('user_id', user_id);
+                 if (error) {
+                    toast.error("Erro ao apagar tudo.", { id: toastId });
+                 } else {
+                    setData([]);
+                    toast.success("Tabela apagada com sucesso!", { id: toastId });
+                 }
+              }}
+              className="flex items-center justify-center w-8 h-[28px] bg-red-950/40 hover:bg-red-800 border border-red-900/50 text-red-500 hover:text-white rounded cursor-pointer transition-colors shadow-sm relative group"
+            >
+               <span className="text-[12px] font-black">X</span>
+               <div className="absolute -top-10 right-0 bg-red-900/90 border border-red-500 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
+                 Deletar 100% da Planilha
+               </div>
+            </button>
           </div>
         </div>
       </div>
