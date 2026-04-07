@@ -3,6 +3,9 @@
 import { useState, useMemo } from "react";
 import DudaExcelTable from "./DudaExcelTable";
 import { formatCurrency } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
+import toast from "react-hot-toast";
+import { Copy, Scissors, Plus, X } from "lucide-react";
 
 interface Props {
   initialData: any[];
@@ -29,6 +32,11 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
+  // Paste State
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const supabase = createClient();
+
   const selectedMonthKey = `${currentYear}-${String(currentMonthIndex + 1).padStart(2, '0')}`;
 
   const filteredData = useMemo(() => {
@@ -49,7 +57,56 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
          csv += `${d.descricao}\t${d.categoria}\t${d.valor}\n`;
      });
      navigator.clipboard.writeText(csv);
-     import("react-hot-toast").then(({ default: toast }) => toast.success("Planilha Mensal copiada para a Área de Transferência."));
+     toast.success("Planilha Mensal copiada (área de transferência).");
+  };
+
+  const processPaste = async () => {
+     if (!pasteText.trim()) return;
+     const toastId = toast.loading("Processando tabela...");
+     
+     const rows = pasteText.split('\n').filter(r => r.trim());
+     const novasEntradas: any[] = [];
+     const defaultDate = `${currentYear}-${String(currentMonthIndex + 1).padStart(2, '0')}-01`;
+
+     rows.forEach(row => {
+         const cols = row.split('\t');
+         if (cols.length >= 2) {
+             const desc = cols[0]?.trim() || "";
+             const cat = cols[1]?.trim() || "";
+             const valStr = (cols[2] || "").replace(/[R$\s\.]/g, '').replace(',', '.');
+             const val = Number(valStr) || 0;
+             
+             if (desc) {
+                 novasEntradas.push({
+                     user_id: user_id,
+                     data: defaultDate,
+                     descricao: desc,
+                     categoria: cat,
+                     tipo: val >= 0 ? "Entrada" : "Saída",
+                     recorrencia: "Única",
+                     parcela: "1/1",
+                     valor: Math.abs(val),
+                     status: "Em aberto",
+                     ordem: 999 
+                 });
+             }
+         }
+     });
+
+     if (novasEntradas.length === 0) {
+         toast.error("Nenhum dado válido reconhecido.", { id: toastId });
+         return;
+     }
+
+     const { data: inserted, error } = await supabase.from("duda_lancamentos").insert(novasEntradas).select();
+     if (error) {
+         toast.error("Erro ao salvar", { id: toastId });
+     } else {
+         toast.success(`${inserted?.length || 0} novas linhas coladas!`, { id: toastId });
+         setData([...data, ...(inserted || [])]);
+         setShowPasteModal(false);
+         setPasteText("");
+     }
   };
 
   const tableStyles: React.CSSProperties = {
@@ -81,13 +138,13 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
         <div className="bg-white border-t border-b border-[#D4D4D4] h-[80px] flex items-center px-4 gap-6 overflow-x-auto no-scrollbar shrink-0">
            <div className="flex gap-4">
                {/* Controls Hoverable */}
-               <button onClick={() => import("react-hot-toast").then(({ default: toast }) => toast("Selecione uma célula específica na tabela para Recortar", { icon: '✂️' }))} className="flex flex-col items-center justify-center text-[#555] hover:text-[#217346] transition-colors group">
-                 <div className="w-8 h-8 bg-[#F3F4F6] group-hover:bg-[#E5E7EB] group-active:bg-gray-300 rounded mb-1 border border-gray-300 flex items-center justify-center transition-all bg-opacity-80">✂️</div>
+               <button onClick={() => toast("Selecione uma célula para Recortar", { icon: '✂️' })} className="flex flex-col items-center justify-center text-[#555] hover:text-[#217346] transition-colors group">
+                 <div className="w-8 h-8 bg-[#F3F4F6] group-hover:bg-[#E5E7EB] group-active:bg-gray-300 rounded mb-1 border border-gray-300 flex items-center justify-center transition-all bg-opacity-80"><Scissors className="w-4 h-4 text-[#555] group-hover:text-[#217346]" /></div>
                  <span className="text-[10px]">Recortar</span>
                </button>
-               <button onClick={handleCopy} className="flex flex-col items-center justify-center text-[#555] hover:text-[#217346] transition-colors group">
-                 <div className="w-8 h-8 bg-[#F3F4F6] group-hover:bg-[#E5E7EB] group-active:bg-gray-300 rounded mb-1 border border-gray-300 flex items-center justify-center transition-all bg-opacity-80">📋</div>
-                 <span className="text-[10px]">Copiar</span>
+               <button onClick={() => setShowPasteModal(true)} className="flex flex-col items-center justify-center text-[#555] hover:text-[#217346] transition-colors group">
+                 <div className="w-8 h-8 bg-[#F3F4F6] group-hover:bg-[#E5E7EB] group-active:bg-gray-300 rounded mb-1 border border-gray-300 flex items-center justify-center transition-all bg-opacity-80"><Copy className="w-4 h-4 text-[#555] group-hover:text-[#217346]" /></div>
+                 <span className="text-[10px]">Colar Tabela</span>
                </button>
            </div>
            
@@ -192,8 +249,34 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
              </div>
           </div>
         </div>
-
       </div>
+
+      {showPasteModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200">
+             <div className="flex justify-between items-center bg-[#217346] text-white p-4">
+                <h3 className="font-bold flex items-center gap-2 font-sans"><Copy className="w-4 h-4"/> Importar do Excel</h3>
+                <button onClick={() => setShowPasteModal(false)} className="hover:bg-white/20 p-1 rounded transition-colors"><X className="w-5 h-5"/></button>
+             </div>
+             <div className="p-5 font-sans">
+                <p className="text-gray-600 text-sm mb-3">
+                  Copie suas linhas do Excel contendo <strong>Descrição</strong>, <strong>Categoria</strong> e <strong>Valor</strong> e cole abaixo. 
+                  (A coluna Valor determinará Entrada/Saída).
+                </p>
+                <textarea 
+                  value={pasteText}
+                  onChange={e => setPasteText(e.target.value)}
+                  className="w-full h-40 border border-gray-300 rounded-md p-3 text-sm focus:border-[#217346] focus:ring-1 focus:ring-[#217346] outline-none resize-none mx-auto block text-black"
+                  placeholder="Exemplo:\nPadaria   Alimentação   -20.50\nSalario   Receita      4500.00"
+                ></textarea>
+                <div className="mt-5 flex justify-end gap-2">
+                   <button onClick={() => setShowPasteModal(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-semibold transition-colors">Cancelar</button>
+                   <button onClick={processPaste} className="px-4 py-2 bg-[#217346] text-white rounded-md hover:bg-[#1a5c38] text-sm font-semibold transition-colors shadow-sm">Importar Dados</button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
