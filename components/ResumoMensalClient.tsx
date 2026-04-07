@@ -307,16 +307,10 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                {formatCurrency(currentTotals.sobra)}
             </div>
 
-            {/* Acumulado + Mensal - inline bottom */}
-            <div className="grid grid-cols-2 gap-3 mt-auto">
-               <div className="flex flex-col bg-violet-950/15 border border-violet-900/25 p-3 rounded-xl">
-                 <span className="text-[9px] text-violet-400/80 font-bold uppercase tracking-widest">Acumulado</span>
-                 <span className="text-sm font-mono font-black text-zinc-100 mt-1">{formatCurrency(currentTotals.acumulado)}</span>
-               </div>
-               <div className={`flex flex-col p-3 rounded-xl ${currentTotals.sobra >= 0 ? 'bg-emerald-950/15 border border-emerald-900/25' : 'bg-red-950/15 border border-red-900/25'}`}>
-                 <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Mensal</span>
-                 <span className={`text-sm font-mono font-black mt-1 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(currentTotals.sobra)}</span>
-               </div>
+            {/* Acumulado - inline compacto */}
+            <div className="flex items-center justify-between bg-violet-950/15 border border-violet-900/25 p-3 rounded-xl mt-auto">
+               <span className="text-[9px] text-violet-400/80 font-bold uppercase tracking-widest">Acumulado</span>
+               <span className="text-sm font-mono font-black text-zinc-100">{formatCurrency(currentTotals.acumulado)}</span>
             </div>
           </div>
 
