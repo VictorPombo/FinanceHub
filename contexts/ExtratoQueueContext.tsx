@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
@@ -75,7 +76,7 @@ export function ExtratoQueueProvider({ children }: { children: React.ReactNode }
       
       {/* Widget Global Visível em todas as telas */}
       {isUploading && (
-         <div className="fixed top-20 right-4 md:right-6 bg-[#060b18]/95 backdrop-blur-xl border border-purple-500/50 shadow-[0_0_30px_rgba(147,51,234,0.2)] p-4 rounded-2xl flex items-center gap-4 z-[9999] animate-in slide-in-from-top-5">
+         <div className="fixed bottom-24 right-4 md:right-8 bg-[#060b18]/95 backdrop-blur-xl border border-purple-500/50 shadow-[0_0_30px_rgba(147,51,234,0.3)] p-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-2" style={{ position: 'fixed', bottom: '96px', right: '24px', zIndex: 999999 }}>
            <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
            <div>
              <p className="text-sm font-bold text-slate-100">Lendo Extrato (IA)...</p>
