@@ -88,6 +88,8 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
      }
   };
 
+
+
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
        
@@ -166,13 +168,22 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
        {/* HISTORY VIEWER */}
        {!previewItems && history.length > 0 && (
          <div className="bg-[#0B1121]/50 rounded-2xl shadow-sm border border-slate-800/80 overflow-hidden backdrop-blur-sm">
-            <div className="bg-slate-900/40 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-               <h3 className="font-bold text-slate-300 flex items-center gap-2">
-                  <ArrowRightLeft className="w-4 h-4 text-slate-500" /> Histórico de Extratos Automáticos
-               </h3>
-               <span className="text-xs text-slate-400 font-medium bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50 shadow-sm flex items-center gap-1">
-                 <Info className="w-3 h-3"/> Reflete no Resumo IA
-               </span>
+            <div className="bg-slate-900/40 border-b border-slate-800 px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+               <div className="flex flex-col gap-1">
+                  <h3 className="font-bold text-slate-300 flex items-center gap-2">
+                     <ArrowRightLeft className="w-4 h-4 text-slate-500" /> Histórico de Extratos Automáticos
+                  </h3>
+                  <span className="text-xs text-slate-400 font-medium bg-slate-800/50 px-2 py-1 rounded w-fit border border-slate-700/50 shadow-sm flex items-center gap-1">
+                    <Info className="w-3 h-3"/> Reflete no Resumo IA
+                  </span>
+               </div>
+               <button 
+                 onClick={handleDeleteAll}
+                 className="px-3 py-1.5 text-xs font-bold text-red-500 bg-red-950/20 hover:bg-red-900/40 border border-red-900/30 rounded-lg transition-colors flex items-center gap-1.5 mt-2 md:mt-0"
+               >
+                 <Trash2 className="w-3.5 h-3.5"/>
+                 Limpar Planilha IA Inteira
+               </button>
             </div>
             
             <div className="overflow-x-auto">
