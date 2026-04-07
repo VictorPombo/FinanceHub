@@ -62,7 +62,7 @@ Retorne APENAS o JSON puro. Sem markdown, sem \`\`\`json. Array vazio [] se nada
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.0-flash',
           contents: [
             { role: 'user', parts: [
                 { text: systemPrompt },
