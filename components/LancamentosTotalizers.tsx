@@ -17,7 +17,7 @@ export default function LancamentosTotalizers({ lancamentos, currentMonthKey }: 
     let mSaidas = 0;
 
     lancamentos.forEach(l => {
-      if (l.status === "Pago") {
+      if (l.status === "Pago" || l.status === "Em aberto") {
         if (l.tipo === "Entrada") tEntradas += Number(l.valor);
         if (l.tipo === "Saída") tSaidas += Number(l.valor); // valor is negative in DB
 
