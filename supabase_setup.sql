@@ -67,3 +67,26 @@ alter table public.configuracoes enable row level security;
 create policy "Usuários podem ver suas configurações" on public.configuracoes for select using (auth.uid() = user_id);
 create policy "Usuários podem inserir suas configurações" on public.configuracoes for insert with check (auth.uid() = user_id);
 create policy "Usuários podem atualizar suas configurações" on public.configuracoes for update using (auth.uid() = user_id);
+
+-- ==========================================
+-- 4. Tabela de Contas e Cartões
+-- ==========================================
+create table if not exists public.contas (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references auth.users not null,
+    nome text not null,
+    tipo text not null check (tipo in ('Conta Corrente', 'Cartão de Crédito')),
+    cor text not null default '#4f46e5',
+    saldo_limite numeric not null default 0,
+    dia_fechamento integer,
+    dia_vencimento integer,
+    status text not null check (status in ('Ativa', 'Arquivada')) default 'Ativa',
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Segurança (RLS) para Contas
+alter table public.contas enable row level security;
+create policy "Usuários podem ver suas próprias contas" on public.contas for select using (auth.uid() = user_id);
+create policy "Usuários podem inserir suas próprias contas" on public.contas for insert with check (auth.uid() = user_id);
+create policy "Usuários podem atualizar suas próprias contas" on public.contas for update using (auth.uid() = user_id);
+create policy "Usuários podem excluir suas próprias contas" on public.contas for delete using (auth.uid() = user_id);

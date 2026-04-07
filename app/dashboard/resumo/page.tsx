@@ -23,7 +23,7 @@ export default async function ResumoMensalPage() {
     .from("lancamentos")
     .select("data, tipo, valor, status")
     .eq("user_id", activeUser.id)
-    .eq("status", "Confirmado")
+    .eq("status", "Pago")
     .order("data", { ascending: true });
 
   // Group by "YYYY-MM"

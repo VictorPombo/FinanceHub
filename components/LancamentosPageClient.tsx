@@ -3,9 +3,8 @@
 import { useState, useMemo } from "react";
 import LancamentosTotalizers from "./LancamentosTotalizers";
 import LancamentosTable from "./LancamentosTable";
-import { getMesAnoKey, getMesAno } from "@/lib/types";
-import { Search, Plus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { getMesAnoKey } from "@/lib/types";
+import { Search, ChevronLeft, ChevronRight, Bot } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -13,130 +12,179 @@ interface Props {
   user_id: string;
 }
 
+const MONTHS = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+];
+
 export default function LancamentosPageClient({ initialData, user_id }: Props) {
   const [data, setData] = useState(initialData);
-  const [filterMonth, setFilterMonth] = useState<string>("Todos");
   const [filterType, setFilterType] = useState<string>("Todos");
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
   const [search, setSearch] = useState("");
   
-  const supabase = createClient();
-
-  // Extract unique months from data for the dropdown
-  const monthsAvailable = useMemo(() => {
-    const keys = new Set<string>();
-    data.forEach(d => keys.add(getMesAnoKey(d.data)));
-    return Array.from(keys).sort((a,b) => b.localeCompare(a)); // Descending
-  }, [data]);
-
-  const currentMonthFilterKey = filterMonth === "Todos" 
-    ? getMesAnoKey(new Date().toISOString()) 
-    : filterMonth;
+  // Year and Month State
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(new Date().getMonth()); // 0-11
+  
+  const selectedMonthKey = `${currentYear}-${String(currentMonthIndex + 1).padStart(2, '0')}`;
 
   // Filter Data
   const filteredData = useMemo(() => {
     return data.filter(item => {
-      if (filterMonth !== "Todos" && getMesAnoKey(item.data) !== filterMonth) return false;
+      // item.data -> "YYYY-MM-DD"
+      if (!item.data || !item.data.startsWith(selectedMonthKey)) return false;
       if (filterType !== "Todos" && item.tipo !== filterType) return false;
       if (filterStatus !== "Todos" && item.status !== filterStatus) return false;
       if (search && !item.descricao.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
-    }).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  }, [data, filterMonth, filterType, filterStatus, search]);
-
-  const handleCreateNew = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const newRecord = {
-      user_id,
-      data: today,
-      descricao: "Novo Lançamento",
-      categoria: "Outros",
-      tipo: "Saída",
-      recorrencia: "Única",
-      parcela: null,
-      valor: -0.01,
-      status: "Previsto",
-      observacoes: ""
-    };
-
-    const { data: inserted, error } = await supabase
-      .from("lancamentos")
-      .insert([newRecord])
-      .select()
-      .single();
-
-    if (error) {
-      toast.error("Erro ao inserir: " + error.message);
-    } else {
-      setData((prev) => [...prev, inserted]);
-      toast.success("Linha em branco adicionada!");
-    }
-  };
+    }).sort((a, b) => {
+      const diff = new Date(a.data).getTime() - new Date(b.data).getTime();
+      if (diff === 0) {
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      }
+      return diff;
+    });
+  }, [data, selectedMonthKey, filterType, filterStatus, search]);
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full bg-[#f8fafc]">
       <LancamentosTotalizers 
         lancamentos={filteredData} 
-        currentMonthKey={currentMonthFilterKey} 
+        currentMonthKey={selectedMonthKey} 
       />
       
-      {/* Toolbar Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 p-3 bg-white border-b border-gray-200 shrink-0">
-        <button 
-          onClick={handleCreateNew}
-          className="flex items-center bg-[#2563EB] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4 mr-1" /> Novo Lançamento
-        </button>
+      {/* YEAR, MONTHS TABS AND FILTERS */}
+      <div className="bg-white border-b border-gray-200 px-3 py-1.5 shrink-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
         
-        <div className="h-6 w-px bg-gray-300 mx-1"></div>
-        
-        <select 
-          value={filterMonth} 
-          onChange={e => setFilterMonth(e.target.value)}
-          className="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="Todos">Todos os Meses</option>
-          {monthsAvailable.map(m => (
-            <option key={m} value={m}>{getMesAno(m)}</option>
-          ))}
-        </select>
+        {/* Year Selector */}
+        <div className="flex items-center bg-slate-100 rounded p-0.5 w-full md:w-auto justify-between md:justify-start">
+           <button onClick={() => setCurrentYear(y => y - 1)} className="p-1.5 md:p-1 hover:bg-white rounded transition-all text-slate-600">
+             <ChevronLeft className="w-4 h-4 md:w-3.5 md:h-3.5"/>
+           </button>
+           <span className="font-bold text-slate-700 px-4 md:px-3 text-base md:text-sm">{currentYear}</span>
+           <button onClick={() => setCurrentYear(y => y + 1)} className="p-1.5 md:p-1 hover:bg-white rounded transition-all text-slate-600">
+             <ChevronRight className="w-4 h-4 md:w-3.5 md:h-3.5"/>
+           </button>
+        </div>
 
-        <select 
-          value={filterType} 
-          onChange={e => setFilterType(e.target.value)}
-          className="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="Todos">Todos Tipos</option>
-          <option value="Entrada">Entradas</option>
-          <option value="Saída">Saídas</option>
-        </select>
+        {/* The 12 Months Tabs */}
+        <div className="flex flex-1 gap-0.5 md:gap-1 overflow-x-auto no-scrollbar justify-center">
+           {MONTHS.map((monthStr, idx) => (
+             <button
+                key={idx}
+                onClick={() => setCurrentMonthIndex(idx)}
+                className={`px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-bold rounded transition-all shrink-0 ${currentMonthIndex === idx ? 'bg-blue-600 text-white shadow' : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}
+             >
+                {monthStr}
+             </button>
+           ))}
+        </div>
 
-        <select 
-          value={filterStatus} 
-          onChange={e => setFilterStatus(e.target.value)}
-          className="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="Todos">Todos Status</option>
-          <option value="Confirmado">Confirmado</option>
-          <option value="Previsto">Previsto</option>
-          <option value="Cancelado">Cancelado</option>
-        </select>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-1.5 w-full md:w-auto justify-center md:justify-end">
+          <select 
+            value={filterStatus} 
+            onChange={e => setFilterStatus(e.target.value)}
+            className="flex-1 md:flex-none text-xs border border-gray-300 rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+          >
+            <option value="Todos">Todos Status</option>
+            <option value="Pago">Pago</option>
+            <option value="Em aberto">Em aberto</option>
+          </select>
 
-        <div className="relative ml-auto">
-          <Search className="w-4 h-4 absolute left-2.5 top-2 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Buscar descrição..." 
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-8 pr-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-64"
-          />
+          <div className="relative w-full md:w-auto flex items-center gap-1">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2 top-2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Buscar..." 
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full md:w-32 lg:w-40 pl-7 pr-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            
+            <label className="flex items-center justify-center w-8 h-[28px] bg-indigo-600 hover:bg-indigo-700 text-white rounded cursor-pointer transition-colors shadow-sm relative group">
+              <input 
+                type="file" 
+                accept="image/*,application/pdf"
+                className="hidden" 
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  const toastId = toast.loading('Lendo comprovante com IA...');
+                  try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const res = await fetch('/api/vision', { method: 'POST', body: formData });
+                    const aiData = await res.json();
+                    
+                    if (!res.ok || !aiData.descricao || aiData.valor === undefined) {
+                       throw new Error(aiData.error || 'Não foi possível extrair os dados');
+                    }
+                    
+                    // Insert directly to supabase
+                    const dbPayload = {
+                      user_id: user_id,
+                      descricao: aiData.descricao,
+                      valor: aiData.tipo === "Saída" ? -Math.abs(aiData.valor) : Math.abs(aiData.valor),
+                      data: aiData.data || new Date().toISOString().split('T')[0],
+                      status: "Pago",
+                      tipo: aiData.tipo || "Saída",
+                      categoria: "Outros", // AI could extract this too in the future
+                      criado_por: "Upload IA"
+                    };
+                    
+                    // Use client to insert
+                    import('@/lib/supabase/client').then(async ({ createClient }) => {
+                       const supabase = createClient();
+                       const { data: inserted, error } = await supabase.from('lancamentos').insert([dbPayload]).select().single();
+                       if (error) throw error;
+                       
+                       setData([inserted, ...data]);
+                       toast.success('Leitura Concluída e Lançamento inserido!', { id: toastId });
+                    });
+                    
+                  } catch (err: any) {
+                    toast.error(err.message, { id: toastId });
+                  } finally {
+                    e.target.value = ''; // Reset file input
+                  }
+                }}
+              />
+              <span className="text-sm rounded-md"><Bot className="w-4 h-4"/></span>
+              
+              {/* Tooltip */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Scanner de Comprovante IA
+              </div>
+            </label>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        <LancamentosTable initialData={filteredData} />
+      <div className="flex-1 overflow-hidden p-2">
+        <LancamentosTable 
+          initialData={filteredData} 
+          userId={user_id} 
+          onDataChange={(newData: any[]) => {
+            // Need to update the MASTER list (data), not just the filtered.
+            // Since onDataChange currently acts like it returns exactly the same items but modified/inserted,
+            // we have to merge them carefully.
+            
+            // To simplify direct mutation without losing unrelated data:
+            // Let's pass the newly appended items or deeply merge.
+            // Actually, if LancamentosTable passes back just the filtered slice + insertions:
+            const newIds = new Set(newData.map(n => n.id));
+            const baseKeep = data.filter(d => !newIds.has(d.id) && !(d.data.startsWith(selectedMonthKey) && (filterType === 'Todos' || d.tipo === filterType)));
+            setData([...baseKeep, ...newData]);
+          }} 
+          currentTabMonth={currentMonthIndex + 1}
+          currentTabYear={currentYear}
+        />
       </div>
     </div>
   );

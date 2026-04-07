@@ -30,12 +30,17 @@ export default function LoginPage() {
         router.refresh();
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setError(error.message);
       } else {
-        setSuccess("Conta criada! Verifique seu email ou faça login.");
-        setIsLogin(true);
+        if (data.session) {
+          router.push("/dashboard/lancamentos");
+          router.refresh();
+        } else {
+          setSuccess("Conta criada! Verifique seu email ou faça login.");
+          setIsLogin(true);
+        }
       }
     }
     setLoading(false);
