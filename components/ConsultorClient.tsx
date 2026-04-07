@@ -17,10 +17,10 @@ interface Props {
   lancPrevistos: any[];
 }
 
-type TabType = "Geral" | "Lançamentos" | "Uploads IA";
+type TabType = "Planilha Manual" | "Planilha IA";
 
 export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancamentos, dividas, config, lancPrevistos }: Props) {
-  const [activeTab, setActiveTab] = useState<TabType>("Geral");
+  const [activeTab, setActiveTab] = useState<TabType>("Planilha Manual");
   
   const dataDeHoje = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(dataDeHoje.getMonth() + 1);
@@ -28,9 +28,8 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
 
   const l = useMemo(() => {
     switch(activeTab) {
-      case "Geral": return [...lancamentos, ...iaLancamentos];
-      case "Lançamentos": return [...lancamentos];
-      case "Uploads IA": return [...iaLancamentos];
+      case "Planilha Manual": return [...lancamentos];
+      case "Planilha IA": return [...iaLancamentos];
     }
   }, [activeTab, lancamentos, iaLancamentos]);
 
@@ -166,9 +165,8 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
         {/* TABS */}
         <div className="flex items-center gap-2 mt-5 overflow-x-auto no-scrollbar pb-1 max-w-7xl mx-auto">
           {([
-            { key: "Geral" as TabType, icon: <Globe className="w-4 h-4"/>, label: "Visão Geral" },
-            { key: "Lançamentos" as TabType, icon: <PencilLine className="w-4 h-4"/>, label: "Lançamentos" },
-            { key: "Uploads IA" as TabType, icon: <Bot className="w-4 h-4"/>, label: "Uploads IA" },
+            { key: "Planilha Manual" as TabType, icon: <PencilLine className="w-4 h-4"/>, label: "Planilha Manual" },
+            { key: "Planilha IA" as TabType, icon: <Bot className="w-4 h-4"/>, label: "Planilha IA" },
           ]).map(tab => (
             <button 
               key={tab.key}
