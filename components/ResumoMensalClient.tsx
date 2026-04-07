@@ -285,9 +285,26 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
           {/* CAIXA */}
           <div className="glass-card p-5 relative overflow-hidden group flex flex-col">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-indigo-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
-            
-            {/* Saldo Inicial - topo */}
-            <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 p-2.5 rounded-xl mb-4">
+
+            {/* Label */}
+            <div className="flex items-center justify-between text-zinc-400 mb-1">
+               <span className="font-bold text-[10px] tracking-[0.15em] uppercase text-violet-400">{isAllMonths ? 'Sobra Anual' : 'Caixa no Mês (Sobra)'}</span>
+               <Wallet className="w-4 h-4 text-violet-400"/>
+            </div>
+
+            {/* Sobra HERO + Acumulado compacto — MESMA LINHA */}
+            <div className="flex items-end justify-between mb-4">
+               <div className={`text-2xl md:text-3xl font-black tracking-tighter font-mono ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatCurrency(currentTotals.sobra)}
+               </div>
+               <div className="flex flex-col items-end">
+                  <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Acumulado</span>
+                  <span className="text-xs font-mono font-bold text-zinc-300">{formatCurrency(currentTotals.acumulado)}</span>
+               </div>
+            </div>
+
+            {/* Saldo Inicial - embaixo */}
+            <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 p-2.5 rounded-xl mt-auto">
                <div className="flex flex-col flex-1">
                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Saldo Inicial Base</span>
                  <div className="flex items-center gap-1 mt-0.5">
@@ -296,21 +313,6 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                      className="w-24 bg-transparent border-b border-zinc-700 outline-none focus:border-violet-500 font-mono text-sm font-black text-zinc-200 transition-colors"/>
                  </div>
                </div>
-               <Wallet className="w-4 h-4 text-violet-400"/>
-            </div>
-
-            {/* Sobra - hero */}
-            <div className="flex items-center justify-between text-zinc-400 mb-1">
-               <span className="font-bold text-[10px] tracking-[0.15em] uppercase text-violet-400">{isAllMonths ? 'Sobra Anual' : 'Caixa no Mês (Sobra)'}</span>
-            </div>
-            <div className={`text-2xl md:text-3xl font-black tracking-tighter font-mono mb-4 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-               {formatCurrency(currentTotals.sobra)}
-            </div>
-
-            {/* Acumulado - inline compacto */}
-            <div className="flex items-center justify-between bg-violet-950/15 border border-violet-900/25 p-3 rounded-xl mt-auto">
-               <span className="text-[9px] text-violet-400/80 font-bold uppercase tracking-widest">Acumulado</span>
-               <span className="text-sm font-mono font-black text-zinc-100">{formatCurrency(currentTotals.acumulado)}</span>
             </div>
           </div>
 
