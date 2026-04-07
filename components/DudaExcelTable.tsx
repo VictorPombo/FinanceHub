@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import jspreadsheet from "jspreadsheet-ce";
 import "jspreadsheet-ce/dist/jspreadsheet.css";
 import "jsuites/dist/jsuites.css";
@@ -18,10 +18,8 @@ interface Props {
 }
 
 export default function DudaExcelTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear, tableName }: Props) {
-  const leftRef = useRef<HTMLDivElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
-  const leftInstance = useRef<any>(null);
-  const rightInstance = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const instanceRef = useRef<any>(null);
   const supabase = createClient();
   const dbTable = tableName || "duda_lancamentos";
 
@@ -29,99 +27,164 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
   const entradas = initialData.filter(d => d.tipo === "Entrada").sort((a,b) => a.ordem - b.ordem);
   const saidas = initialData.filter(d => d.tipo === "Saída").sort((a,b) => a.ordem - b.ordem);
 
-  const getColName = (x: number) => {
-    if (x === 1) return 'data';
-    if (x === 2) return 'descricao';
-    if (x === 3) return 'categoria';
-    if (x === 4) return 'valor';
-    return null;
-  };
-
   const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
 
-  // Internal Synchronization Function
-  const handleCellChange = async (isEntrada: boolean, instance: any, cell: any, x: string, y: string, value: string) => {
-    const list = isEntrada ? entradas : saidas;
-    const rowIndex = parseInt(y);
+  // Constants mapping
+  const COL_ENTRADA_DESC = 0; // A
+  const COL_ENTRADA_CAT = 1;  // B
+  const COL_ENTRADA_VALOR = 2;// C
+  const COL_SAIDA_DESC = 6;   // G
+  const COL_SAIDA_VALOR = 7;  // H
+  
+  const COL_CAIXA_TITLE = 18; // S
+  const COL_CAIXA_VALOR = 19; // T
+  
+  const COL_ENTRADA_ID = 20;  // U
+  const COL_SAIDA_ID = 21;    // V
+
+  const handleCellChange = async (instance: any, x: string, y: string, value: string) => {
     const colIndex = parseInt(x);
-    const colName = getColName(colIndex);
+    const rowIndex = parseInt(y);
 
-    if (!colName) return;
+    // Ignorar edições nos cabeçalhos estéticos ou formulários estáticos
+    if (colIndex === COL_SAIDA_DESC && rowIndex === 0) return; // "SAIDAS" header
+    if (colIndex === COL_CAIXA_TITLE || colIndex === COL_CAIXA_VALOR) return; // S3, T3 formulas
 
-    const item = list[rowIndex];
+    const isEntrada = [COL_ENTRADA_DESC, COL_ENTRADA_CAT, COL_ENTRADA_VALOR].includes(colIndex);
+    const isSaida = [COL_SAIDA_DESC, COL_SAIDA_VALOR].includes(colIndex);
+    
+    if (!isEntrada && !isSaida) return; // Editou coluna vazia (D, E, F...)
 
-    // Se a linha não existe no banco, mas editamos ela (nova linha rolando final do excel)
-    if (!item) {
-        // Criar Fantasma
-        const payloadToInsert = {
+    const idColIndex = isEntrada ? COL_ENTRADA_ID : COL_SAIDA_ID;
+    
+    // As in JSpreadsheet, data might not be immediately available via instance.getData if it's async,
+    // but getValueFromCoords is synchronous.
+    const id = instance.jspreadsheet.getValueFromCoords(idColIndex, rowIndex);
+
+    // Map column to db field
+    let field = "";
+    if (colIndex === COL_ENTRADA_DESC || colIndex === COL_SAIDA_DESC) field = "descricao";
+    if (colIndex === COL_ENTRADA_CAT) field = "categoria";
+    if (colIndex === COL_ENTRADA_VALOR || colIndex === COL_SAIDA_VALOR) field = "valor";
+
+    let finalValue: any = value;
+    if (field === "valor") {
+        finalValue = Math.abs(Number(value.replace(/[^0-9.-]+/g, "")) || 0) * (isEntrada ? 1 : -1);
+    }
+
+    if (!id || id === "") {
+        // Inserir novo
+        // Precisamos coletar os dados atuais da linha para não inserir nulo se ela editar primeiro a categoria
+        const descRow = instance.jspreadsheet.getValueFromCoords(isEntrada ? COL_ENTRADA_DESC : COL_SAIDA_DESC, rowIndex) || "";
+        const catRow = isEntrada ? (instance.jspreadsheet.getValueFromCoords(COL_ENTRADA_CAT, rowIndex) || "") : "Outros";
+        let valRow = instance.jspreadsheet.getValueFromCoords(isEntrada ? COL_ENTRADA_VALOR : COL_SAIDA_VALOR, rowIndex) || "0";
+        valRow = Math.abs(Number(valRow.toString().replace(/[^0-9.-]+/g, "")) || 0) * (isEntrada ? 1 : -1);
+
+        const payload = {
             user_id: userId,
             data: defaultDate,
-            descricao: colName === 'descricao' ? value : "",
-            categoria: colName === 'categoria' ? value : "Outros",
+            descricao: field === 'descricao' ? value : descRow,
+            categoria: field === 'categoria' ? value : catRow,
             tipo: isEntrada ? "Entrada" : "Saída",
             recorrencia: "Única",
             parcela: "1/1",
-            valor: colName === 'valor' ? Math.abs(Number(value) || 0) * (isEntrada ? 1 : -1) : 0,
+            valor: field === 'valor' ? finalValue : valRow,
             status: "Em aberto",
-            ordem: list.length
+            ordem: rowIndex
         };
 
-        const { data, error } = await supabase.from(dbTable).insert([payloadToInsert]).select().single();
+        const { data, error } = await supabase.from(dbTable).insert([payload]).select().single();
         if (data) {
            onDataChange([...initialData, data]); 
-           // Inject raw ID back into the grid so future edits hit the right row
-           instance.jspreadsheet.setValueFromCoords(0, rowIndex, data.id, true);
+           instance.jspreadsheet.setValueFromCoords(idColIndex, rowIndex, data.id, true); // true = force sem disparar onchange
         }
     } else {
-        // Update linha Existente
-        const updatePayload: any = {};
-        if (colName === 'valor') {
-           updatePayload.valor = Math.abs(Number(value) || 0) * (isEntrada ? 1 : -1);
-        } else {
-           updatePayload[colName] = value;
-        }
-
-        const optimisticData = initialData.map(d => d.id === item.id ? { ...d, ...updatePayload } : d);
-        onDataChange(optimisticData); // update global state slightly
-        
-        await supabase.from(dbTable).update(updatePayload).eq("id", item.id);
+        // Atualizar existente
+        const updatePayload: any = { [field]: finalValue };
+        const optimisticData = initialData.map(d => d.id === id ? { ...d, ...updatePayload } : d);
+        onDataChange(optimisticData); 
+        await supabase.from(dbTable).update(updatePayload).eq("id", id);
     }
   };
 
-  const initGrid = (ref: any, instanceRef: any, dataItems: any[], isEntrada: boolean) => {
-    if (ref.current) {
-      if (instanceRef.current) {
+  const initGrid = () => {
+    if (!containerRef.current) return;
+    if (instanceRef.current) {
         instanceRef.current.destroy();
-      }
+    }
 
-      // Format Data into 2D Array
-      // Adding empty rows at the bottom for Excel UX
-      const gridData = dataItems.map(d => [
-        d.id,
-        d.data,
-        d.descricao,
-        d.categoria,
-        Math.abs(d.valor)
-      ]);
+    const maxRows = Math.max(entradas.length, saidas.length + 1) + 20; // +20 empty padding
+    const gridData = [];
 
-      // Fill with up to 10 empty rows
-      for(let i=0; i<15; i++) {
-        gridData.push(["", "", "", "", ""]);
-      }
+    // Preencher Linhas
+    for (let i = 0; i < maxRows; i++) {
+        const row = Array(22).fill(""); 
+        
+        // Entradas A-C (0-2)
+        if (entradas[i]) {
+            row[COL_ENTRADA_DESC] = entradas[i].descricao;
+            row[COL_ENTRADA_CAT] = entradas[i].categoria;
+            row[COL_ENTRADA_VALOR] = Math.abs(entradas[i].valor);
+            row[COL_ENTRADA_ID] = entradas[i].id;
+        }
 
-      instanceRef.current = jspreadsheet(ref.current, {
+        // Saídas G-H (6-7)
+        // Row 0 is "SAIDAS" title. Saídas start from Row 1.
+        if (i === 0) {
+            row[COL_SAIDA_DESC] = "SAIDAS";
+        } else if (saidas[i - 1]) {
+            row[COL_SAIDA_DESC] = saidas[i - 1].descricao;
+            row[COL_SAIDA_VALOR] = Math.abs(saidas[i - 1].valor);
+            row[COL_SAIDA_ID] = saidas[i - 1].id;
+        }
+
+        // Caixa Livre no S3 (Linha 2, cols 18-19)
+        if (i === 2) {
+            row[COL_CAIXA_TITLE] = 'Caixa "Livre"';
+            row[COL_CAIXA_VALOR] = `=SUM(C1:C1000) - SUM(H2:H1000)`; // Excel formula magic!
+        }
+
+        gridData.push(row);
+    }
+
+    // Configuração JSpreadsheet Baseada exatemente na imagem da Duda!
+    instanceRef.current = jspreadsheet(containerRef.current, {
         data: gridData,
+        minDimensions: [22, maxRows],
         columns: [
-          { type: 'hidden', title: 'ID' },
-          { type: 'calendar', title: 'Data', options: { format: 'YYYY-MM-DD' }, width: 100 },
-          { type: 'text', title: 'Descrição', width: 180 },
-          { type: 'dropdown', title: 'Categoria', source: ['Outros', ...userCategories], autocomplete: true, width: 120 },
-          { type: 'numeric', title: 'Valor (R$)', mask: 'U$ #.##,00', decimal: ',', width: 100 },
+            { type: 'text', title: 'Grupo', width: 140 },               // A: Entrada Desc
+            { type: 'dropdown', title: 'Responsável', source: ['Outros', ...userCategories], autocomplete: true, width: 140 }, // B: Entrada Cat/Resp
+            { type: 'numeric', title: 'R$ Valor', mask: 'R$ #.##,00', decimal: ',', width: 110 }, // C: Entrada Valor
+            { type: 'text', title: '', width: 50 }, // D
+            { type: 'text', title: '', width: 50 }, // E
+            { type: 'text', title: '', width: 50 }, // F
+            { type: 'text', title: 'Beneficiário', width: 160 }, // G: Saida Desc
+            { type: 'numeric', title: 'R$ Valor', mask: '#.##,00', decimal: ',', width: 90 }, // H: Saida Valor
+            { type: 'text', title: '', width: 40 }, // I
+            { type: 'text', title: '', width: 40 }, // J
+            { type: 'text', title: '', width: 40 }, // K
+            { type: 'text', title: '', width: 40 }, // L
+            { type: 'text', title: '', width: 40 }, // M
+            { type: 'text', title: '', width: 40 }, // N
+            { type: 'text', title: '', width: 40 }, // O
+            { type: 'text', title: '', width: 40 }, // P
+            { type: 'text', title: '', width: 40 }, // Q
+            { type: 'text', title: '', width: 40 }, // R
+            { type: 'text', title: 'Métricas', width: 120 }, // S: Caixa Livre
+            { type: 'numeric', title: 'Resultado', mask: 'R$ #.##,00', decimal: ',', width: 120 }, // T: Valor Caixa
+            { type: 'hidden', title: 'ID E' }, // U
+            { type: 'hidden', title: 'ID S' }, // V
         ],
-        allowInsertColumn: false,
+        style: {
+            'G1': 'color: #cc0000; font-weight: bold; background-color: #f7f7f7;', // "SAIDAS" red text
+            'S3': 'font-weight: bold; text-align: right;', // Caixa Livre Label
+            'T3': 'font-weight: bold; background-color: #fdfd96; color: #333;', // Yellow background for Result
+        },
+        allowInsertColumn: true,
         allowInsertRow: true,
         allowDeleteRow: true,
-        allowDeleteColumn: false,
+        allowDeleteColumn: true,
+        wordWrap: true,
         contextMenu: function(obj, x, y, e) {
              const items = [];
              if (y != null) {
@@ -143,19 +206,23 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
         },
         // @ts-ignore
         onchange: function(instance: any, cell: any, x: string|number, y: string|number, value: string) {
-          handleCellChange(isEntrada, instance, cell, x.toString(), y.toString(), value);
+             handleCellChange(instance, x.toString(), y.toString(), value);
         },
         // @ts-ignore
         ondeleterow: async function(instance: any, y: any, numOfRows: any, rowDOMElements: any, rowData: any[]) {
-          // rowData contains the data of deleted rows
-          const promises = rowData.map(r => {
-             const id = r[0]; // first column is hidden ID
-             if (id) return supabase.from(dbTable).delete().eq("id", id);
-             return null;
-          }).filter(Boolean);
-          
-          await Promise.all(promises);
-          toast.success("Linha(s) apagada(s)", { position: 'bottom-center' });
+             const promises = rowData.map(r => {
+                const idEntrada = r[COL_ENTRADA_ID];
+                const idSaida = r[COL_SAIDA_ID];
+                const deletes = [];
+                if (idEntrada && idEntrada !== "") deletes.push(supabase.from(dbTable).delete().eq("id", idEntrada));
+                if (idSaida && idSaida !== "") deletes.push(supabase.from(dbTable).delete().eq("id", idSaida));
+                return deletes;
+             }).flat();
+             
+             if(promises.length > 0) {
+                 await Promise.all(promises);
+                 toast.success("Linha(s) apagada(s) do banco!", { position: 'bottom-center' });
+             }
         },
         text: {
            insertANewRowBefore: 'Inserir nova linha acima',
@@ -164,43 +231,23 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
            copy: 'Copiar',
            paste: 'Colar',
         }
-      });
-    }
+    });
+
   };
 
   useEffect(() => {
-    // Only init if we are on client (useEffect ensures this)
-    // Avoid double init in StrictMode
     const timer = setTimeout(() => {
-      initGrid(leftRef, leftInstance, entradas, true);
-      initGrid(rightRef, rightInstance, saidas, false);
+      initGrid();
     }, 100);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData.length, currentTabMonth, currentTabYear]); // We re-render full grid if month changes
+  }, [initialData.length, currentTabMonth, currentTabYear]); 
 
   return (
-    <div className="flex flex-col md:flex-row w-full h-full gap-2 p-2 pb-24 overflow-x-auto bg-[#e6e6e6]">
-      {/* Lado Esquerdo - Entradas */}
-      <div className="flex-1 bg-white border border-[#D4D4D4] shadow-sm rounded-sm min-w-[500px]">
-         <div className="bg-emerald-900/10 text-emerald-800 font-bold border-b border-[#D4D4D4] px-4 py-2 text-sm flex justify-between">
-           <span>ENTRADAS</span>
-           <span>JSpreadsheet Engine</span>
-         </div>
-         <div className="jspreadsheet-wrapper overflow-auto">
-            <div ref={leftRef}></div>
-         </div>
-      </div>
-      
-      {/* Lado Direito - Saídas */}
-      <div className="flex-1 bg-white border border-[#D4D4D4] shadow-sm rounded-sm min-w-[500px]">
-         <div className="bg-red-900/10 text-red-800 font-bold border-b border-[#D4D4D4] px-4 py-2 text-sm">
-           SAÍDAS
-         </div>
-         <div className="jspreadsheet-wrapper overflow-auto">
-            <div ref={rightRef}></div>
-         </div>
-      </div>
+    <div className="w-full h-full overflow-auto bg-white p-2">
+       <div className="jspreadsheet-wrapper">
+          <div ref={containerRef}></div>
+       </div>
     </div>
   );
 }

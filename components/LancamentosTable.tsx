@@ -362,8 +362,16 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     return (
       <tr key={item.id} className={`${rowClass} transition-colors group align-middle border-b border-slate-800/30`}>
         <td className="sticky left-0 z-10 bg-[#020617] group-hover:bg-[#060b18] text-center text-xs font-medium text-slate-500 w-[50px] px-1 relative transition-colors border-b border-slate-800/30">
-           <button onClick={() => deleteItem(item.id)} className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-500 bg-slate-800 shadow rounded-lg p-1.5 z-50 hover:bg-red-950 transition-all"><Trash2 className="w-3.5 h-3.5"/></button>
-           <span className="opacity-40">{sequenceIndex + 1}</span>
+           <div className="relative flex items-center justify-center w-full h-full min-h-[28px]">
+              <button 
+                 onClick={() => deleteItem(item.id)} 
+                 className="absolute opacity-0 group-hover:opacity-100 text-red-500 shadow rounded-lg p-1.5 z-50 hover:text-red-400 hover:bg-slate-800 transition-all"
+                 title="Apagar linha"
+              >
+                 <Trash2 className="w-3.5 h-3.5"/>
+              </button>
+              <span className="opacity-40 group-hover:opacity-0 transition-opacity">{sequenceIndex + 1}</span>
+           </div>
         </td>
         {renderCell(item, "descricao", "250px")}
         {renderCell(item, "valor_digitado", "130px", "number")}
