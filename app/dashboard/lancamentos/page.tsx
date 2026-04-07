@@ -15,10 +15,20 @@ export default async function LancamentosPage() {
       .eq("user_id", activeUser.id)
       .order("data", { ascending: true });
 
+  // Fetch Categorias
+    const { data: categorias } = await supabase
+      .from("categorias")
+      .select("nome")
+      .eq("user_id", activeUser.id)
+      .order("nome", { ascending: true });
+
+  const customCategories = (categorias || []).map(c => c.nome);
+
   return (
     <LancamentosPageClient 
       initialData={lancamentos || []} 
-      user_id={activeUser.id} 
+      user_id={activeUser.id}
+      userCategories={customCategories}
     />
   );
 }

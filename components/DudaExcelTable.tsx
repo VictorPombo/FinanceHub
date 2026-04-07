@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { formatCurrency, CATEGORIAS } from "@/lib/types";
+import { formatCurrency } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import { Trash2 } from "lucide-react";
@@ -9,6 +9,7 @@ import { Trash2 } from "lucide-react";
 interface Props {
   initialData: any[];
   userId: string;
+  userCategories: string[];
   onDataChange: (newData: any[]) => void;
   currentTabMonth: number;
   currentTabYear: number;
@@ -19,7 +20,7 @@ const PARCELAMENTO_OPTIONS = [
   "7x", "8x", "9x", "10x", "11x", "12x", "Fixo"
 ];
 
-export default function DudaExcelTable({ initialData, userId, onDataChange, currentTabMonth, currentTabYear }: Props) {
+export default function DudaExcelTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear }: Props) {
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
   const supabase = createClient();
@@ -278,7 +279,7 @@ export default function DudaExcelTable({ initialData, userId, onDataChange, curr
         </td>
         {renderCell(item, "data", "110px", "date")}
         {renderCell(item, "status", "110px", "select", ["Pago", "Em aberto"])}
-        {renderCell(item, "categoria", "180px", "select", CATEGORIAS)}
+        {renderCell(item, "categoria", "180px", "select", userCategories && userCategories.length > 0 ? userCategories : [])}
       </tr>
     );
   };

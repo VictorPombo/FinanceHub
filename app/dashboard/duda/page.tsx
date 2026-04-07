@@ -22,9 +22,22 @@ export default async function DudaPage() {
     console.error("Erro ao carregar lançamentos da Duda:", error);
   }
 
+  // Fetch Categorias
+    const { data: categorias } = await supabase
+      .from("categorias")
+      .select("nome")
+      .eq("user_id", user.id)
+      .order("nome", { ascending: true });
+
+  const customCategories = (categorias || []).map(c => c.nome);
+
   return (
     <div className="flex-1 overflow-hidden bg-[#020617] relative flex flex-col pt-1">
-      <PlanilhaDudaClient initialData={lancamentos || []} user_id={user.id} />
+      <PlanilhaDudaClient 
+        initialData={lancamentos || []} 
+        user_id={user.id} 
+        userCategories={customCategories}
+      />
     </div>
   );
 }

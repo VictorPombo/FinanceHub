@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 interface Props {
   initialData: any[];
   user_id: string;
+  userCategories: string[];
 }
 
 const MONTHS = [
@@ -17,7 +18,7 @@ const MONTHS = [
   "Jul", "Ago", "Set", "Out", "Nov", "Dez"
 ];
 
-export default function LancamentosPageClient({ initialData, user_id }: Props) {
+export default function LancamentosPageClient({ initialData, user_id, userCategories }: Props) {
   const [data, setData] = useState(initialData);
   const [filterType, setFilterType] = useState<string>("Todos");
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
@@ -171,6 +172,7 @@ export default function LancamentosPageClient({ initialData, user_id }: Props) {
         <LancamentosTable 
           initialData={filteredData} 
           userId={user_id} 
+          userCategories={userCategories}
           onDataChange={(newData: any[]) => {
             // Need to update the MASTER list (data), not just the filtered.
             // Since onDataChange currently acts like it returns exactly the same items but modified/inserted,

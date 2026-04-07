@@ -5,16 +5,29 @@ import CategoriasClient from "@/components/CategoriasClient";
 export default async function CategoriasPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const activeUser = user;
-  if (!activeUser) redirect("/");
+  if (!user) redirect("/");
 
+  // Puxa Lançamentos Confirmados e Pagos para gerar os Gráficos
   const { data: lancamentos } = await supabase
     .from("lancamentos")
     .select("categoria, tipo, valor, status")
-    .eq("user_id", activeUser.id)
-    .eq("status", "Confirmado");
+    .eq("user_id", user.id)
+    .in("status", ["Confirmado", "Pago"]);
+
+  // Puxa Categorias customizadas
+  const { data: categorias } = await supabase
+    .from("categorias")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("nome", { ascending: true });
 
   return (
-    <CategoriasClient initialData={lancamentos || []} />
+    <div className="flex-1 overflow-hidden bg-[#020617] relative flex flex-col">
+       <CategoriasClient 
+          initialData={lancamentos || []} 
+          userId={user.id} 
+          initialCategories={categorias || []} 
+       />
+    </div>
   );
 }

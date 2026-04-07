@@ -8,6 +8,7 @@ import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 interface Props {
   initialData: any[];
   user_id: string;
+  userCategories: string[];
 }
 
 const MONTHS = [
@@ -15,7 +16,7 @@ const MONTHS = [
   "Jul", "Ago", "Set", "Out", "Nov", "Dez"
 ];
 
-export default function PlanilhaDudaClient({ initialData, user_id }: Props) {
+export default function PlanilhaDudaClient({ initialData, user_id, userCategories }: Props) {
   const [data, setData] = useState(initialData);
   const [filterType, setFilterType] = useState<string>("Todos");
   const [search, setSearch] = useState("");
@@ -121,6 +122,7 @@ export default function PlanilhaDudaClient({ initialData, user_id }: Props) {
         <DudaExcelTable 
           initialData={filteredData} 
           userId={user_id} 
+          userCategories={userCategories}
           onDataChange={(newData: any[]) => {
             const newIds = new Set(newData.map(n => n.id));
             const baseKeep = data.filter(d => !newIds.has(d.id) && !(d.data.startsWith(selectedMonthKey) && (filterType === 'Todos' || d.tipo === filterType)));

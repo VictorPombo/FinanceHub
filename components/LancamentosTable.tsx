@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { formatCurrency, CATEGORIAS } from "@/lib/types";
+import { formatCurrency } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import { Trash2, Plus, ArrowDownRight, ArrowUpRight, X, Save } from "lucide-react";
@@ -9,6 +9,7 @@ import { Trash2, Plus, ArrowDownRight, ArrowUpRight, X, Save } from "lucide-reac
 interface Props {
   initialData: any[];
   userId: string;
+  userCategories: string[];
   onDataChange: (newData: any[]) => void;
   currentTabMonth: number;
   currentTabYear: number;
@@ -19,7 +20,7 @@ const PARCELAMENTO_OPTIONS = [
   "7x", "8x", "9x", "10x", "11x", "12x", "Fixo"
 ];
 
-export default function LancamentosTable({ initialData, userId, onDataChange, currentTabMonth, currentTabYear }: Props) {
+export default function LancamentosTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear }: Props) {
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
   const supabase = createClient();
@@ -338,7 +339,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
         </td>
         {renderCell(item, "data", "110px", "date")}
         {renderCell(item, "status", "110px", "select", ["Pago", "Em aberto"])}
-        {renderCell(item, "categoria", "180px", "select", CATEGORIAS)}
+        {renderCell(item, "categoria", "180px", "select", userCategories && userCategories.length > 0 ? userCategories : [])}
       </tr>
     );
   };
@@ -375,7 +376,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
         <td className="px-2 border-b border-slate-800/20 bg-slate-900/20 text-center"><span className="text-xs text-slate-600">-</span></td>
         <td className="px-2 border-b border-slate-800/20"><input type="date" value={form.data} onChange={e => setForm({...form, data: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-xs text-slate-200 outline-none border-none py-2" /></td>
         <td className="px-2 border-b border-slate-800/20"><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2"><option value="Pago" className="bg-slate-900 text-slate-200">Pago</option><option value="Em aberto" className="bg-slate-900 text-slate-200">Em aberto</option></select></td>
-        <td className="px-2 border-b border-slate-800/20"><select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2">{CATEGORIAS.map(c => <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>)}</select></td>
+        <td className="px-2 border-b border-slate-800/20"><select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2">{(userCategories && userCategories.length > 0 ? userCategories : []).map(c => <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>)}</select></td>
       </tr>
     );
   };
@@ -514,7 +515,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
                  <div className="flex-1">
                     <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Categoria</label>
                     <select value={mobileForm.categoria} onChange={(e) => setMobileForm({...mobileForm, categoria: e.target.value})} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-purple-500">
-                       {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                       {(userCategories && userCategories.length > 0 ? userCategories : []).map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                  </div>
                  <div className="flex-1">
