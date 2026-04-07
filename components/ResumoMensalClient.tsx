@@ -9,7 +9,7 @@ import {
   BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line 
 } from "recharts";
-import { TrendingUp, TrendingDown, CheckCircle2, Clock, Wallet, Bot, PencilLine } from "lucide-react";
+import { TrendingUp, TrendingDown, CheckCircle2, Clock, Wallet, Bot, PencilLine, CalendarDays, DollarSign, ArrowRightLeft } from "lucide-react";
 import AlertasFinn from "./AlertasFinn";
 
 interface Props {
@@ -29,6 +29,12 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"A Pagar" | "Pago" | "A Receber" | "Recebido">("A Pagar");
   const [modalIsLoading, setModalIsLoading] = useState(false);
+
+  // Baixa form states
+  const [baixaSelectedId, setBaixaSelectedId] = useState<string>("");
+  const [baixaDate, setBaixaDate] = useState(new Date().toISOString().split('T')[0]);
+  const [baixaTipo, setBaixaTipo] = useState<"total" | "parcial">("total");
+  const [baixaValorParcial, setBaixaValorParcial] = useState("");
 
   const supabase = createClient();
   const router = useRouter();
@@ -141,16 +147,84 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
     return filtered;
   };
 
-  const handleMarkAs = async (item: any, newStatus: string) => {
+  const getPendingItems = () => {
+    if (modalType === "Recebido" || modalType === "A Receber") {
+      return currentMonthRaw.filter((x: any) => x.tipo === "Entrada" && x.status !== "Pago");
+    }
+    return currentMonthRaw.filter((x: any) => x.tipo === "Saída" && x.status !== "Pago");
+  };
+
+  const getCompletedItems = () => {
+    if (modalType === "Recebido" || modalType === "A Receber") {
+      return currentMonthRaw.filter((x: any) => x.tipo === "Entrada" && x.status === "Pago");
+    }
+    return currentMonthRaw.filter((x: any) => x.tipo === "Saída" && x.status === "Pago");
+  };
+
+  const openModal = (type: typeof modalType) => {
+    setModalType(type);
+    setBaixaSelectedId("");
+    setBaixaDate(new Date().toISOString().split('T')[0]);
+    setBaixaTipo("total");
+    setBaixaValorParcial("");
+    setModalOpen(true);
+  };
+
+  const handleBaixa = async () => {
+    if (!baixaSelectedId) { toast.error("Selecione um lançamento!"); return; }
+    const item = currentMonthRaw.find((x: any) => x.id === baixaSelectedId);
+    if (!item) { toast.error("Item não encontrado."); return; }
+
+    const table = item.origem === "Upload IA" ? "ia_lancamentos" : "lancamentos";
+    const valorOriginal = Math.abs(Number(item.valor));
+    setModalIsLoading(true);
+
+    try {
+      if (baixaTipo === "total") {
+        // Total: update status to Pago + update date
+        const { error } = await supabase.from(table).update({ status: "Pago", data: baixaDate }).eq("id", item.id);
+        if (error) throw error;
+        toast.success("Baixa total realizada!");
+      } else {
+        // Partial: split the row
+        const parcialVal = Number(baixaValorParcial);
+        if (isNaN(parcialVal) || parcialVal <= 0) { toast.error("Valor parcial inválido!"); setModalIsLoading(false); return; }
+        if (parcialVal >= valorOriginal) { toast.error("Valor parcial deve ser menor que o total. Use Baixa Total."); setModalIsLoading(false); return; }
+
+        const resto = valorOriginal - parcialVal;
+        const valorResto = item.tipo === "Saída" ? -resto : resto;
+        const valorPago = item.tipo === "Saída" ? -parcialVal : parcialVal;
+
+        // 1. Update original row with remaining value (still pending)
+        const { error: errUpdate } = await supabase.from(table).update({ valor: valorResto }).eq("id", item.id);
+        if (errUpdate) throw errUpdate;
+
+        // 2. Insert clone with paid portion
+        const { id, created_at, ...cloneBase } = item;
+        const clone = { ...cloneBase, valor: valorPago, status: "Pago", data: baixaDate, descricao: `${item.descricao} (parcial)` };
+        delete clone.origem; // origem is injected client-side, not a DB column
+        const { error: errInsert } = await supabase.from(table).insert([clone]);
+        if (errInsert) throw errInsert;
+
+        toast.success(`Baixa parcial: R$ ${parcialVal.toFixed(2)} registrado, R$ ${resto.toFixed(2)} pendente.`);
+      }
+      router.refresh();
+      setBaixaSelectedId("");
+      setBaixaTipo("total");
+      setBaixaValorParcial("");
+    } catch (err: any) {
+      toast.error("Erro ao processar baixa: " + (err?.message || "desconhecido"));
+    } finally {
+      setModalIsLoading(false);
+    }
+  };
+
+  const handleUndoStatus = async (item: any) => {
     setModalIsLoading(true);
     const table = item.origem === "Upload IA" ? "ia_lancamentos" : "lancamentos";
-    const { error } = await supabase.from(table).update({ status: newStatus }).eq("id", item.id);
-    if (error) {
-       toast.error("Erro ao atualizar status do lançamento!");
-    } else {
-       toast.success("Atualizado com sucesso!");
-       router.refresh();
-    }
+    const { error } = await supabase.from(table).update({ status: "Pendente" }).eq("id", item.id);
+    if (error) toast.error("Erro ao reverter status!");
+    else { toast.success("Revertido para pendente."); router.refresh(); }
     setModalIsLoading(false);
   };
 
@@ -251,11 +325,11 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                {formatCurrency(currentTotals.entradas)}
             </div>
             <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => { setModalType("Recebido"); setModalOpen(true); }} className="flex flex-col bg-emerald-950/20 border border-emerald-900/30 p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-emerald-900/40">
+               <button onClick={() => openModal("Recebido")} className="flex flex-col bg-emerald-950/20 border border-emerald-900/30 p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-emerald-900/40">
                  <span className="text-[9px] text-emerald-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Recebido</span>
                  <span className="text-xs font-mono font-bold text-emerald-400 mt-0.5">{formatCurrency(entradasPagas)}</span>
                </button>
-               <button onClick={() => { setModalType("A Receber"); setModalOpen(true); }} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-amber-900/40 ${entradasAReceber > 0 ? 'bg-amber-950/20 border border-amber-900/30' : 'bg-slate-900/40 border border-slate-800/60 opacity-50'}`}>
+               <button onClick={() => openModal("A Receber")} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-amber-900/40 ${entradasAReceber > 0 ? 'bg-amber-950/20 border border-amber-900/30' : 'bg-slate-900/40 border border-slate-800/60 opacity-50'}`}>
                  <span className="text-[9px] text-amber-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A receber</span>
                  <span className="text-xs font-mono font-bold text-amber-400 mt-0.5">{formatCurrency(entradasAReceber)}</span>
                </button>
@@ -273,11 +347,11 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                {formatCurrency(Math.abs(currentTotals.saidas))}
             </div>
             <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => { setModalType("Pago"); setModalOpen(true); }} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-red-900/40 ${saidasPagas > 0 ? 'bg-red-950/20 border border-red-900/30' : 'bg-slate-900/40 border border-slate-800/60 opacity-50'}`}>
+               <button onClick={() => openModal("Pago")} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-red-900/40 ${saidasPagas > 0 ? 'bg-red-950/20 border border-red-900/30' : 'bg-slate-900/40 border border-slate-800/60 opacity-50'}`}>
                  <span className="text-[9px] text-red-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Pago</span>
                  <span className="text-xs font-mono font-bold text-red-400 mt-0.5">{formatCurrency(saidasPagas)}</span>
                </button>
-               <button onClick={() => { setModalType("A Pagar"); setModalOpen(true); }} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-orange-900/40 ${saidasAPagar > 0 ? 'bg-orange-950/20 border border-orange-900/30' : 'bg-slate-900/40 border border-slate-800/60 opacity-50'}`}>
+               <button onClick={() => openModal("A Pagar")} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-orange-900/40 ${saidasAPagar > 0 ? 'bg-orange-950/20 border border-orange-900/30' : 'bg-slate-900/40 border border-slate-800/60 opacity-50'}`}>
                  <span className="text-[9px] text-orange-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A pagar</span>
                  <span className="text-xs font-mono font-bold text-orange-400 mt-0.5">{formatCurrency(saidasAPagar)}</span>
                </button>
@@ -368,47 +442,164 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
         </div>
       </div>
       
-      {/* QUICK STATUS EDIT MODAL */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-           <div className="bg-[#0f172a] border border-slate-800 p-5 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[85vh]">
-              <div className="flex justify-between items-center mb-4 border-b border-slate-800/80 pb-3">
-                 <h2 className="text-white font-black uppercase tracking-wider flex items-center gap-2">
-                    {modalType === "A Pagar" || modalType === "A Receber" ? <Clock className="w-5 h-5 text-amber-400"/> : <CheckCircle2 className="w-5 h-5 text-emerald-400"/>}
-                    Resumo de itens: {modalType}
+      {/* ADVANCED SETTLEMENT MODAL */}
+      {modalOpen && (() => {
+        const isEntrada = modalType === "Recebido" || modalType === "A Receber";
+        const pendingItems = getPendingItems();
+        const completedItems = getCompletedItems();
+        const selectedItem = pendingItems.find((x: any) => x.id === baixaSelectedId);
+        const selectedItemValor = selectedItem ? Math.abs(Number(selectedItem.valor)) : 0;
+
+        return (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
+           <div className="bg-[#0f172a] border border-slate-800 p-5 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+              {/* HEADER */}
+              <div className="flex justify-between items-center mb-5 border-b border-slate-800/80 pb-3">
+                 <h2 className="text-white font-black text-base uppercase tracking-wider flex items-center gap-2">
+                    <ArrowRightLeft className="w-5 h-5 text-purple-400"/>
+                    {isEntrada ? 'Gestão de Receitas' : 'Gestão de Despesas'}
                  </h2>
                  <button onClick={() => setModalOpen(false)} className="text-slate-500 hover:text-white font-bold px-2 py-0.5 text-2xl leading-none">&times;</button>
               </div>
-              <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-2">
-                 {getModalItems().length === 0 && <p className="text-slate-500 text-sm text-center py-8">Nenhum item encontrado.</p>}
-                 {getModalItems().map((item: any) => (
-                    <div key={item.id} className="p-3 bg-slate-900/50 rounded-xl border border-slate-800 flex items-center justify-between gap-4">
-                       <div className="min-w-0 flex-1">
-                          <p className="text-slate-200 font-bold text-sm truncate uppercase tracking-tight">{item.descricao}</p>
-                          <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-1">
-                            {new Date(item.data + "T12:00:00").toLocaleDateString('pt-BR')} · {item.categoria || 'Outros'}
-                          </p>
-                       </div>
-                       <div className="flex items-center gap-3 shrink-0">
-                          <span className={`font-mono font-black ${item.tipo === 'Entrada' ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {formatCurrency(Math.abs(item.valor))}
-                          </span>
-                          {modalType === "A Pagar" || modalType === "A Receber" ? (
-                             <button disabled={modalIsLoading} onClick={() => handleMarkAs(item, "Pago")} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] uppercase tracking-wider font-bold rounded-lg shadow disabled:opacity-50 transition-colors">
-                               Marcar Pago
-                             </button>
-                          ) : (
-                             <button disabled={modalIsLoading} onClick={() => handleMarkAs(item, "Pendente")} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-[10px] uppercase tracking-wider font-bold rounded-lg shadow disabled:opacity-50 transition-colors">
-                               Marcar Pendente
-                             </button>
+
+              <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-5">
+                {/* --- FORM: REGISTRAR BAIXA --- */}
+                <div className="p-4 bg-gradient-to-b from-slate-900/80 to-slate-950/60 rounded-xl border border-slate-800">
+                  <h3 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-1.5">
+                    <DollarSign className="w-3.5 h-3.5"/>
+                    Registrar {isEntrada ? 'Recebimento' : 'Pagamento'}
+                  </h3>
+
+                  {pendingItems.length === 0 ? (
+                    <p className="text-slate-500 text-sm text-center py-4">Nenhum item pendente no período.</p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {/* 1. Select item */}
+                      <div>
+                        <label className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-1">Lançamento</label>
+                        <select value={baixaSelectedId} onChange={e => setBaixaSelectedId(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-purple-500 transition-colors cursor-pointer">
+                          <option value="">Selecione...</option>
+                          {pendingItems.map((item: any) => (
+                            <option key={item.id} value={item.id} className="bg-slate-900">
+                              {item.descricao} — {formatCurrency(Math.abs(Number(item.valor)))} ({new Date(item.data + 'T12:00:00').toLocaleDateString('pt-BR')})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {baixaSelectedId && (
+                        <>
+                          {/* Selected item preview */}
+                          <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 flex items-center justify-between">
+                            <div>
+                              <p className="text-slate-200 font-bold text-sm uppercase">{selectedItem?.descricao}</p>
+                              <p className="text-slate-500 text-[10px] mt-0.5">{selectedItem?.categoria || 'Outros'}</p>
+                            </div>
+                            <span className={`font-mono font-black text-lg ${isEntrada ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {formatCurrency(selectedItemValor)}
+                            </span>
+                          </div>
+
+                          {/* 2. Date */}
+                          <div>
+                            <label className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-1 flex items-center gap-1">
+                              <CalendarDays className="w-3 h-3"/> Data da Baixa
+                            </label>
+                            <input type="date" value={baixaDate} onChange={e => setBaixaDate(e.target.value)}
+                              className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-purple-500 transition-colors"/>
+                          </div>
+
+                          {/* 3. Total / Parcial toggle */}
+                          <div>
+                            <label className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-1.5">Tipo</label>
+                            <div className="flex gap-2">
+                              <button onClick={() => { setBaixaTipo("total"); setBaixaValorParcial(""); }}
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${
+                                  baixaTipo === 'total' 
+                                    ? 'bg-purple-600/20 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
+                                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+                                }`}>
+                                💯 Total
+                              </button>
+                              <button onClick={() => setBaixaTipo("parcial")}
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${
+                                  baixaTipo === 'parcial' 
+                                    ? 'bg-amber-600/20 border-amber-500/40 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.15)]' 
+                                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+                                }`}>
+                                ✂️ Parcial
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 4. Partial value input */}
+                          {baixaTipo === "parcial" && (
+                            <div>
+                              <label className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.15em] block mb-1">
+                                Valor {isEntrada ? 'Recebido' : 'Pago'} (de {formatCurrency(selectedItemValor)})
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-400 font-mono text-sm font-bold">R$</span>
+                                <input type="number" step="0.01" min="0.01" max={selectedItemValor - 0.01}
+                                  value={baixaValorParcial} onChange={e => setBaixaValorParcial(e.target.value)}
+                                  placeholder="0,00"
+                                  className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-amber-500 font-mono transition-colors"/>
+                              </div>
+                              {baixaValorParcial && Number(baixaValorParcial) > 0 && Number(baixaValorParcial) < selectedItemValor && (
+                                <p className="text-[10px] text-amber-400/80 mt-1.5 font-medium">
+                                  💡 Restante após baixa: {formatCurrency(selectedItemValor - Number(baixaValorParcial))}
+                                </p>
+                              )}
+                            </div>
                           )}
-                       </div>
+
+                          {/* SUBMIT */}
+                          <button disabled={modalIsLoading} onClick={handleBaixa}
+                            className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs uppercase tracking-[0.15em] font-black rounded-xl shadow-lg shadow-purple-900/30 disabled:opacity-50 transition-all mt-1">
+                            {modalIsLoading ? 'Processando...' : `Confirmar ${baixaTipo === 'total' ? 'Baixa Total' : 'Baixa Parcial'}`}
+                          </button>
+                        </>
+                      )}
                     </div>
-                 ))}
+                  )}
+                </div>
+
+                {/* --- COMPLETED LIST --- */}
+                {completedItems.length > 0 && (
+                  <div className="p-4 bg-slate-900/40 rounded-xl border border-slate-800/60">
+                    <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5"/>
+                      Já {isEntrada ? 'Recebidos' : 'Pagos'} ({completedItems.length})
+                    </h3>
+                    <div className="flex flex-col gap-1.5">
+                      {completedItems.map((item: any) => (
+                        <div key={item.id} className="p-2.5 bg-slate-950/40 rounded-lg border border-slate-800/40 flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-slate-300 font-bold text-xs truncate uppercase">{item.descricao}</p>
+                            <p className="text-slate-600 text-[9px] uppercase font-bold tracking-widest mt-0.5">
+                              {new Date(item.data + "T12:00:00").toLocaleDateString('pt-BR')} · {item.categoria || 'Outros'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`font-mono font-black text-sm ${isEntrada ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {formatCurrency(Math.abs(Number(item.valor)))}
+                            </span>
+                            <button disabled={modalIsLoading} onClick={() => handleUndoStatus(item)}
+                              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[9px] uppercase tracking-wider font-bold rounded-md disabled:opacity-50 transition-colors">
+                              Desfazer
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
            </div>
         </div>
-      )}
+        );
+      })()}
 
     </div>
   );
