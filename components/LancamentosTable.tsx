@@ -257,10 +257,10 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
         const finalDesc = optimisticData[itemIndex].descricao;
         const finalVal = Math.abs(optimisticData[itemIndex].valor);
         
-        // If entirely empty after blur, silently drop it.
-        if (!finalDesc && finalVal === 0) {
-             onDataChange(initialData.filter(d => d.id !== id));
-             return;
+        // Let it stay as draft if they haven't filled both
+        if (!finalDesc || finalVal === 0) {
+            // Keep it in memory
+            return;
         }
 
         const payloadToInsert = { ...optimisticData[itemIndex] };
@@ -297,8 +297,9 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
   };
 
   const renderCell = (item: any, field: string, width: string, type: "text" | "number" | "select" | "date" = "text", options?: string[]) => {
-    const isEditing = editingCell?.id === item.id && editingCell?.field === field;
     const isGhost = item.id.startsWith("ghost-");
+    const isTempDraft = item.isDraft;
+    const isEditing = (editingCell?.id === item.id && editingCell?.field === field) || isTempDraft;
     
     let displayValue = item[field] || "";
     if (field === "valor_digitado" && !isGhost) {
@@ -318,14 +319,16 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
     }
 
     const canEdit = field !== "id" && field !== "valor_final" && field !== "parcela";
-    if (isGhost && !isEditing) displayValue = ""; 
+    if ((isGhost || isTempDraft) && !isEditing) displayValue = ""; 
 
     let editValue = item[field] || "";
     if (field === "valor_digitado") {
-       editValue = Math.abs(item.valor).toString();
+       editValue = item.valor !== 0 ? Math.abs(item.valor).toString() : "";
        if (isGhost) editValue = "";
     } else if (field === "parcelamento") {
-       editValue = displayValue;
+       editValue = item[field] || "1x (Única)";
+    } else if (field === "status") {
+       editValue = item[field] || "Em aberto";
     }
 
     return (
@@ -376,14 +379,16 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
 
   const renderRow = (item: any, sequenceIndex: number) => {
     const isGhost = item.id.startsWith("ghost-");
-    let rowClass = item.tipo === "Entrada" ? "bg-emerald-950/10" : "bg-red-950/10";
-    if (isGhost) rowClass = "opacity-60";
+    const isTemp = item.isDraft;
+    // Premium soft gradients for rows
+    let rowClass = item.tipo === "Entrada" ? "bg-emerald-950/5 hover:bg-emerald-950/10" : "bg-red-950/5 hover:bg-red-950/10";
+    if (isGhost || isTemp) rowClass = "bg-slate-900/40"; // neutral for new
 
     return (
-      <tr key={item.id} className={`${rowClass} hover:bg-slate-800/50 transition-colors group`}>
-        <td className="sticky left-0 z-10 bg-[#020617] group-hover:bg-slate-800/50 border-b border-slate-800 text-center text-xs font-medium text-slate-500 w-[40px] px-1 relative transition-colors">
-           {!isGhost && <button onClick={() => deleteItem(item.id)} className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-500 bg-slate-900 shadow-md rounded-full p-1.5 z-50 hover:bg-red-950 transition-all"><Trash2 className="w-3 h-3"/></button>}
-           {isGhost ? "+" : sequenceIndex + 1}
+      <tr key={item.id} className={`${rowClass} transition-colors group align-middle border-b border-slate-800/40`}>
+        <td className="sticky left-0 z-10 bg-[#020617] group-hover:bg-[#070b1a] text-center text-xs font-medium text-slate-500 w-[50px] px-1 relative transition-colors">
+           {(!isGhost && !isTemp) && <button onClick={() => deleteItem(item.id)} className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-500 bg-slate-800 shadow rounded-lg p-1.5 z-50 hover:bg-red-950 transition-all"><Trash2 className="w-3.5 h-3.5"/></button>}
+           {(isGhost || isTemp) ? <Plus className="w-3 h-3 mx-auto opacity-50" /> : <span className="opacity-40">{sequenceIndex + 1}</span>}
         </td>
         {renderCell(item, "descricao", "250px")}
         {renderCell(item, "valor_digitado", "130px", "number")}
@@ -468,26 +473,26 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
       </button>
 
       {/* DESKTOP TABLE VIEW */}
-      <div className="hidden md:block flex-1 w-full overflow-auto relative bg-[#020617] rounded-2xl border border-slate-800/80 mb-4">
-        <table className="w-max min-w-full border-collapse">
+      <div className="hidden md:block flex-1 w-full overflow-auto relative bg-[#020617] rounded-xl border border-slate-800/50 shadow-2xl mb-4">
+        <table className="w-max min-w-full border-collapse font-sans">
           <thead>
-            <tr className="bg-slate-900/80 text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-800">
-              <th className="sticky left-0 z-30 bg-slate-900/80 w-[40px] py-3"></th>
-              <th className="py-3 px-3 text-left" style={{width: '250px'}}>Descrição</th>
-              <th className="py-3 px-3 text-right" style={{width: '130px'}}>Valor (R$)</th>
-              <th className="py-3 px-3 text-left" style={{width: '120px'}}>Parcelamento</th>
-              <th className="py-3 px-3 text-left" style={{width: '70px'}}>Parc.</th>
-              <th className="py-3 px-3 text-left" style={{width: '110px'}}>Data</th>
-              <th className="py-3 px-3 text-left" style={{width: '110px'}}>Status</th>
-              <th className="py-3 px-3 text-left" style={{width: '180px'}}>Categoria</th>
+            <tr className="bg-[#020617] text-slate-400 text-xs font-semibold uppercase tracking-widest border-b border-slate-800/60 sticky top-0 z-30 shadow-sm">
+              <th className="sticky left-0 bg-[#020617] w-[50px] py-3.5"></th>
+              <th className="py-3.5 px-3 text-left font-semibold" style={{width: '250px'}}>Descrição</th>
+              <th className="py-3.5 px-3 text-right font-semibold" style={{width: '130px'}}>Valor (R$)</th>
+              <th className="py-3.5 px-3 text-left font-semibold" style={{width: '120px'}}>Parcelamento</th>
+              <th className="py-3.5 px-3 text-left font-semibold" style={{width: '70px'}}>Parc.</th>
+              <th className="py-3.5 px-3 text-left font-semibold" style={{width: '110px'}}>Data</th>
+              <th className="py-3.5 px-3 text-left font-semibold" style={{width: '110px'}}>Status</th>
+              <th className="py-3.5 px-3 text-left font-semibold" style={{width: '180px'}}>Categoria</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-               <td className="sticky left-0 bg-[#020617] z-20 pt-6"></td>
-               <td colSpan={7} className="px-4 py-4 pt-6">
+               <td className="sticky left-0 bg-[#020617] z-20 pt-4"></td>
+               <td colSpan={7} className="px-4 py-2 pt-5">
                   <div className="flex items-center gap-2">
-                    <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-900 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+                    <span className="text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest bg-emerald-950/30 border border-emerald-900/50 shadow-sm">
                       Receitas
                     </span>
                   </div>
@@ -497,10 +502,10 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
             {ghostEntradas.map((item, i) => renderRow(item, entradas.length + i))}
 
             <tr>
-               <td className="sticky left-0 bg-[#020617] z-20 pt-8"></td>
-               <td colSpan={7} className="px-4 py-4 pt-8 border-t border-slate-800">
+               <td className="sticky left-0 bg-[#020617] z-20 pt-6"></td>
+               <td colSpan={7} className="px-4 py-2 pt-8">
                   <div className="flex items-center gap-2">
-                    <span className="bg-red-950/40 text-red-500 border border-red-900 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+                    <span className="text-red-400 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest bg-red-950/30 border border-red-900/50 shadow-sm">
                       Despesas
                     </span>
                   </div>
@@ -510,27 +515,6 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
             {ghostSaidas.map((item, i) => renderRow(item, saidas.length + i))}
 
             <tr className="h-6"><td colSpan={8}></td></tr>
-            
-            <tr className="bg-slate-900/50 border-t border-slate-800 sticky bottom-0 z-30 shadow-[0_-4px_15px_-1px_rgb(0,0,0,0.5)] backdrop-blur-sm">
-              <td className="sticky left-0 bg-slate-900/50 border-r border-slate-800"></td>
-              <td colSpan={2} className="px-4 py-4 font-bold uppercase tracking-widest text-slate-300">
-                BALANÇO DO MÊS
-              </td>
-              <td colSpan={1}></td>
-              <td colSpan={2} className="px-4 text-right text-xs font-semibold uppercase text-slate-500 align-middle border-l border-slate-800">
-                <div>Total Entradas:</div>
-                <div className="mt-1">Total Saídas:</div>
-                <div className="text-slate-200 font-bold text-sm mt-2 pt-2 border-t border-slate-800">SALDO ACUMULADO:</div>
-              </td>
-              <td colSpan={2} className="px-4 text-left font-mono font-bold align-middle">
-                <div className="text-emerald-500">{formatCurrency(totalEntradas)}</div>
-                <div className="text-red-500 mt-1">{formatCurrency(totalSaidas)}</div>
-                <div className={`text-base mt-2 pt-2 border-t border-slate-200 ${saldoFinal < 0 ? "text-red-500" : "text-emerald-500"}`}>
-                   {formatCurrency(saldoFinal)}
-                </div>
-              </td>
-              <td className="border border-slate-700"></td>
-            </tr>
           </tbody>
         </table>
       </div>
