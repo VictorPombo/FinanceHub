@@ -16,12 +16,12 @@ export default function UserToolbar({ email }: { email: string }) {
 
   return (
     <div className="flex items-center gap-4">
-      <span className="text-sm text-gray-600 truncate max-w-[150px] sm:max-w-xs" title={email}>
+      <span className="text-sm text-slate-400 truncate max-w-[150px] sm:max-w-xs" title={email}>
         {email}
       </span>
       <button 
         onClick={handleLogout}
-        className="flex items-center gap-1 text-sm bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-sm transition-colors shadow-sm"
+        className="flex items-center gap-1 text-sm bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 px-3 py-1.5 rounded-md transition-colors shadow-sm"
       >
         <LogOut className="w-4 h-4" />
         Sair

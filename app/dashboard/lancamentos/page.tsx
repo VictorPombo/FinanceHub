@@ -13,7 +13,6 @@ export default async function LancamentosPage() {
       .from("lancamentos")
       .select("*")
       .eq("user_id", activeUser.id)
-      .or("origem.eq.Manual,origem.is.null")
       .order("data", { ascending: true });
 
   return (

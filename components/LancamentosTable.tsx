@@ -310,7 +310,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
 
     return (
       <td 
-        className={`border-b border-slate-100 ${isEditing ? "bg-white ring-2 ring-blue-500 z-10 relative rounded border-none shadow-sm" : ""} transition-colors ${field === "valor_digitado" ? "bg-slate-50/30 font-mono" : ""} ${isGhost ? "opacity-60 hover:bg-slate-50 cursor-pointer" : "cursor-cell"} ${ghostLoading === `${item.tipo}-${field}` ? "animate-pulse" : ""}`}
+        className={`border-b border-slate-800 ${isEditing ? "bg-slate-800 ring-2 ring-purple-500 z-10 relative rounded shadow-[0_0_15px_rgba(139,92,246,0.3)]" : ""} transition-colors ${field === "valor_digitado" ? "bg-slate-900/50 font-mono" : ""} ${isGhost ? "opacity-60 hover:bg-slate-900 cursor-pointer" : "cursor-cell"} ${ghostLoading === `${item.tipo}-${field}` ? "animate-pulse" : ""}`}
         style={{ width, minWidth: width, maxWidth: width }}
         onDoubleClick={() => canEdit && !isGhost && setEditingCell({ id: item.id, field })}
         onClick={() => {
@@ -335,7 +335,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
             <input
               ref={inputRef as React.RefObject<HTMLInputElement>}
               type={type}
-              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-slate-800"
+              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-slate-200 placeholder-slate-600"
               defaultValue={editValue}
               onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
               onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
@@ -345,7 +345,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
           )
         ) : (
           <div className={`w-full h-full px-2 py-1.5 truncate flex items-center ${field === 'valor_digitado' ? 'justify-end font-mono' : ''}`}>
-             <span className={`truncate text-slate-700 text-sm ${field === 'valor_digitado' && !isGhost && item.valor < 0 ? 'text-red-600' : ''} ${field === 'valor_digitado' && !isGhost && item.valor > 0 ? 'text-emerald-700' : ''}`}>
+             <span className={`truncate text-slate-300 text-sm ${field === 'valor_digitado' && !isGhost && item.valor < 0 ? 'text-red-400' : ''} ${field === 'valor_digitado' && !isGhost && item.valor > 0 ? 'text-emerald-400' : ''}`}>
                 {displayValue}
              </span>
           </div>
@@ -356,19 +356,19 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
 
   const renderRow = (item: any, sequenceIndex: number) => {
     const isGhost = item.id.startsWith("ghost-");
-    let rowClass = item.tipo === "Entrada" ? "bg-emerald-50/20" : "bg-red-50/20";
+    let rowClass = item.tipo === "Entrada" ? "bg-emerald-950/10" : "bg-red-950/10";
     if (isGhost) rowClass = "opacity-60";
 
     return (
-      <tr key={item.id} className={`${rowClass} hover:bg-slate-50 transition-colors group`}>
-        <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 border-b border-slate-100 text-center text-xs font-medium text-slate-400 w-[40px] px-1 relative transition-colors">
-           {!isGhost && <button onClick={() => deleteItem(item.id)} className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-500 bg-white shadow-md rounded-full p-1.5 z-50 hover:bg-red-50 transition-all"><Trash2 className="w-3 h-3"/></button>}
+      <tr key={item.id} className={`${rowClass} hover:bg-slate-800/50 transition-colors group`}>
+        <td className="sticky left-0 z-10 bg-[#020617] group-hover:bg-slate-800/50 border-b border-slate-800 text-center text-xs font-medium text-slate-500 w-[40px] px-1 relative transition-colors">
+           {!isGhost && <button onClick={() => deleteItem(item.id)} className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-500 bg-slate-900 shadow-md rounded-full p-1.5 z-50 hover:bg-red-950 transition-all"><Trash2 className="w-3 h-3"/></button>}
            {isGhost ? "+" : sequenceIndex + 1}
         </td>
         {renderCell(item, "descricao", "250px")}
         {renderCell(item, "valor_digitado", "130px", "number")}
         {renderCell(item, "parcelamento", "120px", "select", PARCELAMENTO_OPTIONS)}
-        <td className="border border-slate-300 px-2 py-1.5 text-xs text-slate-500 text-center bg-slate-50 opacity-80" style={{width: '70px'}}>
+        <td className="border border-slate-700 px-2 py-1.5 text-xs text-slate-500 text-center bg-slate-900/50 opacity-80" style={{width: '70px'}}>
            {item.parcela || ""}
         </td>
         {renderCell(item, "data", "110px", "date")}
@@ -393,27 +393,27 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
   const saldoFinal = totalEntradas + totalSaidas;
 
   return (
-    <div className="w-full h-full flex flex-col font-sans bg-transparent md:bg-white pb-24 md:pb-10 relative">
+    <div className="w-full h-full flex flex-col font-sans bg-[#020617] pb-24 md:pb-10 relative">
       
       {/* MOBILE FULL-SCREEN LIST VIEW */}
       <div className="md:hidden flex flex-col gap-3 px-3 py-2 overflow-auto relative">
          {initialData.length === 0 && (
-            <div className="text-center py-20 text-slate-400">Nenhum lançamento no mês.</div>
+            <div className="text-center py-20 text-slate-500">Nenhum lançamento no mês.</div>
          )}
          {initialData.map(item => (
            <div 
              key={item.id} 
              onClick={() => openMobileEdit(item)}
-             className={`flex flex-col bg-white rounded-xl shadow-sm border p-4 active:scale-95 transition-transform ${item.tipo === 'Entrada' ? 'border-emerald-100' : 'border-red-100'}`}
+             className={`flex flex-col bg-slate-900/80 backdrop-blur-md rounded-xl shadow-lg border p-4 active:scale-95 transition-transform ${item.tipo === 'Entrada' ? 'border-emerald-900/50' : 'border-red-900/50'}`}
            >
               <div className="flex justify-between items-start mb-2">
                  <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-full ${item.tipo === 'Entrada' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                    <div className={`p-2 rounded-full ${item.tipo === 'Entrada' ? 'bg-emerald-950/50 text-emerald-400' : 'bg-red-950/50 text-red-500'}`}>
                        {item.tipo === 'Entrada' ? <ArrowUpRight className="w-4 h-4"/> : <ArrowDownRight className="w-4 h-4"/>}
                     </div>
                     <div>
-                       <h4 className="font-bold text-slate-800 leading-tight">{item.descricao}</h4>
-                       <span className="text-[10px] uppercase font-bold text-slate-400">{item.categoria}</span>
+                       <h4 className="font-bold text-slate-200 leading-tight">{item.descricao}</h4>
+                       <span className="text-[10px] uppercase font-bold text-slate-500">{item.categoria}</span>
                     </div>
                  </div>
                  <div className="text-right">
@@ -422,15 +422,15 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
                     </span>
                  </div>
               </div>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/50">
                  <span className="text-xs text-slate-500">{new Date(item.data + "T00:00:00").toLocaleDateString('pt-BR')}</span>
                  <div className="flex items-center gap-2">
                     {item.parcela && item.parcela !== "1/1" && (
-                       <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">
+                       <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">
                           {item.parcela}
                        </span>
                     )}
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.status === 'Pago' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.status === 'Pago' ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900' : 'bg-orange-950/40 text-orange-400 border border-orange-900'}`}>
                        {item.status}
                     </span>
                  </div>
@@ -448,11 +448,11 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
       </button>
 
       {/* DESKTOP TABLE VIEW */}
-      <div className="hidden md:block flex-1 w-full overflow-auto relative bg-white rounded-2xl shadow-sm border border-slate-100/80 mb-4">
+      <div className="hidden md:block flex-1 w-full overflow-auto relative bg-[#020617] rounded-2xl border border-slate-800/80 mb-4">
         <table className="w-max min-w-full border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-              <th className="sticky left-0 z-30 bg-slate-50/80 w-[40px] py-3"></th>
+            <tr className="bg-slate-900/80 text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-800">
+              <th className="sticky left-0 z-30 bg-slate-900/80 w-[40px] py-3"></th>
               <th className="py-3 px-3 text-left" style={{width: '250px'}}>Descrição</th>
               <th className="py-3 px-3 text-right" style={{width: '130px'}}>Valor (R$)</th>
               <th className="py-3 px-3 text-left" style={{width: '120px'}}>Parcelamento</th>
@@ -464,10 +464,10 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
           </thead>
           <tbody>
             <tr>
-               <td className="sticky left-0 bg-white z-20 pt-6"></td>
+               <td className="sticky left-0 bg-[#020617] z-20 pt-6"></td>
                <td colSpan={7} className="px-4 py-4 pt-6">
                   <div className="flex items-center gap-2">
-                    <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+                    <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-900 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
                       Receitas
                     </span>
                   </div>
@@ -477,10 +477,10 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
             {ghostEntradas.map((item, i) => renderRow(item, entradas.length + i))}
 
             <tr>
-               <td className="sticky left-0 bg-white z-20 pt-8"></td>
-               <td colSpan={7} className="px-4 py-4 pt-8 border-t border-slate-100">
+               <td className="sticky left-0 bg-[#020617] z-20 pt-8"></td>
+               <td colSpan={7} className="px-4 py-4 pt-8 border-t border-slate-800">
                   <div className="flex items-center gap-2">
-                    <span className="bg-red-50 text-red-600 border border-red-100 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+                    <span className="bg-red-950/40 text-red-500 border border-red-900 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
                       Despesas
                     </span>
                   </div>
@@ -491,16 +491,16 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
 
             <tr className="h-6"><td colSpan={8}></td></tr>
             
-            <tr className="bg-slate-50 border-t border-slate-200 sticky bottom-0 z-30 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.02)]">
-              <td className="sticky left-0 bg-slate-50 border-r border-slate-200"></td>
-              <td colSpan={2} className="px-4 py-4 font-bold uppercase tracking-widest text-slate-700">
+            <tr className="bg-slate-900/50 border-t border-slate-800 sticky bottom-0 z-30 shadow-[0_-4px_15px_-1px_rgb(0,0,0,0.5)] backdrop-blur-sm">
+              <td className="sticky left-0 bg-slate-900/50 border-r border-slate-800"></td>
+              <td colSpan={2} className="px-4 py-4 font-bold uppercase tracking-widest text-slate-300">
                 BALANÇO DO MÊS
               </td>
               <td colSpan={1}></td>
-              <td colSpan={2} className="px-4 text-right text-xs font-semibold uppercase text-slate-400 align-middle border-l border-slate-200">
+              <td colSpan={2} className="px-4 text-right text-xs font-semibold uppercase text-slate-500 align-middle border-l border-slate-800">
                 <div>Total Entradas:</div>
                 <div className="mt-1">Total Saídas:</div>
-                <div className="text-slate-800 font-bold text-sm mt-2 pt-2 border-t border-slate-200">SALDO ACUMULADO:</div>
+                <div className="text-slate-200 font-bold text-sm mt-2 pt-2 border-t border-slate-800">SALDO ACUMULADO:</div>
               </td>
               <td colSpan={2} className="px-4 text-left font-mono font-bold align-middle">
                 <div className="text-emerald-500">{formatCurrency(totalEntradas)}</div>

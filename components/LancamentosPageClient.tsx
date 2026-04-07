@@ -34,6 +34,7 @@ export default function LancamentosPageClient({ initialData, user_id }: Props) {
     return data.filter(item => {
       // item.data -> "YYYY-MM-DD"
       if (!item.data || !item.data.startsWith(selectedMonthKey)) return false;
+      if (item.origem === 'Extrato') return false;
       if (filterType !== "Todos" && item.tipo !== filterType) return false;
       if (filterStatus !== "Todos" && item.status !== filterStatus) return false;
       if (search && !item.descricao.toLowerCase().includes(search.toLowerCase())) return false;
@@ -48,22 +49,22 @@ export default function LancamentosPageClient({ initialData, user_id }: Props) {
   }, [data, selectedMonthKey, filterType, filterStatus, search]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#f8fafc]">
+    <div className="flex flex-col h-full w-full bg-[#020617]">
       <LancamentosTotalizers 
         lancamentos={filteredData} 
         currentMonthKey={selectedMonthKey} 
       />
       
       {/* YEAR, MONTHS TABS AND FILTERS */}
-      <div className="bg-white border-b border-gray-200 px-3 py-1.5 shrink-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+      <div className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 px-3 py-1.5 shrink-0 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
         
         {/* Year Selector */}
-        <div className="flex items-center bg-slate-100 rounded p-0.5 w-full md:w-auto justify-between md:justify-start">
-           <button onClick={() => setCurrentYear(y => y - 1)} className="p-1.5 md:p-1 hover:bg-white rounded transition-all text-slate-600">
+        <div className="flex items-center bg-slate-900/50 rounded-lg p-0.5 w-full md:w-auto justify-between md:justify-start border border-slate-800/60">
+           <button onClick={() => setCurrentYear(y => y - 1)} className="p-1.5 md:p-1 hover:bg-slate-800 rounded transition-all text-slate-400">
              <ChevronLeft className="w-4 h-4 md:w-3.5 md:h-3.5"/>
            </button>
-           <span className="font-bold text-slate-700 px-4 md:px-3 text-base md:text-sm">{currentYear}</span>
-           <button onClick={() => setCurrentYear(y => y + 1)} className="p-1.5 md:p-1 hover:bg-white rounded transition-all text-slate-600">
+           <span className="font-bold text-slate-200 px-4 md:px-3 text-base md:text-sm">{currentYear}</span>
+           <button onClick={() => setCurrentYear(y => y + 1)} className="p-1.5 md:p-1 hover:bg-slate-800 rounded transition-all text-slate-400">
              <ChevronRight className="w-4 h-4 md:w-3.5 md:h-3.5"/>
            </button>
         </div>
@@ -74,7 +75,7 @@ export default function LancamentosPageClient({ initialData, user_id }: Props) {
              <button
                 key={idx}
                 onClick={() => setCurrentMonthIndex(idx)}
-                className={`px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-bold rounded transition-all shrink-0 ${currentMonthIndex === idx ? 'bg-blue-600 text-white shadow' : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}
+                className={`px-2 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-bold rounded-lg transition-all shrink-0 ${currentMonthIndex === idx ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'bg-transparent text-slate-500 hover:bg-slate-800 hover:text-slate-300'}`}
              >
                 {monthStr}
              </button>
@@ -86,7 +87,7 @@ export default function LancamentosPageClient({ initialData, user_id }: Props) {
           <select 
             value={filterStatus} 
             onChange={e => setFilterStatus(e.target.value)}
-            className="flex-1 md:flex-none text-xs border border-gray-300 rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+            className="flex-1 md:flex-none text-xs border border-slate-800 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500 bg-slate-900/80 text-slate-200"
           >
             <option value="Todos">Todos Status</option>
             <option value="Pago">Pago</option>
@@ -98,10 +99,10 @@ export default function LancamentosPageClient({ initialData, user_id }: Props) {
               <Search className="w-3.5 h-3.5 absolute left-2 top-2 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Buscar..." 
+                placeholder="Buscar Transações..." 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full md:w-32 lg:w-40 pl-7 pr-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full md:w-32 lg:w-48 pl-7 pr-2 py-1.5 border border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 bg-slate-900/80 text-slate-200 placeholder-slate-500 transition-all"
               />
             </div>
             

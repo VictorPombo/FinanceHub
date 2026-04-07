@@ -57,18 +57,18 @@ export default function ContasClient({ initialData, userId }: Props) {
     <div className="flex flex-col gap-6 max-w-[1400px] mx-auto w-full">
        
        {/* CONTROLS ROW */}
-       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0B1121]/90 backdrop-blur-xl p-4 rounded-2xl shadow-sm border border-slate-800/80">
          
-         <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl w-full md:w-max">
+         <div className="flex items-center gap-2 p-1 bg-slate-900/80 rounded-xl w-full md:w-max">
            <button 
              onClick={() => setActiveTab("Ativas")}
-             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Ativas' ? 'bg-white text-slate-800 shadow shadow-black/5' : 'text-slate-500 hover:text-slate-700'}`}
+             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Ativas' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'}`}
            >
              Ativas
            </button>
            <button 
              onClick={() => setActiveTab("Arquivadas")}
-             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Arquivadas' ? 'bg-white text-slate-800 shadow shadow-black/5' : 'text-slate-500 hover:text-slate-700'}`}
+             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Arquivadas' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'}`}
            >
              Arquivadas
            </button>
@@ -76,7 +76,7 @@ export default function ContasClient({ initialData, userId }: Props) {
 
          <button 
            onClick={() => { setEditingConta(null); setIsModalOpen(true); }}
-           className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold transition-transform active:scale-95 shadow-sm text-sm w-full md:w-max"
+           className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl font-bold transition-transform active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.4)] text-sm w-full md:w-max"
          >
            <Plus className="w-4 h-4"/>
            Nova Conta / Cartão
@@ -92,58 +92,58 @@ export default function ContasClient({ initialData, userId }: Props) {
              const disponivel = conta.saldo_limite - gastoDummy;
 
              return (
-               <div key={conta.id} className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-200 flex flex-col relative overflow-hidden group hover:shadow-md transition-shadow">
+               <div key={conta.id} className="bg-slate-900/40 backdrop-blur-xl rounded-[24px] p-6 border border-slate-800/60 flex flex-col relative overflow-hidden group hover:shadow-[0_0_20px_rgba(147,51,234,0.15)] transition-all">
                   {/* Decorative Color Bar on top edge representing the card color */}
-                  <div className="absolute top-0 left-0 right-0 h-2 opacity-80" style={{ backgroundColor: conta.cor }}></div>
+                  <div className="absolute top-0 left-0 right-0 h-2 opacity-80" style={{ backgroundColor: conta.cor, boxShadow: `0 0 15px ${conta.cor}` }}></div>
                   
                   {/* Avatar / Headers */}
                   <div className="flex items-start justify-between mb-6 pt-2">
                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: conta.cor }}>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: conta.cor, boxShadow: `0 0 10px ${conta.cor}` }}>
                            {conta.tipo === 'Cartão de Crédito' ? <CreditCard className="w-5 h-5"/> : <Landmark className="w-5 h-5"/>}
                         </div>
                         <div>
-                           <h3 className="font-extrabold text-slate-800 text-lg tracking-tight -mb-1">{conta.nome}</h3>
-                           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{conta.tipo}</span>
+                           <h3 className="font-extrabold text-slate-200 text-lg tracking-tight -mb-1">{conta.nome}</h3>
+                           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{conta.tipo}</span>
                         </div>
                      </div>
                   </div>
 
                   {/* Main Values Grid based on GranaZen Faturas */}
-                  <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 flex-1 flex flex-col justify-center mb-6">
+                  <div className="bg-slate-950/50 rounded-2xl p-4 border border-slate-800/50 flex-1 flex flex-col justify-center mb-6">
                      {conta.tipo === 'Cartão de Crédito' ? (
                        <>
-                         <div className="flex justify-between items-end mb-4 pb-4 border-b border-slate-200/60">
+                         <div className="flex justify-between items-end mb-4 pb-4 border-b border-slate-800/60">
                             <div>
-                               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Fatura Atual</p>
-                               <span className="text-2xl font-black text-red-500 tracking-tight">{formatCurrency(gastoDummy)}</span>
+                               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Fatura Atual</p>
+                               <span className="text-2xl font-black text-red-400 tracking-tight">{formatCurrency(gastoDummy)}</span>
                             </div>
                          </div>
                          <div className="grid grid-cols-2 gap-4">
                             <div>
-                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Limite Disponível</p>
-                               <p className="font-mono text-sm font-bold text-emerald-600">{formatCurrency(disponivel)}</p>
+                               <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Limite Disponível</p>
+                               <p className="font-mono text-sm font-bold text-emerald-400">{formatCurrency(disponivel)}</p>
                             </div>
                             <div>
-                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Limite Total</p>
-                               <p className="font-mono text-sm font-bold text-slate-800">{formatCurrency(conta.saldo_limite)}</p>
+                               <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Limite Total</p>
+                               <p className="font-mono text-sm font-bold text-slate-200">{formatCurrency(conta.saldo_limite)}</p>
                             </div>
                             <div>
-                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5 animate-pulse">Fecha Dia</p>
-                               <p className="font-mono text-sm font-bold text-slate-800">{conta.dia_fechamento || '--'}</p>
+                               <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5 animate-pulse">Fecha Dia</p>
+                               <p className="font-mono text-sm font-bold text-slate-200">{conta.dia_fechamento || '--'}</p>
                             </div>
                             <div>
-                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Vence Dia</p>
-                               <p className="font-mono text-sm font-bold text-slate-800">{conta.dia_vencimento || '--'}</p>
+                               <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Vence Dia</p>
+                               <p className="font-mono text-sm font-bold text-slate-200">{conta.dia_vencimento || '--'}</p>
                             </div>
                          </div>
                        </>
                      ) : (
                        // Conta Corrente view
                        <div className="flex flex-col justify-center items-center py-4">
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">Saldo Atual</p>
-                            <span className="text-3xl font-black text-slate-800 tracking-tight">{formatCurrency(conta.saldo_limite)}</span>
-                            <div className="mt-4 text-xs text-slate-400 font-medium px-4 py-1.5 bg-white rounded-full border border-slate-200">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Saldo Atual</p>
+                            <span className="text-3xl font-black text-slate-200 tracking-tight">{formatCurrency(conta.saldo_limite)}</span>
+                            <div className="mt-4 text-xs text-slate-500 font-medium px-4 py-1.5 bg-slate-900/50 rounded-full border border-slate-800">
                                Conta Padrão 
                             </div>
                        </div>
@@ -153,20 +153,20 @@ export default function ContasClient({ initialData, userId }: Props) {
                   {/* Actions Base */}
                   <div className="flex items-center gap-2 mt-auto">
                      {conta.tipo === 'Cartão de Crédito' && (
-                       <button className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2">
+                       <button className="flex-1 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-slate-300 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2">
                           Detalhes da Fatura <ArrowRight className="w-3 h-3"/>
                        </button>
                      )}
                      {!conta.tipo.includes('Cartão') && (
-                       <button className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2">
+                       <button className="flex-1 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-slate-300 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2">
                           Ajustar Saldo
                        </button>
                      )}
                      
-                     <button onClick={() => {setEditingConta(conta); setIsModalOpen(true);}} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                     <button onClick={() => {setEditingConta(conta); setIsModalOpen(true);}} className="w-10 h-10 flex items-center justify-center bg-slate-800/50 border border-slate-700 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-purple-900/30 transition-colors">
                         <Edit2 className="w-4 h-4"/>
                      </button>
-                     <button onClick={() => handleDelete(conta.id)} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                     <button onClick={() => handleDelete(conta.id)} className="w-10 h-10 flex items-center justify-center bg-slate-800/50 border border-slate-700 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-900/30 transition-colors">
                         <Trash2 className="w-4 h-4"/>
                      </button>
                   </div>
@@ -176,10 +176,10 @@ export default function ContasClient({ initialData, userId }: Props) {
        </div>
 
        {filteredData.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-             <CreditCard className="w-12 h-12 text-slate-300 mb-4" />
-             <p className="text-lg font-bold text-slate-600">Nenhuma conta encontrada</p>
-             <p className="text-slate-400 text-sm">Adicione seu primeiro cartão ou conta bancária clicando em Nova Conta.</p>
+          <div className="flex flex-col items-center justify-center py-20 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800">
+             <CreditCard className="w-12 h-12 text-slate-600 mb-4" />
+             <p className="text-lg font-bold text-slate-300">Nenhuma conta encontrada</p>
+             <p className="text-slate-500 text-sm">Adicione seu primeiro cartão ou conta bancária clicando em Nova Conta.</p>
           </div>
        )}
 

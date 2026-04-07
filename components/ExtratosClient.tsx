@@ -105,16 +105,16 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
     <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
        
        {!previewItems && (
-         <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
+         <div className="bg-[#0B1121]/90 backdrop-blur-xl rounded-2xl p-8 shadow-sm border border-slate-800/80 text-center flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-purple-900/30 text-purple-400 rounded-full flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.2)]">
                <UploadCloud className="w-8 h-8"/>
             </div>
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight mb-2">Importar Arquivo de Extrato</h2>
-            <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
+            <h2 className="text-xl font-bold text-slate-100 tracking-tight mb-2">Importar Arquivo de Extrato</h2>
+            <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
                Arraste sua foto ou PDF do extrato bancário aqui. Nossa IA lerá todas as linhas e categorizará sozinho.
             </p>
             
-            <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold cursor-pointer transition-colors shadow-sm flex items-center gap-2">
+            <label className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold cursor-pointer transition-colors shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)] flex items-center gap-2">
                {isUploading ? <><Loader2 className="w-5 h-5 animate-spin" /> Processando...</> : <><FileText className="w-5 h-5" /> Selecionar Arquivo</>}
                <input 
                   type="file" 
@@ -129,16 +129,16 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
 
        {/* PREVIEW MODE AFTER UPLOAD */}
        {previewItems && (
-         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+         <div className="bg-[#0B1121]/90 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-slate-800/80">
             <div className="flex items-center justify-between mb-6">
-               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Transações Detectadas ({previewItems.length})
+               <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Transações Detectadas ({previewItems.length})
                </h2>
                <div className="flex gap-2">
-                  <button onClick={() => setPreviewItems(null)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg">
+                  <button onClick={() => setPreviewItems(null)} className="px-4 py-2 text-sm font-bold text-slate-400 hover:bg-slate-800/50 rounded-lg transition-colors">
                      Cancelar
                   </button>
-                  <button onClick={handleConfirmImport} className="px-4 py-2 text-sm font-bold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-sm">
+                  <button onClick={handleConfirmImport} className="px-4 py-2 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
                      Confirmar e Salvar Tudo
                   </button>
                </div>
@@ -147,7 +147,7 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
             <div className="overflow-x-auto">
                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead>
-                     <tr className="border-b border-slate-200/60 text-slate-400">
+                     <tr className="border-b border-slate-800 text-slate-500">
                         <th className="py-3 px-4 font-bold text-[10px] uppercase tracking-wider">Data</th>
                         <th className="py-3 px-4 font-bold text-[10px] uppercase tracking-wider">Descrição</th>
                         <th className="py-3 px-4 font-bold text-[10px] uppercase tracking-wider">Categoria / Tipo</th>
@@ -156,16 +156,16 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
                   </thead>
                   <tbody>
                      {previewItems.map((item, idx) => (
-                        <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                           <td className="py-3 px-4 text-slate-600">{item.data}</td>
-                           <td className="py-3 px-4 text-slate-800 font-semibold">{item.descricao}</td>
+                        <tr key={idx} className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 transition-colors">
+                           <td className="py-3 px-4 text-slate-400">{item.data}</td>
+                           <td className="py-3 px-4 text-slate-200 font-semibold">{item.descricao}</td>
                            <td className="py-3 px-4">
-                              <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs mr-2 border border-slate-200/50">{item.categoria}</span>
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${item.tipo === 'Entrada' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                              <span className="bg-slate-800/50 text-slate-400 px-2 py-1 rounded text-xs mr-2 border border-slate-700/50">{item.categoria}</span>
+                              <span className={`px-2 py-1 rounded text-xs font-bold border ${item.tipo === 'Entrada' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/50' : 'bg-red-950/40 text-red-500 border-red-900/50'}`}>
                                  {item.tipo}
                               </span>
                            </td>
-                           <td className={`py-3 px-4 text-right font-mono font-bold ${item.tipo === 'Entrada' ? 'text-emerald-600' : 'text-slate-800'}`}>
+                           <td className={`py-3 px-4 text-right font-mono font-bold ${item.tipo === 'Entrada' ? 'text-emerald-400' : 'text-slate-300'}`}>
                               {formatCurrency(item.valor)}
                            </td>
                         </tr>
@@ -178,12 +178,12 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
 
        {/* HISTORY VIEWER */}
        {!previewItems && history.length > 0 && (
-         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-               <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                  <ArrowRightLeft className="w-4 h-4 text-slate-400" /> Histórico de Extratos Automáticos
+         <div className="bg-[#0B1121]/50 rounded-2xl shadow-sm border border-slate-800/80 overflow-hidden backdrop-blur-sm">
+            <div className="bg-slate-900/40 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+               <h3 className="font-bold text-slate-300 flex items-center gap-2">
+                  <ArrowRightLeft className="w-4 h-4 text-slate-500" /> Histórico de Extratos Automáticos
                </h3>
-               <span className="text-xs text-slate-500 font-medium bg-white px-2 py-1 rounded border border-slate-200 shadow-sm flex items-center gap-1">
+               <span className="text-xs text-slate-400 font-medium bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50 shadow-sm flex items-center gap-1">
                  <Info className="w-3 h-3"/> Reflete no Resumo
                </span>
             </div>
@@ -191,7 +191,7 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
             <div className="overflow-x-auto">
                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead>
-                     <tr className="border-b border-slate-200/60 text-slate-400">
+                     <tr className="border-b border-slate-800 text-slate-500">
                         <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider">Data</th>
                         <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider">Descrição / Categoria</th>
                         <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider">Tipo</th>
@@ -201,22 +201,22 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
                   </thead>
                   <tbody>
                      {history.map((item, idx) => (
-                        <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                           <td className="py-3 px-6 text-slate-600">{item.data.split('-').length === 3 ? item.data.split('-').reverse().join('/') : item.data}</td>
+                        <tr key={idx} className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 transition-colors">
+                           <td className="py-3 px-6 text-slate-400">{item.data.split('-').length === 3 ? item.data.split('-').reverse().join('/') : item.data}</td>
                            <td className="py-3 px-6">
-                              <p className="text-slate-800 font-semibold">{item.descricao}</p>
-                              <p className="text-xs text-slate-400">{item.categoria}</p>
+                              <p className="text-slate-200 font-semibold">{item.descricao}</p>
+                              <p className="text-xs text-slate-500">{item.categoria}</p>
                            </td>
                            <td className="py-3 px-6">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${item.tipo === 'Entrada' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                              <span className={`px-2 py-1 rounded text-xs font-bold border ${item.tipo === 'Entrada' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/50' : 'bg-red-950/40 text-red-500 border-red-900/50'}`}>
                                  {item.tipo}
                               </span>
                            </td>
-                           <td className={`py-3 px-6 font-mono font-bold ${item.tipo === 'Entrada' ? 'text-emerald-600' : 'text-slate-800'}`}>
+                           <td className={`py-3 px-6 font-mono font-bold ${item.tipo === 'Entrada' ? 'text-emerald-400' : 'text-slate-300'}`}>
                               {formatCurrency(Math.abs(item.valor))}
                            </td>
                            <td className="py-3 px-6 text-right">
-                              <button onClick={() => handleDeleteHistory(item.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                              <button onClick={() => handleDeleteHistory(item.id)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">
                                  <Trash2 className="w-4 h-4"/>
                               </button>
                            </td>

@@ -27,12 +27,12 @@ export default function TabsNavigation() {
               href={tab.href}
               className={`flex items-center px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-full
                 ${isActive 
-                  ? "bg-slate-100 text-slate-800" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30 shadow-[0_0_15px_rgba(147,51,234,0.3)]" 
+                  : "bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800 border border-transparent"
                 }
               `}
             >
-              <span className={`flex items-center justify-center ${isActive ? 'text-emerald-500' : 'text-slate-400 group-hover:text-slate-500'}`}>
+              <span className={`flex items-center justify-center ${isActive ? 'text-purple-400' : 'text-slate-500 group-hover:text-slate-400'}`}>
                 {tab.icon}
               </span> 
               {tab.label}
@@ -42,7 +42,7 @@ export default function TabsNavigation() {
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[100] pb-safe shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#020617]/90 backdrop-blur-xl border-t border-slate-800 z-[100] pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
         <div className="flex items-center justify-around h-16">
           {tabs.map((tab) => {
             const isActive = pathname.startsWith(tab.href);
@@ -51,10 +51,10 @@ export default function TabsNavigation() {
                 key={tab.href}
                 href={tab.href}
                 className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
-                  isActive ? "text-blue-600" : "text-slate-400"
+                  isActive ? "text-purple-400" : "text-slate-500"
                 }`}
               >
-                <div className={`p-1 rounded-full ${isActive ? 'bg-blue-50' : ''}`}>
+                <div className={`p-1 rounded-full ${isActive ? 'bg-purple-900/40 shadow-[0_0_10px_rgba(147,51,234,0.3)]' : ''}`}>
                    {tab.icon}
                 </div>
                 <span className="text-[10px] font-semibold tracking-tight">{tab.label.split(" ")[0]}</span>
