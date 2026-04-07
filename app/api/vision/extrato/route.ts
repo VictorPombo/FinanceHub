@@ -56,18 +56,41 @@ Retorne EXATAMENTE UM ARRAY JSON onde cada objeto tenha:
 
 Atenção máxima em retornar APENAS O JSON, nenhuma palavra a mais. Se falhar retorne [].`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        { role: 'user', parts: [
-            { text: systemPrompt },
-            { inlineData: { data: base64Image, mimeType: mimeType } }
-        ] }
-      ],
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
+    let response;
+    let attempt = 0;
+    const maxAttempts = 3;
+    
+    while(attempt < maxAttempts) {
+       try {
+           response = await ai.models.generateContent({
+             model: 'gemini-2.5-flash',
+             contents: [
+               { role: 'user', parts: [
+                   { text: systemPrompt },
+                   { inlineData: { data: base64Image, mimeType: mimeType } }
+               ] }
+             ],
+             config: {
+               responseMimeType: "application/json",
+             }
+           });
+           break;
+       } catch(err: any) {
+           attempt++;
+           if (attempt >= maxAttempts) throw err;
+           const msg = err.message || '';
+           if (msg.includes('503') || msg.includes('overloaded') || msg.includes('high demand')) {
+               // Aguarda 2 segundos antes de tentar de novo
+               await new Promise(r => setTimeout(r, 2000));
+           } else {
+               throw err;
+           }
+       }
+    }
+    
+    if (!response) {
+       throw new Error("Falha total na comunicação com a IA.");
+    }
 
     const responseText = response.text || '[]';
     let parsedData = [];
