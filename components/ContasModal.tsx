@@ -65,7 +65,7 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
 
     if (conta?.id) {
       const { data, error } = await supabase.from('contas').update(payload).eq('id', conta.id).select().single();
-      if (error) { console.error(error); toast.error("Erro ao atualizar"); }
+      if (error) { console.error(error); toast.error(error.message); }
       else {
          onSave(data);
          toast.success("Atualizado");
@@ -73,7 +73,7 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
       }
     } else {
       const { data, error } = await supabase.from('contas').insert([payload]).select().single();
-      if (error) toast.error("Erro ao criar");
+      if (error) { console.error(error); toast.error(error.message || "Erro ao criar"); }
       else {
          onSave(data);
          toast.success("Criado com sucesso");
