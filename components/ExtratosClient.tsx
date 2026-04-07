@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatCurrency, formatDataBr } from "@/lib/types";
+import { formatCurrency } from "@/lib/types";
 import { UploadCloud, FileText, CheckCircle2, ArrowRightLeft, Trash2, Loader2, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -65,8 +65,8 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
      
      // Build Payload
      const payload = previewItems.map(item => {
-        let absValor = Math.abs(Number(item.valor));
-        let finalValor = item.tipo === 'Saída' ? -absValor : absValor;
+        const absValor = Math.abs(Number(item.valor));
+        const finalValor = item.tipo === 'Saída' ? -absValor : absValor;
         return {
            user_id: userId,
            descricao: item.descricao,
@@ -202,7 +202,7 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
                   <tbody>
                      {history.map((item, idx) => (
                         <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                           <td className="py-3 px-6 text-slate-600">{formatDataBr(item.data)}</td>
+                           <td className="py-3 px-6 text-slate-600">{item.data.split('-').length === 3 ? item.data.split('-').reverse().join('/') : item.data}</td>
                            <td className="py-3 px-6">
                               <p className="text-slate-800 font-semibold">{item.descricao}</p>
                               <p className="text-xs text-slate-400">{item.categoria}</p>

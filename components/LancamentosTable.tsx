@@ -239,7 +239,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
     }
 
     // REGULAR UPDATE EXISTING ROW
-    let updatePayload: any = {};
+    const updatePayload: any = {};
     if (field === "valor_digitado") { 
       let newValor = Math.abs(Number(value));
       newValor = item.tipo === "Saída" ? -newValor : newValor;
