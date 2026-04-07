@@ -136,11 +136,10 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
   // --- END MOBILE STATE ---
 
   const handleGhostClick = async (itemType: string, focusField: string) => {
-    if (ghostLoading) return;
-    setGhostLoading(`${itemType}-${focusField}`);
-
+    const tempId = `temp-${Date.now()}`;
     const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
-    const insertPayload = {
+    const tempItem = {
+      id: tempId,
       user_id: userId,
       data: defaultDate,
       descricao: "",
@@ -148,24 +147,15 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
       tipo: itemType,
       recorrencia: "Única",
       parcela: "1/1",
-      valor: itemType === "Saída" ? -0.01 : 0.01,
+      valor: 0,
       status: "Em aberto",
-      created_at: new Date().toISOString()
+      isDraft: true
     };
 
-    const { data: inserted, error } = await supabase
-      .from("lancamentos")
-      .insert([insertPayload])
-      .select()
-      .single();
-    
-    setGhostLoading(null);
-    if (!error && inserted) {
-       onDataChange([...initialData, inserted]);
-       setEditingCell({ id: inserted.id, field: focusField });
-    } else {
-       toast.error("Erro de conexão ao iniciar célula.");
-    }
+    onDataChange([...initialData, tempItem]);
+    setTimeout(() => {
+        setEditingCell({ id: tempId, field: focusField });
+    }, 50);
   };
 
   useEffect(() => {
@@ -178,9 +168,16 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
     const itemIndex = initialData.findIndex((i) => i.id === id);
     if (itemIndex === -1) return;
     const item = initialData[itemIndex];
+    const isTemp = String(id).startsWith("temp-");
 
     // FIRE MOTOR IF CHANGING PARCELAMENTO
     if (field === "parcelamento") {
+      if (isTemp) {
+         toast.error("Preencha descrição ou valor antes de parcelar.");
+         setEditingCell(null);
+         return;
+      }
+      
       let nMeses = 1;
       let recType = "Parcelado";
       if (value === "Fixo") {
@@ -256,8 +253,27 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
     onDataChange(optimisticData);
     setEditingCell(null);
 
-    const { error } = await supabase.from("lancamentos").update(updatePayload).eq("id", id);
-    if (error) toast.error("Erro ao salvar");
+    if (isTemp) {
+        const finalDesc = optimisticData[itemIndex].descricao;
+        const finalVal = Math.abs(optimisticData[itemIndex].valor);
+        
+        // If entirely empty after blur, silently drop it.
+        if (!finalDesc && finalVal === 0) {
+             onDataChange(initialData.filter(d => d.id !== id));
+             return;
+        }
+
+        const payloadToInsert = { ...optimisticData[itemIndex] };
+        delete payloadToInsert.id;
+        delete payloadToInsert.isDraft;
+        
+        const { data, error } = await supabase.from("lancamentos").insert([payloadToInsert]).select().single();
+        if (data) onDataChange(optimisticData.map(d => d.id === id ? data : d));
+        else if (error) toast.error("Erro ao salvar rascunho");
+    } else {
+        const { error } = await supabase.from("lancamentos").update(updatePayload).eq("id", id);
+        if (error) toast.error("Erro ao salvar");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, id: string, field: string, type: string) => {
@@ -269,6 +285,10 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
 
   const deleteItem = async (id: string, isMobile = false) => {
     if (id.startsWith("ghost-")) return;
+    if (id.startsWith("temp-")) {
+       onDataChange(initialData.filter(d => d.id !== id));
+       return;
+    }
     if (!window.confirm("Deseja realmente excluir este lançamento?")) return;
     onDataChange(initialData.filter((d) => d.id !== id));
     await supabase.from("lancamentos").delete().eq("id", id);
