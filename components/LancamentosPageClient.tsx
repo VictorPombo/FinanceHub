@@ -143,8 +143,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                           data: aiData.data || new Date().toISOString().split('T')[0],
                           status: "Pago",
                           tipo: aiData.tipo || "Saída",
-                          categoria: "Outros", // AI could extract this too in the future
-                          criado_por: "Upload IA"
+                          categoria: "Outros" // AI could extract this too in the future
                         };
                         
                         // Use client to insert
@@ -242,23 +241,31 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                <div className="flex justify-end gap-3 mt-2">
                   <button 
                      disabled={isParsingText}
-                     onClick={async () => {
+                     onClick={() => {
                         if (!aiTextInput.trim()) { toast.error("Insira o texto primeiro"); return; }
-                        setIsParsingText(true);
-                        const toastId = toast.loading("Analisando transcrições financeiras...");
-                        try {
-                           const res = await fetch('/api/parse-text', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ text: aiTextInput, currentYear })
-                           });
-                           const aiData = await res.json();
-                           if (!res.ok) throw new Error(aiData.error || 'Erro na IA');
-                           if (!aiData.transactions || aiData.transactions.length === 0) {
-                              toast.error("Nenhuma transação identificada.", { id: toastId });
-                              setIsParsingText(false);
-                              return;
-                           }
+                        
+                        const textToProcess = aiTextInput;
+                        const yearToProcess = currentYear;
+                        
+                        setAiTextModalOpen(false);
+                        setAiTextInput("");
+                        
+                        const toastId = toast.loading("Analisando transcrições financeiras em 2º plano...");
+                        
+                        // Executa em Background
+                        (async () => {
+                           try {
+                              const res = await fetch('/api/parse-text', {
+                                 method: 'POST',
+                                 headers: { 'Content-Type': 'application/json' },
+                                 body: JSON.stringify({ text: textToProcess, currentYear: yearToProcess })
+                              });
+                              const aiData = await res.json();
+                              if (!res.ok) throw new Error(aiData.error || 'Erro na IA');
+                              if (!aiData.transactions || aiData.transactions.length === 0) {
+                                 toast.error("Nenhuma transação identificada.", { id: toastId });
+                                 return;
+                              }
 
                            toast.loading(`Encontradas ${aiData.transactions.length} transações. Inserindo no banco...`, { id: toastId });
                            
@@ -273,28 +280,24 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                                  user_id: user_id,
                                  descricao: tx.descricao,
                                  valor: finalVal,
-                                 data: tx.data || `${currentYear}-${String(currentMonthIndex+1).padStart(2,'0')}-01`,
+                                 data: tx.data || `${yearToProcess}-${String(currentMonthIndex+1).padStart(2,'0')}-01`,
                                  status: "Pago", // assume pago se tá em balanço
                                  tipo: tx.tipo,
-                                 categoria: "Outros", 
-                                 criado_por: "Upload IA Lote"
+                                 categoria: "Outros"
                               };
                            });
 
                            const { data: insertedRows, error } = await supabase.from(targetTable).insert(payloads).select();
                            if (error) throw error;
 
-                           setData([...(insertedRows || []), ...data]);
+                           setData(prev => [...(insertedRows || []), ...prev]);
                            toast.success(`${insertedRows?.length} transações inseridas com sucesso!`, { id: toastId, duration: 4000 });
-                           setAiTextInput("");
-                           setAiTextModalOpen(false);
                         } catch (err: any) {
                            toast.error(err.message, { id: toastId });
-                        } finally {
-                           setIsParsingText(false);
                         }
-                     }}
-                     className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl px-6 py-3 font-bold shadow-lg shadow-purple-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                     })();
+                  }}
+                  className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl px-6 py-3 font-bold shadow-lg shadow-purple-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
                   >
                      {isParsingText ? "PROCESSANDO..." : <><Bot className="w-5 h-5"/> GERAR LANÇAMENTOS</>}
                   </button>
