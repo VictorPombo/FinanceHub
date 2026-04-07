@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/types";
-import { CreditCard, Landmark, Plus, Edit2, Trash2, ArrowRight } from "lucide-react";
+import { CreditCard, Landmark, Plus, Edit2, Trash2, ArrowRight, CheckCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import ContasModal from "./ContasModal";
@@ -31,7 +31,22 @@ export default function ContasClient({ initialData, userId }: Props) {
   
   const supabase = createClient();
 
+  // Track which cards have been marked as "Pago"
+  const [faturaPaga, setFaturaPaga] = useState<Record<string, boolean>>({});
+
   const filteredData = data.filter(c => c.status === activeTab);
+
+  const handleTogglePago = (id: string) => {
+    setFaturaPaga(prev => {
+      const newState = { ...prev, [id]: !prev[id] };
+      if (newState[id]) {
+        toast.success("Fatura marcada como PAGA ✅");
+      } else {
+        toast("Fatura desmarcada", { icon: '🔄' });
+      }
+      return newState;
+    });
+  };
 
   const handleDelete = async (id: string) => {
     if(!window.confirm("Deseja realmente deletar esta conta?")) return;
@@ -86,15 +101,14 @@ export default function ContasClient({ initialData, userId }: Props) {
        {/* GRID VIEWS */}
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredData.map(conta => {
-             // Simulando saldo disp gasto aleatorio baseado no limite para fins visuais se for Cartão
-             // Em um sistema real, cruzaríamos com os Lancamentos cujo status='Em aberto' para esse cartão
-             const gastoDummy = conta.tipo === 'Cartão de Crédito' ? (conta.saldo_limite * 0.15) : 0;
+             const isPago = faturaPaga[conta.id] || false;
+             const gastoDummy = conta.tipo === 'Cartão de Crédito' ? (isPago ? 0 : conta.saldo_limite * 0.15) : 0;
              const disponivel = conta.saldo_limite - gastoDummy;
 
              return (
-               <div key={conta.id} className="bg-slate-900/40 backdrop-blur-xl rounded-[24px] p-6 border border-slate-800/60 flex flex-col relative overflow-hidden group hover:shadow-[0_0_20px_rgba(147,51,234,0.15)] transition-all">
+               <div key={conta.id} className={`bg-slate-900/40 backdrop-blur-xl rounded-[24px] p-6 border flex flex-col relative overflow-hidden group hover:shadow-[0_0_20px_rgba(147,51,234,0.15)] transition-all ${isPago ? 'border-emerald-500/40' : 'border-slate-800/60'}`}>
                   {/* Decorative Color Bar on top edge representing the card color */}
-                  <div className="absolute top-0 left-0 right-0 h-2 opacity-80" style={{ backgroundColor: conta.cor, boxShadow: `0 0 15px ${conta.cor}` }}></div>
+                  <div className="absolute top-0 left-0 right-0 h-2 opacity-80" style={{ backgroundColor: isPago ? '#10B981' : conta.cor, boxShadow: `0 0 15px ${isPago ? '#10B981' : conta.cor}` }}></div>
                   
                   {/* Avatar / Headers */}
                   <div className="flex items-start justify-between mb-6 pt-2">
@@ -107,6 +121,11 @@ export default function ContasClient({ initialData, userId }: Props) {
                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{conta.tipo}</span>
                         </div>
                      </div>
+                     {isPago && (
+                        <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 uppercase tracking-wider animate-pulse">
+                           ✅ Pago
+                        </span>
+                     )}
                   </div>
 
                   {/* Main Values Grid based on GranaZen Faturas */}
@@ -116,7 +135,8 @@ export default function ContasClient({ initialData, userId }: Props) {
                          <div className="flex justify-between items-end mb-4 pb-4 border-b border-slate-800/60">
                             <div>
                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Fatura Atual</p>
-                               <span className="text-2xl font-black text-red-400 tracking-tight">{formatCurrency(gastoDummy)}</span>
+                               <span className={`text-2xl font-black tracking-tight ${isPago ? 'text-emerald-400 line-through opacity-60' : 'text-red-400'}`}>{formatCurrency(conta.saldo_limite * 0.15)}</span>
+                               {isPago && <p className="text-emerald-400 text-xs font-bold mt-1">Fatura quitada</p>}
                             </div>
                          </div>
                          <div className="grid grid-cols-2 gap-4">
@@ -129,7 +149,7 @@ export default function ContasClient({ initialData, userId }: Props) {
                                <p className="font-mono text-sm font-bold text-slate-200">{formatCurrency(conta.saldo_limite)}</p>
                             </div>
                             <div>
-                               <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5 animate-pulse">Fecha Dia</p>
+                               <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Fecha Dia</p>
                                <p className="font-mono text-sm font-bold text-slate-200">{conta.dia_fechamento || '--'}</p>
                             </div>
                             <div>
@@ -153,8 +173,16 @@ export default function ContasClient({ initialData, userId }: Props) {
                   {/* Actions Base */}
                   <div className="flex items-center gap-2 mt-auto">
                      {conta.tipo === 'Cartão de Crédito' && (
-                       <button className="flex-1 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 text-slate-300 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2">
-                          Detalhes da Fatura <ArrowRight className="w-3 h-3"/>
+                       <button 
+                         onClick={() => handleTogglePago(conta.id)}
+                         className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                           isPago 
+                             ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]' 
+                             : 'bg-slate-800/50 hover:bg-emerald-900/30 border border-slate-700/50 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/30'
+                         }`}
+                       >
+                          <CheckCircle className="w-4 h-4"/>
+                          {isPago ? 'Pago ✅' : 'Marcar como Pago'}
                        </button>
                      )}
                      {!conta.tipo.includes('Cartão') && (
