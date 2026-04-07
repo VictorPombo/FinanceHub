@@ -94,29 +94,9 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
              Planilha Excel Oficial
            </div>
         </div>
-      </div>
-
-      {/* SPREADSHEET AREA */}
-      <div className="flex-1 overflow-auto bg-white relative no-scrollbar">
-        <DudaExcelTable 
-          initialData={filteredData} 
-          userId={user_id} 
-          userCategories={userCategories}
-          onDataChange={(newData: any[]) => {
-            const newIds = new Set(newData.map(n => n.id));
-            const baseKeep = data.filter(d => !newIds.has(d.id) && !(d.data.startsWith(selectedMonthKey) && (filterType === 'Todos' || d.tipo === filterType)));
-            setData([...baseKeep, ...newData]);
-          }} 
-          currentTabMonth={currentMonthIndex + 1}
-          currentTabYear={currentYear}
-        />
-      </div>
-
-      {/* EXCEL BOTTOM TABS & STATUS WRAPPER - STICKY TO VP */}
-      <div className="sticky bottom-16 md:bottom-0 z-50 flex flex-col w-full shadow-[0_-5px_20px_rgba(0,0,0,0.15)] md:shadow-none">
         
-        {/* EXCEL BOTTOM TABS (MONTHS) */}
-        <div className="h-[30px] bg-[#F3F3F3] border-t border-[#D4D4D4] flex items-center shrink-0 w-full overflow-x-auto no-scrollbar px-2 shadow-inner">
+        {/* EXCEL TOP TABS (MONTHS) */}
+        <div className="h-[30px] bg-[#F3F3F3] border-b border-[#D4D4D4] flex items-center shrink-0 w-full overflow-x-auto no-scrollbar px-2 shadow-inner">
            <div className="flex items-center gap-2 mr-4 text-gray-500">
              <button className="hover:text-black">◀</button>
              <button className="hover:text-black">▶</button>
@@ -144,8 +124,26 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
              <button className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 ml-1 rounded">➕</button>
            </div>
         </div>
-        
-        {/* EXCEL STATUS BAR */}
+      </div>
+
+      {/* SPREADSHEET AREA */}
+      <div className="flex-1 overflow-auto bg-white relative no-scrollbar">
+        <DudaExcelTable 
+          initialData={filteredData} 
+          userId={user_id} 
+          userCategories={userCategories}
+          onDataChange={(newData: any[]) => {
+            const newIds = new Set(newData.map(n => n.id));
+            const baseKeep = data.filter(d => !newIds.has(d.id) && !(d.data.startsWith(selectedMonthKey) && (filterType === 'Todos' || d.tipo === filterType)));
+            setData([...baseKeep, ...newData]);
+          }} 
+          currentTabMonth={currentMonthIndex + 1}
+          currentTabYear={currentYear}
+        />
+      </div>
+
+      {/* EXCEL STATUS BAR WRAPPER - STICKY TO VP */}
+      <div className="sticky bottom-16 md:bottom-0 z-50 flex flex-col w-full shadow-[0_-5px_20px_rgba(0,0,0,0.15)] md:shadow-none">
         <div className="h-[22px] bg-[#217346] text-white flex items-center justify-between px-4 text-[11px] shrink-0 pb-safe md:pb-0">
           <div className="flex items-center gap-4">
              <span>PRONTO</span>

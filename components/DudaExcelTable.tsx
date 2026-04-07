@@ -62,6 +62,7 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
   // DRAG AND DROP STATE
   const [draggedCol, setDraggedCol] = useState<{ side: 'left'|'right', index: number } | null>(null);
   const [draggedRow, setDraggedRow] = useState<{ type: 'Entrada'|'Saída', index: number } | null>(null);
+  const [draggedCell, setDraggedCell] = useState<{ isEntrada: boolean, index: number, field: string } | null>(null);
 
   const updateItem = async (isEntrada: boolean, index: number, field: string, value: any) => {
     const list = isEntrada ? entradas : saidas;
@@ -159,6 +160,87 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
   };
 
   // ---------------------------------------------
+  // DND HANDLERS - CELLS
+  // ---------------------------------------------
+  const handleCellDrop = async (isEntrada: boolean, targetIndex: number, colDefField: string) => {
+    if (!draggedCell || draggedCell.isEntrada !== isEntrada || draggedCell.field !== colDefField) return;
+    if (draggedCell.index === targetIndex) {
+        setDraggedCell(null);
+        return;
+    }
+
+    const list = isEntrada ? [...entradas] : [...saidas];
+    const setter = isEntrada ? setEntradas : setSaidas;
+    
+    const srcItemOrig = list[draggedCell.index];
+    if (!srcItemOrig || !srcItemOrig.id) { 
+        setDraggedCell(null); 
+        return; 
+    }
+
+    // Clonando para não mutar estado diretamente
+    const srcItem = { ...srcItemOrig };
+    const targetItem = list[targetIndex] ? { ...list[targetIndex] } : null;
+
+    const srcVal = srcItem[colDefField];
+    const emptyVal = colDefField === 'valor' ? 0 : "";
+    
+    setDraggedCell(null);
+
+    // 1. Limpa a Célula de Origem (Mover)
+    srcItem[colDefField] = emptyVal;
+    list[draggedCell.index] = srcItem;
+    
+    // 2. Preenche a Célula de Destino
+    let targetPayloadToInsert = null;
+    const targetId = targetItem?.id;
+    
+    if (targetItem && targetItem.id) {
+       targetItem[colDefField] = colDefField === 'valor' ? (isEntrada ? Math.abs(Number(srcVal)) : -Math.abs(Number(srcVal))) : srcVal;
+       list[targetIndex] = targetItem;
+    } else {
+       // Criaçao de linha Fantasma (Ghost row)
+       const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
+       
+       let finalFormatedVal = srcVal;
+       if (colDefField === 'valor') finalFormatedVal = isEntrada ? Math.abs(Number(srcVal)) : -Math.abs(Number(srcVal));
+
+       targetPayloadToInsert = {
+           user_id: userId,
+           data: defaultDate,
+           descricao: isEntrada && colDefField === 'descricao' ? srcVal : "",
+           categoria: isEntrada && colDefField === 'categoria' ? srcVal : "",
+           tipo: isEntrada ? "Entrada" : "Saída",
+           recorrencia: "Única",
+           parcela: "1/1",
+           valor: colDefField === 'valor' ? finalFormatedVal : 0,
+           status: "Em aberto",
+           ordem: list.length
+       };
+    }
+
+    setter(list); // Atualização Otimista na Interface
+    toast.success("Quadrado movido!");
+
+    // Atualização Assíncrona no Banco (Background)
+    await supabase.from("duda_lancamentos").update({ [colDefField]: colDefField === 'valor' ? 0 : emptyVal }).eq("id", srcItem.id);
+    
+    if (targetItem && targetId) {
+        let finalValToSave = srcVal;
+        if (colDefField === 'valor') finalValToSave = isEntrada ? Math.abs(Number(srcVal)) : -Math.abs(Number(srcVal));
+        await supabase.from("duda_lancamentos").update({ [colDefField]: finalValToSave }).eq("id", targetId);
+    } else if (targetPayloadToInsert) {
+        const { data } = await supabase.from("duda_lancamentos").insert([targetPayloadToInsert]).select().single();
+        if (data) {
+           list[targetIndex] = data;
+           setter([...list]);
+           // Atualiza array global silenciosamente
+           onDataChange([...initialData, data]);
+        }
+    }
+  };
+
+  // ---------------------------------------------
   // RENDER CELLS
   // ---------------------------------------------
   const renderCellLeft = (index: number, colDef: ColDef) => {
@@ -176,10 +258,15 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
     return (
       <td 
         key={`L-${index}-${colDef.id}`}
-        className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4]`}
+        className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4] hover:bg-purple-50`}
         style={{ width: colDef.width, minWidth: colDef.width, maxWidth: colDef.width }}
         onDoubleClick={() => setEditingCell({ side: 'left', index, field: colDef.field })}
         onClick={() => { if(!item) setEditingCell({ side: 'left', index, field: colDef.field }) }}
+        draggable={!isEditing && !!item}
+        onDragStart={() => setDraggedCell({ isEntrada: true, index, field: colDef.field })}
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+        onDrop={() => handleCellDrop(true, index, colDef.field)}
+        title={item ? "Arraste e Solte este quadrado" : ""}
       >
         {isEditing ? (
           <input
@@ -230,10 +317,15 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
      return (
        <td 
          key={`R-${index}-${colDef.id}`}
-         className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4]`}
+         className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4] hover:bg-purple-50`}
          style={{ width: colDef.width, minWidth: colDef.width, maxWidth: colDef.width }}
          onDoubleClick={() => setEditingCell({ side: 'right', index: dataIndex, field: colDef.field })}
          onClick={() => { if(!item) setEditingCell({ side: 'right', index: dataIndex, field: colDef.field }) }}
+         draggable={!isEditing && !!item}
+         onDragStart={() => setDraggedCell({ isEntrada: false, index: dataIndex, field: colDef.field })}
+         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+         onDrop={() => handleCellDrop(false, dataIndex, colDef.field)}
+         title={item ? "Arraste e Solte este quadrado" : ""}
        >
          {isEditing ? (
            <input
