@@ -287,18 +287,18 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-indigo-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
             <div>
               <div className="flex items-center justify-between text-zinc-400 mb-1">
-                 <span className="font-bold text-[10px] tracking-[0.15em] uppercase text-violet-400">Caixa Estimado (Acumulado)</span>
+                 <span className="font-bold text-[10px] tracking-[0.15em] uppercase text-violet-400">{isAllMonths ? 'Sobra Anual' : 'Caixa no Mês (Sobra)'}</span>
                  <Wallet className="w-4 h-4 text-violet-400"/>
               </div>
-              <div className="text-2xl md:text-3xl font-black text-zinc-50 tracking-tighter font-mono mb-2">
-                 {formatCurrency(currentTotals.acumulado)}
+              <div className={`text-2xl md:text-3xl font-black tracking-tighter font-mono mb-2 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                 {formatCurrency(currentTotals.sobra)}
               </div>
               
               <div className="flex items-center justify-between text-zinc-500 mb-1 mt-3 border-t border-zinc-800/60 pt-3">
-                 <span className="font-bold text-[9px] tracking-[0.15em] uppercase">{isAllMonths ? 'Sobra Anual' : 'Caixa no Mês (Sobra)'}</span>
+                 <span className="font-bold text-[9px] tracking-[0.15em] uppercase">Caixa Estimado (Acumulado)</span>
               </div>
-              <div className={`text-lg font-black tracking-tighter font-mono mb-4 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                 {formatCurrency(currentTotals.sobra)}
+              <div className="text-lg font-black text-zinc-50 tracking-tighter font-mono mb-4">
+                 {formatCurrency(currentTotals.acumulado)}
               </div>
             </div>
 
@@ -324,14 +324,14 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
             <div className="text-2xl md:text-3xl font-black text-emerald-400 tracking-tighter font-mono mb-4">
                {formatCurrency(currentTotals.entradas)}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => openModal("Recebido")} className="flex flex-col bg-emerald-950/20 border border-emerald-900/30 p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-emerald-900/40">
-                 <span className="text-[9px] text-emerald-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Recebido</span>
-                 <span className="text-xs font-mono font-bold text-emerald-400 mt-0.5">{formatCurrency(entradasPagas)}</span>
+            <div className="grid grid-cols-2 gap-3">
+               <button onClick={() => openModal("Recebido")} className="flex flex-col bg-emerald-950/20 border border-emerald-900/30 p-3.5 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-emerald-900/40">
+                 <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1.5 uppercase tracking-widest"><CheckCircle2 className="w-3.5 h-3.5"/> Recebido</span>
+                 <span className="text-base font-mono font-black text-emerald-400 mt-1.5">{formatCurrency(entradasPagas)}</span>
                </button>
-               <button onClick={() => openModal("A Receber")} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-amber-900/40 ${entradasAReceber > 0 ? 'bg-amber-950/20 border border-amber-900/30' : 'bg-zinc-900/40 border border-zinc-800/60 opacity-50'}`}>
-                 <span className="text-[9px] text-amber-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A receber</span>
-                 <span className="text-xs font-mono font-bold text-amber-400 mt-0.5">{formatCurrency(entradasAReceber)}</span>
+               <button onClick={() => openModal("A Receber")} className={`flex flex-col p-3.5 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-amber-900/40 ${entradasAReceber > 0 ? 'bg-amber-950/20 border border-amber-900/30' : 'bg-zinc-900/40 border border-zinc-800/60 opacity-50'}`}>
+                 <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1.5 uppercase tracking-widest"><Clock className="w-3.5 h-3.5"/> A receber</span>
+                 <span className="text-base font-mono font-black text-amber-400 mt-1.5">{formatCurrency(entradasAReceber)}</span>
                </button>
             </div>
           </div>
@@ -346,14 +346,14 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
             <div className="text-2xl md:text-3xl font-black text-red-500 tracking-tighter font-mono mb-4">
                {formatCurrency(Math.abs(currentTotals.saidas))}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => openModal("Pago")} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-red-900/40 ${saidasPagas > 0 ? 'bg-red-950/20 border border-red-900/30' : 'bg-zinc-900/40 border border-zinc-800/60 opacity-50'}`}>
-                 <span className="text-[9px] text-red-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Pago</span>
-                 <span className="text-xs font-mono font-bold text-red-400 mt-0.5">{formatCurrency(saidasPagas)}</span>
+            <div className="grid grid-cols-2 gap-3">
+               <button onClick={() => openModal("Pago")} className={`flex flex-col p-3.5 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-red-900/40 ${saidasPagas > 0 ? 'bg-red-950/20 border border-red-900/30' : 'bg-zinc-900/40 border border-zinc-800/60 opacity-50'}`}>
+                 <span className="text-[10px] text-red-500 font-bold flex items-center gap-1.5 uppercase tracking-widest"><CheckCircle2 className="w-3.5 h-3.5"/> Pago</span>
+                 <span className="text-base font-mono font-black text-red-400 mt-1.5">{formatCurrency(saidasPagas)}</span>
                </button>
-               <button onClick={() => openModal("A Pagar")} className={`flex flex-col p-2 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-orange-900/40 ${saidasAPagar > 0 ? 'bg-orange-950/20 border border-orange-900/30' : 'bg-zinc-900/40 border border-zinc-800/60 opacity-50'}`}>
-                 <span className="text-[9px] text-orange-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A pagar</span>
-                 <span className="text-xs font-mono font-bold text-orange-400 mt-0.5">{formatCurrency(saidasAPagar)}</span>
+               <button onClick={() => openModal("A Pagar")} className={`flex flex-col p-3.5 rounded-xl text-left cursor-pointer hover:scale-[1.03] transition-transform shadow-sm hover:shadow-orange-900/40 ${saidasAPagar > 0 ? 'bg-orange-950/20 border border-orange-900/30' : 'bg-zinc-900/40 border border-zinc-800/60 opacity-50'}`}>
+                 <span className="text-[10px] text-orange-500 font-bold flex items-center gap-1.5 uppercase tracking-widest"><Clock className="w-3.5 h-3.5"/> A pagar</span>
+                 <span className="text-base font-mono font-black text-orange-400 mt-1.5">{formatCurrency(saidasAPagar)}</span>
                </button>
             </div>
           </div>
