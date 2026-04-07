@@ -67,6 +67,12 @@ Atenção máxima em retornar APENAS O JSON, nenhuma palavra a mais. Se falhar r
     return NextResponse.json(parsedData);
   } catch (error: any) {
     console.error('OCR Extrato Error:', error);
-    return NextResponse.json({ error: error.message || 'Falha ao processar extrato' }, { status: 500 });
+    
+    let errMsg = error.message || 'Falha ao processar extrato.';
+    if (errMsg.includes('503') || errMsg.includes('high demand') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded')) {
+       errMsg = "Sua requisição é volumosa demais para a IA processar de uma vez (arquivos grandes como 90 dias geram timeout). Por favor, dívida o seu PDF em partes de até 30 dias e tente novamente.";
+    }
+    
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }

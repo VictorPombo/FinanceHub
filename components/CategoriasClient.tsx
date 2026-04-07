@@ -5,7 +5,7 @@ import { formatCurrency } from "@/lib/types";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
-import { Plus, Trash2, Tags } from "lucide-react";
+import { Plus, Trash2, Tags, Eraser } from "lucide-react";
 
 interface CategoriaDb {
   id: string;
@@ -106,15 +106,29 @@ export default function CategoriasClient({ initialData, userId, initialCategorie
      }
   };
 
+  const handleZerarCustos = async (name: string) => {
+     if (!window.confirm(`ALERTA: Deseja realmente APAGAR TODOS os lançamentos (Manuais, IA e Excel) vinculados à categoria '${name}'? O custo ficará zero.`)) return;
+     const toastId = toast.loading("Apagando lançamentos...");
+     
+     await Promise.all([
+        supabase.from("lancamentos").delete().eq("user_id", userId).eq("categoria", name),
+        supabase.from("ia_lancamentos").delete().eq("user_id", userId).eq("categoria", name),
+        supabase.from("duda_lancamentos").delete().eq("user_id", userId).eq("categoria", name)
+     ]);
+
+     toast.success("Custos zerados com sucesso!", { id: toastId });
+     window.location.reload(); // Refresh to update Next.js Server Cache unified metrics
+  };
+
   const handleDeleteCat = async (id: string, name: string) => {
-     if (!window.confirm(`Tem certeza que deseja deletar a categoria '${name}'? Ela sumirá das opções de seleção das tabelas.`)) return;
+     if (!window.confirm(`Tem certeza que deseja deletar a categoria '${name}' da sua lista de seleção? (Os lançamentos já feitos continuarão existindo)`)) return;
      
      const { error } = await supabase.from("categorias").delete().eq("id", id);
      if (error) {
         toast.error("Erro ao deletar");
      } else {
         setCategorias(categorias.filter(c => c.id !== id));
-        toast.success("Deletada com sucesso!");
+        toast.success("Categoria deletada!");
      }
   };
 
@@ -183,10 +197,17 @@ export default function CategoriasClient({ initialData, userId, initialCategorie
                     <td className="text-right font-mono font-bold text-rose-400 tracking-tight px-4 py-3">{formatCurrency(row.saidas)}</td>
                     <td className="text-center font-mono text-xs text-slate-500 bg-slate-900/20 px-4 py-3">{row.perc.toFixed(1)}%</td>
                     <td className="text-right px-4 py-3">
-                       {dbCat && (
-                          <button onClick={() => handleDeleteCat(dbCat.id, dbCat.nome)} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded transition-all">
-                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        {dbCat && (
+                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                             {/* Botão de Zerar Custos daquela categoria */}
+                             <button onClick={() => handleZerarCustos(dbCat.nome)} title="Zerar todos os lançamentos desta categoria" className="p-1.5 text-slate-500 hover:text-amber-400 hover:bg-amber-950/40 rounded transition-all">
+                                <Eraser className="w-3.5 h-3.5" />
+                             </button>
+                             {/* Botão de excluir categoria inteira */}
+                             <button onClick={() => handleDeleteCat(dbCat.id, dbCat.nome)} title="Excluir Categoria" className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded transition-all">
+                                <Trash2 className="w-3.5 h-3.5" />
+                             </button>
+                          </div>
                        )}
                     </td>
                   </tr>

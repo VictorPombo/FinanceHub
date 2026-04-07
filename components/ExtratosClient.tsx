@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import { useExtratoQueue } from "@/contexts/ExtratoQueueContext";
 import LancamentosPageClient from "./LancamentosPageClient";
+import { useRouter } from "next/navigation";
 
 interface ExtratoItem {
   id?: string;
@@ -69,12 +70,18 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
      }
   };
 
+  const router = useRouter();
+
   const handleDeleteAll = async () => {
      if(!window.confirm("APAGAR TODOS os lançamentos IA? Isso esvaziará a Planilha IA inteira.")) return;
      const toastId = toast.loading("Apagando...");
      const { error } = await supabase.from('ia_lancamentos').delete().eq('user_id', userId);
      if (error) { toast.error("Erro", { id: toastId }); }
-     else { setHistory([]); toast.success("Todos os registros excluídos!", { id: toastId }); }
+     else { 
+         setHistory([]); 
+         toast.success("Todos os registros excluídos!", { id: toastId }); 
+         router.refresh(); // FORCES THE SERVER TO CLEAR CACHE
+     }
   };
 
   return (
