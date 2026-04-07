@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { formatCurrency, CATEGORIAS } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
-import { Trash2, Plus, ArrowDownRight, ArrowUpRight, X, Save, TrendingUp } from "lucide-react";
+import { Trash2, Plus, ArrowDownRight, ArrowUpRight, X, Save } from "lucide-react";
 
 interface Props {
   initialData: any[];
@@ -21,9 +21,70 @@ const PARCELAMENTO_OPTIONS = [
 
 export default function LancamentosTable({ initialData, userId, onDataChange, currentTabMonth, currentTabYear }: Props) {
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
-  const [ghostLoading, setGhostLoading] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
   const supabase = createClient();
+
+  // --- ADD ENGINE ---
+  const handleAddNew = async (form: any, isDesktop = false) => {
+    if (!form.descricao || !form.valor) {
+       toast.error("Preencha descrição e valor");
+       return false;
+    }
+    toast.loading("Salvando...");
+    
+    let baseValor = Math.abs(Number(String(form.valor).replace(',', '.')));
+    baseValor = form.tipo === "Saída" ? -baseValor : baseValor;
+
+    let nMeses = 1;
+    let recType = "Única";
+    let origParcela = "1/1";
+    
+    if (form.parcelamento === "Fixo") {
+       nMeses = 12;
+       recType = "Recorrente";
+       origParcela = "Fixa";
+    } else {
+       nMeses = parseInt(form.parcelamento) || 1;
+       if (nMeses > 1) {
+          recType = "Parcelado";
+          origParcela = `1/${nMeses}`;
+       }
+    }
+
+    const baseDate = new Date(form.data + "T00:00:00");
+    const rows = [];
+    
+    for (let i = 0; i < nMeses; i++) {
+       const future = new Date(baseDate);
+       future.setMonth(future.getMonth() + i);
+       const yyyy = future.getFullYear();
+       const mm = String(future.getMonth() + 1).padStart(2, '0');
+       const dd = String(future.getDate()).padStart(2, '0');
+       
+       rows.push({
+         user_id: userId,
+         data: `${yyyy}-${mm}-${dd}`,
+         descricao: form.descricao,
+         categoria: form.categoria,
+         tipo: form.tipo,
+         recorrencia: recType,
+         parcela: recType === "Recorrente" ? "Fixa" : (recType === "Única" ? "1/1" : `${i+1}/${nMeses}`),
+         valor: baseValor,
+         status: form.status || "Em aberto"
+       });
+    }
+
+    const { data: generated, error } = await supabase.from("lancamentos").insert(rows).select();
+    toast.dismiss();
+    if (error) {
+       toast.error("Erro ao inserir!");
+       return false;
+    } else {
+       toast.success("Adicionado!");
+       onDataChange([...initialData, ...(generated || [])]);
+       return true;
+    }
+  };
 
   // --- MOBILE STATE ---
   const [mobileModalOpen, setMobileModalOpen] = useState(false);
@@ -47,24 +108,21 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
       categoria: item.categoria, 
       tipo: item.tipo, 
       valor: Math.abs(item.valor).toString(), 
-      parcelamento: item.recorrencia === "Única" ? "1x (Única)" : (item.recorrencia === "Recorrente" ? "Fixo" : "1x (Única)"), // Simplified for edit
+      parcelamento: item.recorrencia === "Única" ? "1x (Única)" : (item.recorrencia === "Recorrente" ? "Fixo" : "1x (Única)"),
       data: item.data
     });
     setMobileModalOpen(true);
   };
 
   const handleMobileSave = async () => {
-    if (!mobileForm.descricao || !mobileForm.valor) {
-       toast.error("Preencha descrição e valor");
-       return;
-    }
-    toast.loading("Salvando...");
-    
-    let baseValor = Math.abs(Number(mobileForm.valor.replace(',', '.')));
-    baseValor = mobileForm.tipo === "Saída" ? -baseValor : baseValor;
-
     if (mobileForm.id) {
-      // EDIT
+      if (!mobileForm.descricao || !mobileForm.valor) {
+         toast.error("Preencha descrição e valor"); return;
+      }
+      toast.loading("Salvando...");
+      let baseValor = Math.abs(Number(String(mobileForm.valor).replace(',', '.')));
+      baseValor = mobileForm.tipo === "Saída" ? -baseValor : baseValor;
+
       const updatePayload = {
         descricao: mobileForm.descricao,
         categoria: mobileForm.categoria,
@@ -81,82 +139,11 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
         setMobileModalOpen(false);
       }
     } else {
-      // ADD
-      let nMeses = 1;
-      let recType = "Única";
-      let origParcela = "1/1";
-      
-      if (mobileForm.parcelamento === "Fixo") {
-         nMeses = 12;
-         recType = "Recorrente";
-         origParcela = "Fixa";
-      } else {
-         nMeses = parseInt(mobileForm.parcelamento) || 1;
-         if (nMeses > 1) {
-            recType = "Parcelado";
-            origParcela = `1/${nMeses}`;
-         }
-      }
-
-      const baseDate = new Date(mobileForm.data + "T00:00:00");
-      const rows = [];
-      
-      for (let i = 0; i < nMeses; i++) {
-         const future = new Date(baseDate);
-         future.setMonth(future.getMonth() + i);
-         const yyyy = future.getFullYear();
-         const mm = String(future.getMonth() + 1).padStart(2, '0');
-         const dd = String(future.getDate()).padStart(2, '0');
-         
-         const isLast = (i === nMeses - 1 && recType === "Parcelado");
-         
-         rows.push({
-           user_id: userId,
-           data: `${yyyy}-${mm}-${dd}`,
-           descricao: mobileForm.descricao,
-           categoria: mobileForm.categoria,
-           tipo: mobileForm.tipo,
-           recorrencia: recType,
-           parcela: recType === "Recorrente" ? "Fixa" : (recType === "Única" ? "1/1" : `${i+1}/${nMeses}`),
-           valor: baseValor,
-           status: "Em aberto"
-         });
-      }
-
-      const { data: generated, error } = await supabase.from("lancamentos").insert(rows).select();
-      toast.dismiss();
-      if (error) toast.error("Erro ao inserir!");
-      else {
-        toast.success("Adicionado!");
-        onDataChange([...initialData, ...(generated || [])]);
-        setMobileModalOpen(false);
-      }
+      const success = await handleAddNew(mobileForm);
+      if (success) setMobileModalOpen(false);
     }
   };
   // --- END MOBILE STATE ---
-
-  const handleGhostClick = async (itemType: string, focusField: string) => {
-    const tempId = `temp-${Date.now()}`;
-    const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
-    const tempItem = {
-      id: tempId,
-      user_id: userId,
-      data: defaultDate,
-      descricao: "",
-      categoria: "Outros",
-      tipo: itemType,
-      recorrencia: "Única",
-      parcela: "1/1",
-      valor: 0,
-      status: "Em aberto",
-      isDraft: true
-    };
-
-    onDataChange([...initialData, tempItem]);
-    setTimeout(() => {
-        setEditingCell({ id: tempId, field: focusField });
-    }, 50);
-  };
 
   useEffect(() => {
     if (editingCell && inputRef.current) {
@@ -168,20 +155,12 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
     const itemIndex = initialData.findIndex((i) => i.id === id);
     if (itemIndex === -1) return;
     const item = initialData[itemIndex];
-    const isTemp = String(id).startsWith("temp-");
 
-    // FIRE MOTOR IF CHANGING PARCELAMENTO
     if (field === "parcelamento") {
-      if (isTemp) {
-         toast.error("Preencha descrição ou valor antes de parcelar.");
-         setEditingCell(null);
-         return;
-      }
-      
       let nMeses = 1;
       let recType = "Parcelado";
       if (value === "Fixo") {
-        nMeses = 12; // clone 12x forward
+        nMeses = 12; 
         recType = "Recorrente";
       } else {
         nMeses = parseInt(value);
@@ -189,14 +168,12 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
 
       setEditingCell(null);
       if (isNaN(nMeses) || nMeses <= 1) {
-         // Revert to 1x
          const { error } = await supabase.from("lancamentos").update({ recorrencia: "Única", parcela: "1/1" }).eq("id", id);
          if (!error) onDataChange(initialData.map(d => d.id === id ? {...d, recorrencia: "Única", parcela: "1/1"} : d));
          return;
       }
 
       toast.loading(`Gerando parcelas futuras...`);
-      // Update original
       const origParcela = recType === "Recorrente" ? "Fixa" : `1/${nMeses}`;
       await supabase.from("lancamentos").update({ recorrencia: recType, parcela: origParcela }).eq("id", id);
       
@@ -228,14 +205,13 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
       if (error) {
          toast.error("Erro no motor de parcelamento");
       } else {
-         toast.success("Mágica de parcelamento concluída!");
+         toast.success("Parcelamento gerado!");
          const origUpdated = { ...item, recorrencia: recType, parcela: origParcela };
          onDataChange([...initialData.map(d => d.id === id ? origUpdated : d), ...(generated || [])]);
       }
       return;
     }
 
-    // REGULAR UPDATE EXISTING ROW
     const updatePayload: any = {};
     if (field === "valor_digitado") { 
       let newValor = Math.abs(Number(value));
@@ -253,27 +229,8 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
     onDataChange(optimisticData);
     setEditingCell(null);
 
-    if (isTemp) {
-        const finalDesc = optimisticData[itemIndex].descricao;
-        const finalVal = Math.abs(optimisticData[itemIndex].valor);
-        
-        // Let it stay as draft if they haven't filled both
-        if (!finalDesc || finalVal === 0) {
-            // Keep it in memory
-            return;
-        }
-
-        const payloadToInsert = { ...optimisticData[itemIndex] };
-        delete payloadToInsert.id;
-        delete payloadToInsert.isDraft;
-        
-        const { data, error } = await supabase.from("lancamentos").insert([payloadToInsert]).select().single();
-        if (data) onDataChange(optimisticData.map(d => d.id === id ? data : d));
-        else if (error) toast.error("Erro ao salvar rascunho");
-    } else {
-        const { error } = await supabase.from("lancamentos").update(updatePayload).eq("id", id);
-        if (error) toast.error("Erro ao salvar");
-    }
+    const { error } = await supabase.from("lancamentos").update(updatePayload).eq("id", id);
+    if (error) toast.error("Erro ao salvar");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, id: string, field: string, type: string) => {
@@ -284,11 +241,6 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
   };
 
   const deleteItem = async (id: string, isMobile = false) => {
-    if (id.startsWith("ghost-")) return;
-    if (id.startsWith("temp-")) {
-       onDataChange(initialData.filter(d => d.id !== id));
-       return;
-    }
     if (!window.confirm("Deseja realmente excluir este lançamento?")) return;
     onDataChange(initialData.filter((d) => d.id !== id));
     await supabase.from("lancamentos").delete().eq("id", id);
@@ -297,12 +249,10 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
   };
 
   const renderCell = (item: any, field: string, width: string, type: "text" | "number" | "select" | "date" = "text", options?: string[]) => {
-    const isGhost = item.id.startsWith("ghost-");
-    const isTempDraft = item.isDraft;
-    const isEditing = (editingCell?.id === item.id && editingCell?.field === field) || isTempDraft;
+    const isEditing = editingCell?.id === item.id && editingCell?.field === field;
     
     let displayValue = item[field] || "";
-    if (field === "valor_digitado" && !isGhost) {
+    if (field === "valor_digitado") {
       displayValue = formatCurrency(item.valor);
     }
     if (field === "parcelamento") {
@@ -313,46 +263,41 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
           displayValue = matched ? `${matched[1]}x` : item.parcela;
        }
     }
-    if (field === "data" && !isEditing && !isGhost && displayValue) {
+    if (field === "data" && !isEditing && displayValue) {
        const parts = displayValue.split('-');
        if (parts.length === 3) displayValue = `${parts[2]}/${parts[1]}`;
     }
 
     const canEdit = field !== "id" && field !== "valor_final" && field !== "parcela";
-    if ((isGhost || isTempDraft) && !isEditing) displayValue = ""; 
 
     let editValue = item[field] || "";
     if (field === "valor_digitado") {
        editValue = item.valor !== 0 ? Math.abs(item.valor).toString() : "";
-       if (isGhost) editValue = "";
     } else if (field === "parcelamento") {
-       editValue = item[field] || "1x (Única)";
-    } else if (field === "status") {
-       editValue = item[field] || "Em aberto";
+       editValue = displayValue;
     }
 
     return (
       <td 
-        className={`border-b border-slate-800 ${isEditing ? "bg-slate-800 ring-2 ring-purple-500 z-10 relative rounded shadow-[0_0_15px_rgba(139,92,246,0.3)]" : ""} transition-colors ${field === "valor_digitado" ? "bg-slate-900/50 font-mono" : ""} ${isGhost ? "opacity-60 hover:bg-slate-900 cursor-pointer" : "cursor-cell"} ${ghostLoading === `${item.tipo}-${field}` ? "animate-pulse" : ""}`}
+        className={`border-b border-slate-800/20 ${isEditing ? "bg-slate-800/80 ring-1 ring-purple-500/50 z-10 relative rounded shadow-sm" : ""} transition-colors ${field === "valor_digitado" ? "font-mono" : ""} cursor-pointer`}
         style={{ width, minWidth: width, maxWidth: width }}
-        onDoubleClick={() => canEdit && !isGhost && setEditingCell({ id: item.id, field })}
+        onDoubleClick={() => canEdit && setEditingCell({ id: item.id, field })}
         onClick={() => {
            if (!canEdit) return;
-           if (isGhost) handleGhostClick(item.tipo, field);
-           else setEditingCell({ id: item.id, field }); // One click on desktop to edit is faster!
+           setEditingCell({ id: item.id, field });
         }}
       >
         {isEditing ? (
           type === "select" ? (
             <select
               ref={inputRef as React.RefObject<HTMLSelectElement>}
-              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-slate-800"
+              className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-slate-200"
               defaultValue={editValue}
               onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
               onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
             >
-              <option value="" disabled>Selecionar...</option>
-              {options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              <option value="" disabled className="bg-slate-900 text-slate-200">Selecionar...</option>
+              {options?.map(opt => <option key={opt} value={opt} className="bg-slate-900 text-slate-200">{opt}</option>)}
             </select>
           ) : (
             <input
@@ -362,13 +307,12 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
               defaultValue={editValue}
               onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
               onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
-              placeholder={isGhost ? "Digitar..." : ""}
               step={type === "number" ? "0.01" : undefined}
             />
           )
         ) : (
-          <div className={`w-full h-full px-2 py-1.5 truncate flex items-center ${field === 'valor_digitado' ? 'justify-end font-mono' : ''}`}>
-             <span className={`truncate text-slate-300 text-sm ${field === 'valor_digitado' && !isGhost && item.valor < 0 ? 'text-red-400' : ''} ${field === 'valor_digitado' && !isGhost && item.valor > 0 ? 'text-emerald-400' : ''}`}>
+          <div className={`w-full h-full px-2 py-2 truncate flex items-center ${field === 'valor_digitado' ? 'justify-end font-mono' : ''}`}>
+             <span className={`truncate text-slate-300 text-[13px] ${field === 'valor_digitado' && item.valor < 0 ? 'text-red-400' : ''} ${field === 'valor_digitado' && item.valor > 0 ? 'text-emerald-400' : ''}`}>
                 {displayValue}
              </span>
           </div>
@@ -378,22 +322,18 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
   };
 
   const renderRow = (item: any, sequenceIndex: number) => {
-    const isGhost = item.id.startsWith("ghost-");
-    const isTemp = item.isDraft;
-    // Premium soft gradients for rows
-    let rowClass = item.tipo === "Entrada" ? "bg-emerald-950/5 hover:bg-emerald-950/10" : "bg-red-950/5 hover:bg-red-950/10";
-    if (isGhost || isTemp) rowClass = "bg-slate-900/40"; // neutral for new
+    const rowClass = item.tipo === "Entrada" ? "bg-emerald-950/5 hover:bg-emerald-900/10" : "bg-red-950/5 hover:bg-red-900/10";
 
     return (
-      <tr key={item.id} className={`${rowClass} transition-colors group align-middle border-b border-slate-800/40`}>
-        <td className="sticky left-0 z-10 bg-[#020617] group-hover:bg-[#070b1a] text-center text-xs font-medium text-slate-500 w-[50px] px-1 relative transition-colors">
-           {(!isGhost && !isTemp) && <button onClick={() => deleteItem(item.id)} className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-500 bg-slate-800 shadow rounded-lg p-1.5 z-50 hover:bg-red-950 transition-all"><Trash2 className="w-3.5 h-3.5"/></button>}
-           {(isGhost || isTemp) ? <Plus className="w-3 h-3 mx-auto opacity-50" /> : <span className="opacity-40">{sequenceIndex + 1}</span>}
+      <tr key={item.id} className={`${rowClass} transition-colors group align-middle border-b border-slate-800/30`}>
+        <td className="sticky left-0 z-10 bg-[#020617] group-hover:bg-[#060b18] text-center text-xs font-medium text-slate-500 w-[50px] px-1 relative transition-colors border-b border-slate-800/30">
+           <button onClick={() => deleteItem(item.id)} className="absolute top-1/2 -left-3 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-500 bg-slate-800 shadow rounded-lg p-1.5 z-50 hover:bg-red-950 transition-all"><Trash2 className="w-3.5 h-3.5"/></button>
+           <span className="opacity-40">{sequenceIndex + 1}</span>
         </td>
         {renderCell(item, "descricao", "250px")}
         {renderCell(item, "valor_digitado", "130px", "number")}
         {renderCell(item, "parcelamento", "120px", "select", PARCELAMENTO_OPTIONS)}
-        <td className="border border-slate-700 px-2 py-1.5 text-xs text-slate-500 text-center bg-slate-900/50 opacity-80" style={{width: '70px'}}>
+        <td className="border-b border-slate-800/20 px-2 py-2 text-xs text-slate-500 text-center bg-slate-900/20" style={{width: '70px'}}>
            {item.parcela || ""}
         </td>
         {renderCell(item, "data", "110px", "date")}
@@ -403,19 +343,45 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
     );
   };
 
+  // Dedicated Desktop Add Row
+  const DesktopAddRow = ({ tipo }: { tipo: string }) => {
+    const [form, setForm] = useState({
+      descricao: "", valor: "", categoria: "Outros", parcelamento: "1x (Única)",
+      data: `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`, status: "Em aberto"
+    });
+
+    const submit = async () => {
+      if (!form.descricao || !form.valor) return; // ignore incomplete
+      const success = await handleAddNew({...form, tipo});
+      if (success) {
+         setForm({ ...form, descricao: "", valor: "" }); // reset
+      }
+    };
+
+    const handleKey = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") submit();
+    };
+
+    return (
+      <tr className="bg-slate-900/30 border-b border-slate-800/40 opacity-80 hover:opacity-100 transition-opacity">
+        <td className="sticky left-0 z-10 bg-[#020617] text-center w-[50px] border-b border-slate-800/40">
+           <button onClick={submit} className="p-1 rounded bg-purple-600/20 text-purple-400 hover:bg-purple-600/40 transition flex items-center justify-center mx-auto" title="Salvar Linha">
+              <Plus className="w-3.5 h-3.5" />
+           </button>
+        </td>
+        <td className="px-2 border-b border-slate-800/20"><input type="text" placeholder="Adicionar descrição..." value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none placeholder-slate-600 py-2" /></td>
+        <td className="px-2 border-b border-slate-800/20"><input type="number" step="0.01" placeholder="0.00" value={form.valor} onChange={e => setForm({...form, valor: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none placeholder-slate-600 text-right font-mono py-2" /></td>
+        <td className="px-2 border-b border-slate-800/20"><select value={form.parcelamento} onChange={e => setForm({...form, parcelamento: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2"><option disabled value="">Parc...</option>{PARCELAMENTO_OPTIONS.map(o => <option key={o} value={o} className="bg-slate-900 text-slate-200">{o}</option>)}</select></td>
+        <td className="px-2 border-b border-slate-800/20 bg-slate-900/20 text-center"><span className="text-xs text-slate-600">-</span></td>
+        <td className="px-2 border-b border-slate-800/20"><input type="date" value={form.data} onChange={e => setForm({...form, data: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-xs text-slate-200 outline-none border-none py-2" /></td>
+        <td className="px-2 border-b border-slate-800/20"><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2"><option value="Pago" className="bg-slate-900 text-slate-200">Pago</option><option value="Em aberto" className="bg-slate-900 text-slate-200">Em aberto</option></select></td>
+        <td className="px-2 border-b border-slate-800/20"><select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} className="w-full bg-transparent text-[13px] text-slate-200 outline-none border-none py-2">{CATEGORIAS.map(c => <option key={c} value={c} className="bg-slate-900 text-slate-200">{c}</option>)}</select></td>
+      </tr>
+    );
+  };
+
   const entradas = initialData.filter(d => d.tipo === "Entrada");
   const saidas = initialData.filter(d => d.tipo === "Saída");
-
-  const ghostEntradas = Array.from({length: 1}).map((_, i) => ({
-    id: `ghost-entrada-${i}`, tipo: "Entrada", descricao: "", categoria: "", valor: 0, status: "", data: ""
-  }));
-  const ghostSaidas = Array.from({length: 1}).map((_, i) => ({
-    id: `ghost-saida-${i}`, tipo: "Saída", descricao: "", categoria: "", valor: 0, status: "", data: ""
-  }));
-
-  const totalEntradas = entradas.reduce((acc, curr) => acc + Number(curr.valor), 0);
-  const totalSaidas = saidas.reduce((acc, curr) => acc + Number(curr.valor), 0);
-  const saldoFinal = totalEntradas + totalSaidas;
 
   return (
     <div className="w-full h-full flex flex-col font-sans bg-[#020617] pb-24 md:pb-10 relative">
@@ -467,7 +433,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
       {/* MOBILE MULTIPLE ADD FAB */}
       <button 
         onClick={openMobileAdd}
-        className="md:hidden fixed bottom-[84px] right-4 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white shadow-[0_8px_30px_rgb(37,99,235,0.4)] active:scale-95 transition-all z-50"
+        className="md:hidden fixed bottom-[84px] right-4 w-14 h-14 bg-purple-600 hover:bg-purple-700 rounded-full flex items-center justify-center text-white shadow-[0_8px_25px_rgb(147,51,234,0.4)] active:scale-95 transition-all z-50"
       >
          <Plus className="w-7 h-7" />
       </button>
@@ -477,11 +443,11 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
         <table className="w-max min-w-full border-collapse font-sans">
           <thead>
             <tr className="bg-[#020617] text-slate-400 text-xs font-semibold uppercase tracking-widest border-b border-slate-800/60 sticky top-0 z-30 shadow-sm">
-              <th className="sticky left-0 bg-[#020617] w-[50px] py-3.5"></th>
+              <th className="sticky left-0 bg-[#020617] w-[50px] py-3.5 border-b border-slate-800/60"></th>
               <th className="py-3.5 px-3 text-left font-semibold" style={{width: '250px'}}>Descrição</th>
               <th className="py-3.5 px-3 text-right font-semibold" style={{width: '130px'}}>Valor (R$)</th>
               <th className="py-3.5 px-3 text-left font-semibold" style={{width: '120px'}}>Parcelamento</th>
-              <th className="py-3.5 px-3 text-left font-semibold" style={{width: '70px'}}>Parc.</th>
+              <th className="py-3.5 px-3 text-center font-semibold" style={{width: '70px'}}>Parc.</th>
               <th className="py-3.5 px-3 text-left font-semibold" style={{width: '110px'}}>Data</th>
               <th className="py-3.5 px-3 text-left font-semibold" style={{width: '110px'}}>Status</th>
               <th className="py-3.5 px-3 text-left font-semibold" style={{width: '180px'}}>Categoria</th>
@@ -499,7 +465,7 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
                </td>
             </tr>
             {entradas.map((item, i) => renderRow(item, i))}
-            {ghostEntradas.map((item, i) => renderRow(item, entradas.length + i))}
+            <DesktopAddRow tipo="Entrada" />
 
             <tr>
                <td className="sticky left-0 bg-[#020617] z-20 pt-6"></td>
@@ -512,56 +478,55 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
                </td>
             </tr>
             {saidas.map((item, i) => renderRow(item, i))}
-            {ghostSaidas.map((item, i) => renderRow(item, saidas.length + i))}
-
-            <tr className="h-6"><td colSpan={8}></td></tr>
+            <DesktopAddRow tipo="Saída" />
+            <tr className="h-4"><td colSpan={8}></td></tr>
           </tbody>
         </table>
       </div>
 
       {/* MOBILE ADD/EDIT MODAL FORMS */}
       {mobileModalOpen && (
-        <div className="md:hidden fixed inset-0 z-[200] flex flex-col justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
-           <div className="bg-white rounded-t-3xl shadow-2xl p-6 px-5 flex flex-col gap-4 animate-in slide-in-from-bottom max-h-[90vh] overflow-auto">
+        <div className="md:hidden fixed inset-0 z-[200] flex flex-col justify-end bg-slate-950/60 backdrop-blur-sm animate-in fade-in">
+           <div className="bg-[#0f172a] border-t border-slate-800 rounded-t-3xl shadow-2xl p-6 px-5 flex flex-col gap-4 animate-in slide-in-from-bottom max-h-[90vh] overflow-auto">
               <div className="flex justify-between items-center mb-2">
-                 <h2 className="text-xl font-bold text-slate-800">{mobileForm.id ? "Editar Lançamento" : "Novo Lançamento"}</h2>
-                 <button onClick={() => setMobileModalOpen(false)} className="p-2 bg-slate-100 rounded-full active:scale-95 text-slate-600">
+                 <h2 className="text-xl font-bold text-slate-200">{mobileForm.id ? "Editar Lançamento" : "Novo Lançamento"}</h2>
+                 <button onClick={() => setMobileModalOpen(false)} className="p-2 bg-slate-800 rounded-full active:scale-95 text-slate-400 hover:text-slate-200">
                     <X className="w-5 h-5" />
                  </button>
               </div>
 
-              <div className="flex bg-slate-100 rounded-lg p-1 gap-1">
-                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Saída"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Saída" ? "bg-white shadow text-red-600" : "text-slate-500"}`}>Despesa</button>
-                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Entrada"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Entrada" ? "bg-white shadow text-emerald-600" : "text-slate-500"}`}>Receita</button>
+              <div className="flex bg-slate-900 rounded-lg p-1 gap-1">
+                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Saída"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Saída" ? "bg-slate-800 shadow text-red-500" : "text-slate-500"}`}>Despesa</button>
+                 <button onClick={() => setMobileForm({...mobileForm, tipo: "Entrada"})} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${mobileForm.tipo === "Entrada" ? "bg-slate-800 shadow text-emerald-400" : "text-slate-500"}`}>Receita</button>
               </div>
 
               <div>
                 <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Valor (R$)</label>
-                <input type="number" step="0.01" value={mobileForm.valor} onChange={(e) => setMobileForm({...mobileForm, valor: e.target.value})} placeholder="0.00" className={`w-full text-3xl font-black font-mono bg-transparent border-b-2 py-2 outline-none ${mobileForm.tipo === "Saída" ? "border-red-200 text-red-600 focus:border-red-500" : "border-emerald-200 text-emerald-600 focus:border-emerald-500"}`} />
+                <input type="number" step="0.01" value={mobileForm.valor} onChange={(e) => setMobileForm({...mobileForm, valor: e.target.value})} placeholder="0.00" className={`w-full text-3xl font-black font-mono bg-transparent border-b-2 py-2 outline-none ${mobileForm.tipo === "Saída" ? "border-red-900/50 text-red-500 focus:border-red-500" : "border-emerald-900/50 text-emerald-400 focus:border-emerald-500"}`} />
               </div>
 
               <div>
                 <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Descrição</label>
-                <input type="text" value={mobileForm.descricao} onChange={(e) => setMobileForm({...mobileForm, descricao: e.target.value})} placeholder="Ex: Mercado" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+                <input type="text" value={mobileForm.descricao} onChange={(e) => setMobileForm({...mobileForm, descricao: e.target.value})} placeholder="Ex: Mercado" className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50" />
               </div>
 
               <div className="flex gap-3">
                  <div className="flex-1">
                     <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Categoria</label>
-                    <select value={mobileForm.categoria} onChange={(e) => setMobileForm({...mobileForm, categoria: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:border-blue-500">
+                    <select value={mobileForm.categoria} onChange={(e) => setMobileForm({...mobileForm, categoria: e.target.value})} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 outline-none focus:border-purple-500">
                        {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                  </div>
                  <div className="flex-1">
                     <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Data</label>
-                    <input type="date" value={mobileForm.data} onChange={(e) => setMobileForm({...mobileForm, data: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:border-blue-500" />
+                    <input type="date" value={mobileForm.data} onChange={(e) => setMobileForm({...mobileForm, data: e.target.value})} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 cursor-text outline-none focus:border-purple-500" style={{colorScheme: 'dark'}} />
                  </div>
               </div>
 
               {!mobileForm.id && (
                 <div>
                    <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Parcelamento (Motor Inteligente)</label>
-                   <select value={mobileForm.parcelamento} onChange={(e) => setMobileForm({...mobileForm, parcelamento: e.target.value})} className="w-full bg-slate-50 border border-blue-200 rounded-xl px-4 py-3 text-blue-700 font-bold outline-none focus:border-blue-500">
+                   <select value={mobileForm.parcelamento} onChange={(e) => setMobileForm({...mobileForm, parcelamento: e.target.value})} className="w-full bg-slate-800 border border-purple-900/50 rounded-xl px-4 py-3 text-purple-400 font-bold outline-none focus:border-purple-500">
                       {PARCELAMENTO_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                    </select>
                 </div>
@@ -569,11 +534,11 @@ export default function LancamentosTable({ initialData, userId, onDataChange, cu
 
               <div className="flex gap-3 mt-4">
                  {mobileForm.id && (
-                    <button onClick={() => deleteItem(mobileForm.id, true)} className="flex items-center justify-center p-4 bg-red-50 text-red-600 rounded-xl active:bg-red-100 transition-colors">
+                    <button onClick={() => deleteItem(mobileForm.id, true)} className="flex items-center justify-center p-4 bg-red-950/40 text-red-500 border border-red-900/30 rounded-xl active:bg-red-950 transition-colors">
                        <Trash2 className="w-6 h-6" />
                     </button>
                  )}
-                 <button onClick={handleMobileSave} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl py-4 font-bold active:bg-blue-700 transition-colors shadow-lg">
+                 <button onClick={handleMobileSave} className="flex-1 flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-4 font-bold active:bg-purple-800 transition-colors shadow-lg shadow-purple-900/20">
                     <Save className="w-5 h-5"/> SALVAR
                  </button>
               </div>
