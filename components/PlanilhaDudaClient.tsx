@@ -22,6 +22,13 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState(new Date().getMonth());
   
+  // Font States
+  const [fontFamily, setFontFamily] = useState("Calibri");
+  const [fontSize, setFontSize] = useState("12");
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+
   const selectedMonthKey = `${currentYear}-${String(currentMonthIndex + 1).padStart(2, '0')}`;
 
   const filteredData = useMemo(() => {
@@ -36,63 +43,93 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
     });
   }, [data, selectedMonthKey, filterType]);
 
+  const handleCopy = () => {
+     let csv = "Descricao\tCategoria\tValor\n";
+     filteredData.forEach(d => {
+         csv += `${d.descricao}\t${d.categoria}\t${d.valor}\n`;
+     });
+     navigator.clipboard.writeText(csv);
+     import("react-hot-toast").then(({ default: toast }) => toast.success("Planilha Mensal copiada para a Área de Transferência."));
+  };
+
+  const tableStyles: React.CSSProperties = {
+     fontFamily: fontFamily === "Calibri" ? "sans-serif" : "inherit",
+     fontSize: `${fontSize}px`,
+     fontWeight: isBold ? 'bold' : 'normal',
+     fontStyle: isItalic ? 'italic' : 'normal',
+     textDecoration: isUnderline ? 'underline' : 'none'
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-60px)] w-full duda-container">
       
       {/* EXCEL TOP RIBBON */}
       <div className="flex flex-col border-b border-[#D4D4D4] bg-[#F3F3F3]">
         {/* Ribbon Tabs */}
-        <div className="flex items-center pt-1 px-1 gap-1 text-[13px]">
-          <div className="bg-[#217346] text-white px-4 py-1 pb-1.5 font-semibold cursor-pointer">ARQUIVO</div>
-          <div className="bg-white text-[#217346] border-t border-l border-r border-[#D4D4D4] border-b-white px-4 py-1 pb-1.5 font-semibold cursor-pointer z-10 relative top-[1px]">PÁGINA INICIAL</div>
-          <div className="text-[#333] hover:text-[#217346] px-4 py-1 font-semibold cursor-pointer">INSERIR</div>
-          <div className="text-[#333] hover:text-[#217346] px-4 py-1 font-semibold cursor-pointer">LAYOUT DA PÁGINA</div>
-          <div className="text-[#333] hover:text-[#217346] px-4 py-1 font-semibold cursor-pointer">FÓRMULAS</div>
-          <div className="text-[#333] hover:text-[#217346] px-4 py-1 font-semibold cursor-pointer">DADOS</div>
-          <div className="text-[#333] hover:text-[#217346] px-4 py-1 font-semibold cursor-pointer">REVISÃO</div>
-          <div className="text-[#333] hover:text-[#217346] px-4 py-1 font-semibold cursor-pointer">EXIBIÇÃO</div>
+        <div className="flex items-center pt-1 px-1 gap-1 text-[13px] overflow-x-auto no-scrollbar">
+          <div className="bg-[#217346] text-white px-4 py-1 pb-1.5 font-semibold cursor-pointer shrink-0">ARQUIVO</div>
+          <div className="bg-white text-[#217346] border-t border-l border-r border-[#D4D4D4] border-b-white px-4 py-1 pb-1.5 font-semibold cursor-pointer z-10 relative top-[1px] shrink-0">PÁGINA INICIAL</div>
+          <div className="text-[#333] hover:text-[#217346] hover:bg-gray-200 px-4 py-1 font-semibold cursor-pointer transition-colors shrink-0">INSERIR</div>
+          <div className="text-[#333] hover:text-[#217346] hover:bg-gray-200 px-4 py-1 font-semibold cursor-pointer transition-colors shrink-0">LAYOUT DA PÁGINA</div>
+          <div className="text-[#333] hover:text-[#217346] hover:bg-gray-200 px-4 py-1 font-semibold cursor-pointer transition-colors shrink-0">FÓRMULAS</div>
+          <div className="text-[#333] hover:text-[#217346] hover:bg-gray-200 px-4 py-1 font-semibold cursor-pointer transition-colors shrink-0">DADOS</div>
+          <div className="text-[#333] hover:text-[#217346] hover:bg-gray-200 px-4 py-1 font-semibold cursor-pointer transition-colors shrink-0">REVISÃO</div>
+          <div className="text-[#333] hover:text-[#217346] hover:bg-gray-200 px-4 py-1 font-semibold cursor-pointer transition-colors shrink-0">EXIBIÇÃO</div>
         </div>
         
-        {/* Ribbon Tools (Fake visual) */}
-        <div className="bg-white border-t border-b border-[#D4D4D4] h-[80px] flex items-center px-4 gap-6">
-           <div className="flex flex-col items-center justify-center text-[#555] cursor-not-allowed opacity-50">
-             <div className="w-8 h-8 bg-gray-200 rounded mb-1 border border-gray-300 flex items-center justify-center">✂️</div>
-             <span className="text-[10px]">Recortar</span>
+        {/* Ribbon Tools */}
+        <div className="bg-white border-t border-b border-[#D4D4D4] h-[80px] flex items-center px-4 gap-6 overflow-x-auto no-scrollbar shrink-0">
+           <div className="flex gap-4">
+               {/* Controls Hoverable */}
+               <button onClick={() => import("react-hot-toast").then(({ default: toast }) => toast("Selecione uma célula específica na tabela para Recortar", { icon: '✂️' }))} className="flex flex-col items-center justify-center text-[#555] hover:text-[#217346] transition-colors group">
+                 <div className="w-8 h-8 bg-[#F3F4F6] group-hover:bg-[#E5E7EB] group-active:bg-gray-300 rounded mb-1 border border-gray-300 flex items-center justify-center transition-all bg-opacity-80">✂️</div>
+                 <span className="text-[10px]">Recortar</span>
+               </button>
+               <button onClick={handleCopy} className="flex flex-col items-center justify-center text-[#555] hover:text-[#217346] transition-colors group">
+                 <div className="w-8 h-8 bg-[#F3F4F6] group-hover:bg-[#E5E7EB] group-active:bg-gray-300 rounded mb-1 border border-gray-300 flex items-center justify-center transition-all bg-opacity-80">📋</div>
+                 <span className="text-[10px]">Colar Tabela</span>
+               </button>
            </div>
-           <div className="flex flex-col items-center justify-center text-[#555] cursor-not-allowed opacity-50">
-             <div className="w-8 h-8 bg-gray-200 rounded mb-1 border border-gray-300 flex items-center justify-center">📋</div>
-             <span className="text-[10px]">Colar</span>
-           </div>
-           <div className="h-16 w-px bg-gray-300"></div>
-           <div className="flex flex-col">
+           
+           <div className="h-16 w-px bg-gray-300 shrink-0"></div>
+           
+           <div className="flex flex-col shrink-0">
               <div className="flex gap-2">
-                 <select className="border border-gray-300 text-sm px-2 py-0.5" disabled><option>Calibri</option></select>
-                 <select className="border border-gray-300 text-sm px-2 py-0.5" disabled><option>12</option></select>
+                 <select value={fontFamily} onChange={e => setFontFamily(e.target.value)} className="border border-gray-300 text-sm px-2 py-0.5 hover:border-gray-400 cursor-pointer outline-none focus:border-[#217346]">
+                     <option value="Calibri">Calibri</option>
+                     <option value="Arial">Arial</option>
+                     <option value="Times New Roman">Times New Roman</option>
+                 </select>
+                 <select value={fontSize} onChange={e => setFontSize(e.target.value)} className="border border-gray-300 text-sm px-2 py-0.5 hover:border-gray-400 cursor-pointer outline-none focus:border-[#217346]">
+                     <option value="10">10</option>
+                     <option value="11">11</option>
+                     <option value="12">12</option>
+                     <option value="14">14</option>
+                 </select>
               </div>
               <div className="flex gap-1 mt-1 text-sm font-serif">
-                 <button className="border border-transparent hover:border-gray-300 px-2 font-bold opacity-50 cursor-not-allowed">N</button>
-                 <button className="border border-transparent hover:border-gray-300 px-2 italic opacity-50 cursor-not-allowed">I</button>
-                 <button className="border border-transparent hover:border-gray-300 px-2 underline opacity-50 cursor-not-allowed">S</button>
+                 <button onClick={() => setIsBold(!isBold)} className={`border px-2 font-bold transition-colors cursor-pointer ${isBold ? 'border-gray-400 bg-gray-200' : 'border-transparent hover:border-gray-300'}`}>N</button>
+                 <button onClick={() => setIsItalic(!isItalic)} className={`border px-2 italic transition-colors cursor-pointer ${isItalic ? 'border-gray-400 bg-gray-200' : 'border-transparent hover:border-gray-300'}`}>I</button>
+                 <button onClick={() => setIsUnderline(!isUnderline)} className={`border px-2 underline transition-colors cursor-pointer ${isUnderline ? 'border-gray-400 bg-gray-200' : 'border-transparent hover:border-gray-300'}`}>S</button>
               </div>
               <div className="text-[10px] text-center mt-1 text-gray-500">Fonte</div>
            </div>
-           <div className="h-16 w-px bg-gray-300"></div>
+           
+           <div className="h-16 w-px bg-gray-300 shrink-0"></div>
            
            {/* Year Selector injected into ribbon! */}
-           <div className="flex items-center gap-2">
+           <div className="flex items-center gap-2 shrink-0">
              <span className="text-xs text-gray-600 font-semibold">ANO CONTÁBIL:</span>
-             <button onClick={() => setCurrentYear(y => y - 1)} className="border border-gray-300 bg-gray-100 hover:bg-gray-200 px-2 rounded text-xs">◀</button>
-             <span className="text-sm font-bold text-[#217346] w-12 text-center">{currentYear}</span>
-             <button onClick={() => setCurrentYear(y => y + 1)} className="border border-gray-300 bg-gray-100 hover:bg-gray-200 px-2 rounded text-xs">▶</button>
+             <button onClick={() => setCurrentYear(y => y - 1)} className="border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 px-3 py-1 rounded text-xs transition-colors cursor-pointer shadow-sm">◀</button>
+             <input type="number" value={currentYear} onChange={e => setCurrentYear(Number(e.target.value))} className="text-sm font-bold text-[#217346] w-14 text-center outline-none border border-transparent hover:border-gray-300 rounded focus:border-[#217346] py-0.5" />
+             <button onClick={() => setCurrentYear(y => y + 1)} className="border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 px-3 py-1 rounded text-xs transition-colors cursor-pointer shadow-sm">▶</button>
            </div>
         </div>
 
         {/* Formula Bar */}
         <div className="bg-white flex items-center px-1 border-b border-[#D4D4D4] h-[26px]">
            <div className="w-10 text-center font-semibold text-gray-500 text-xs border-r border-[#D4D4D4] h-full flex items-center justify-center">fx</div>
-           <div className="flex-1 px-3 text-gray-400 text-xs italic">
-             Planilha Excel Oficial
-           </div>
+           <input type="text" className="flex-1 px-3 text-gray-600 text-xs italic outline-none" value={"=SUM(L1:L) - SUM(R1:R)"} readOnly />
         </div>
         
         {/* EXCEL TOP TABS (MONTHS) */}
@@ -127,7 +164,7 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
       </div>
 
       {/* SPREADSHEET AREA */}
-      <div className="flex-1 overflow-auto bg-white relative no-scrollbar">
+      <div className="flex-1 overflow-auto bg-white relative no-scrollbar" style={tableStyles}>
         <DudaExcelTable 
           initialData={filteredData} 
           userId={user_id} 
