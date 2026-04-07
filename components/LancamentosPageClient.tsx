@@ -108,7 +108,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
             status: "Pago",
             tipo: tx.tipo,
             categoria: tx.categoria || "Outros",
-            recorrencia: "Única",
+            recorrencia: tx.recorrencia || "Única",
             parcela: "1/1"
           };
         });

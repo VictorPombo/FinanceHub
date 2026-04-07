@@ -21,28 +21,38 @@ export async function POST(req: Request) {
 
     const yearToUse = currentYear || new Date().getFullYear();
 
-    const systemPrompt = `Você é um assistente financeiro ultra-preciso que extrai transações de textos informais.
+    const systemPrompt = `Você é um assistente financeiro ultra-preciso que extrai transações de textos informais brasileiros.
 
-O usuário vai enviar um bloco de texto contendo transações financeiras. Sua missão é identificar TODAS as transações e retornar um array JSON.
+O usuário vai enviar um bloco de texto contendo transações financeiras organizadas por mês. Extraia TODAS as transações individuais e retorne um array JSON.
 
 REGRAS OBRIGATÓRIAS:
-1. "descricao": Nome curto de quem pagou/recebeu ou do serviço. Máximo 4 palavras. Capitalizado.
-2. "valor": Número decimal positivo. "R$ 1.500,00" → 1500.0, "R$45,90" → 45.9, "350" → 350.0
-3. "tipo": EXATAMENTE "Entrada" ou "Saída". Use o contexto:
-   - Palavras como "recebido", "entrada", "recebi", "pagamento de", "pix de", "salário", "freelance": → "Entrada"
-   - Palavras como "paguei", "gastei", "compra", "fatura", "aluguel", "conta", "ifood", "uber", "saída": → "Saída"
-   - Se o texto tem seções como "Entradas:" ou "Receitas:", tudo abaixo até a próxima seção é Entrada
-   - Se o texto tem seções como "Saídas:" ou "Despesas:" ou "Gastos:", tudo abaixo é Saída
-4. "data": String "YYYY-MM-DD". 
-   - Se o texto diz "12/05": → "${yearToUse}-05-12"
-   - Se diz "05 de abril": → "${yearToUse}-04-05"
-   - Se não há data, use "${yearToUse}-${String(new Date().getMonth()+1).padStart(2,'0')}-01"
-5. "categoria": Tente categorizar: "Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Serviços", "Educação", "Recebimento", "Investimento", ou "Outros"
+1. "descricao": Nome curto de quem pagou/recebeu ou do serviço. Máximo 4 palavras. Capitalizado. Remova emojis.
+2. "valor": Número decimal positivo. "R$ 1.500,00" → 1500.0, "R$45,90" → 45.9, "350" → 350.0. SEMPRE positivo.
+3. "tipo": EXATAMENTE "Entrada" ou "Saída":
+   - Seções com 📥, "Entradas", "Receitas", "recebido", "salário", "freelance" → "Entrada"
+   - Seções com 📤, "Saídas", "Despesas", "Gastos", "paguei", "fatura", "aluguel" → "Saída"
+4. "data": String "YYYY-MM-DD". Use o contexto do mês na seção:
+   - "(10/04)" → "${yearToUse}-04-10"
+   - "(17/05)" → "${yearToUse}-05-17"
+   - Se diz "05 de abril" → "${yearToUse}-04-05"
+   - Se não há data, use o mês da seção atual
+5. "categoria": Categorize: "Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Serviços", "Educação", "Recebimento", "Investimento", "Dívida", ou "Outros"
+6. "recorrencia": Detecte pelo contexto:
+   - Se marcado "UNICA", "ÚNICA", "📍" → "Única"
+   - Se marcado "ULTIMA", "ÚLTIMA", "⚠️" → "Única"
+   - Se aparece apenas 1 vez em todos os meses → "Única"
+   - Se aparece todo mês (pessoa/serviço que repete) → "Recorrente"
+   - Na dúvida → "Recorrente"
 
-EXEMPLO DE SAÍDA:
+IMPORTANTE:
+- IGNORE linhas de resumo/totais como "Total entradas:", "Sobra mês:", "Acumulado:", "Saldo inicial:". Extraia apenas as transações individuais.
+- Se o texto cobre VÁRIOS MESES, extraia TODAS as transações de TODOS os meses.
+- NÃO duplique transações. Cada bullet point = 1 transação.
+
+EXEMPLO:
 [
-  { "descricao": "Aluguel", "valor": 1200.0, "tipo": "Saída", "data": "${yearToUse}-04-10", "categoria": "Moradia" },
-  { "descricao": "Freelance João", "valor": 800.0, "tipo": "Entrada", "data": "${yearToUse}-04-15", "categoria": "Recebimento" }
+  { "descricao": "Junior", "valor": 1000.0, "tipo": "Entrada", "data": "${yearToUse}-04-10", "categoria": "Recebimento", "recorrencia": "Recorrente" },
+  { "descricao": "IPVA", "valor": 1032.0, "tipo": "Saída", "data": "${yearToUse}-04-15", "categoria": "Transporte", "recorrencia": "Única" }
 ]
 
 Retorne APENAS o JSON puro. Sem markdown, sem \`\`\`json. Array vazio [] se nada encontrado.`;
