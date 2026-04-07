@@ -12,7 +12,6 @@ export default function TabsNavigation() {
     { href: "/dashboard/lancamentos", icon: ListOrdered, label: "Lançamentos", short: "Lançar" },
     { href: "/dashboard/contas", icon: CreditCard, label: "Cartões", short: "Cartões" },
     { href: "/dashboard/extratos", icon: FileText, label: "Extratos Auto", short: "Extratos" },
-    { href: "/dashboard/planilha-ia", icon: Bot, label: "Planilha IA", short: "Plan. IA" },
     { href: "/dashboard/consultor", icon: Bot, label: "Consultor IA", short: "Consult." },
     { href: "/dashboard/categorias", icon: Tags, label: "Categorias", short: "Categ." },
     { href: "/dashboard/duda", icon: Table2, label: "Planilha Excel", short: "Excel" },

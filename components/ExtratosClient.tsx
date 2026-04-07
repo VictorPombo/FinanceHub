@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/types";
-import { UploadCloud, FileText, CheckCircle2, ArrowRightLeft, Trash2, Loader2, Info } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, ArrowRightLeft, Trash2, Loader2, Info, Bot, ListOrdered } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import { useExtratoQueue } from "@/contexts/ExtratoQueueContext";
+import LancamentosPageClient from "./LancamentosPageClient";
 
 interface ExtratoItem {
   id?: string;
@@ -17,8 +18,9 @@ interface ExtratoItem {
   status?: string;
 }
 
-export default function ExtratosClient({ userId, initialHistory }: { userId: string, initialHistory: any[] }) {
+export default function ExtratosClient({ userId, initialHistory, userCategories }: { userId: string, initialHistory: any[], userCategories: string[] }) {
   const [history, setHistory] = useState(initialHistory);
+  const [activeTab, setActiveTab] = useState<"Upload" | "Planilha">("Upload");
   const { isUploading, uploadExtrato, previewItems, setPreviewItems } = useExtratoQueue();
   const supabase = createClient();
 
@@ -76,9 +78,39 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
   };
 
   return (
-    <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full pb-20 md:pb-0">
-       
-       {/* UPLOAD ZONE */}
+    <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full pb-20 md:pb-0 h-full">
+
+       {/* LOCAL TABS */}
+       <div className="flex items-center gap-2 glass-card p-2 rounded-2xl w-max relative z-10 shrink-0">
+          <button 
+            onClick={() => setActiveTab("Upload")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'Upload' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.3)] border border-purple-500/30' : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
+          >
+            <UploadCloud className="w-4 h-4"/>
+            Importar
+          </button>
+          <button 
+            onClick={() => setActiveTab("Planilha")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'Planilha' ? 'bg-emerald-600/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] border border-emerald-500/30' : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
+          >
+            <ListOrdered className="w-4 h-4"/>
+            Planilha Inteligente
+          </button>
+       </div>
+
+       {activeTab === "Planilha" ? (
+         <div className="flex-1 mt-2">
+            <LancamentosPageClient 
+              initialData={history}
+              user_id={userId}
+              userCategories={userCategories}
+              tableName="ia_lancamentos"
+              isReadOnly={true}
+            />
+         </div>
+       ) : (
+         <>
+           {/* UPLOAD ZONE */}
        {!previewItems && (
          <div className="glass-card p-8 text-center flex flex-col items-center justify-center">
             <div className="w-14 h-14 bg-purple-900/30 text-purple-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
@@ -201,6 +233,8 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
                </table>
             </div>
          </div>
+       )}
+       </>
        )}
     </div>
   );
