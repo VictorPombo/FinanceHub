@@ -48,14 +48,18 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
     if (!limite) return toast.error("Informe o Limite ou Saldo atual");
 
     setSaving(true);
+    
+    const parsedVencimento = tipo === 'Cartão de Crédito' ? Number(diaVencimento) : null;
+    const parsedFechamento = tipo === 'Cartão de Crédito' ? Number(diaFechamento) : null;
+    
     const payload = {
       user_id: userId,
       nome,
       tipo,
       cor,
       saldo_limite: Number(limite),
-      dia_fechamento: tipo === 'Cartão de Crédito' ? Number(diaFechamento) : null,
-      dia_vencimento: tipo === 'Cartão de Crédito' ? Number(diaVencimento) : null,
+      dia_fechamento: isNaN(parsedFechamento!) || parsedFechamento === 0 ? null : parsedFechamento,
+      dia_vencimento: isNaN(parsedVencimento!) || parsedVencimento === 0 ? null : parsedVencimento,
       status: conta?.status || "Ativas"
     };
 
@@ -80,13 +84,13 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-[0_20px_50px_rgb(0,0,0,0.15)] flex flex-col max-h-screen">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 className="text-lg font-extrabold text-slate-800 tracking-tight">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#020617]/80 backdrop-blur-md">
+      <div className="bg-[#0F172A] border border-slate-800/80 w-full max-w-md rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col max-h-screen">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/60 shrink-0">
+          <h2 className="text-lg font-black text-slate-100 tracking-tight">
             {conta?.id ? "Editar Conta/Cartão" : "Nova Conta/Cartão"}
           </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -96,14 +100,14 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
            <div className="grid grid-cols-2 gap-3 mb-6">
               <button 
                 onClick={() => setTipo('Cartão de Crédito')}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border ${tipo === 'Cartão de Crédito' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${tipo === 'Cartão de Crédito' ? 'border-purple-500 bg-purple-900/20 text-purple-400 font-bold shadow-[0_0_15px_rgba(147,51,234,0.15)]' : 'border-slate-800 text-slate-500 hover:bg-slate-800/50'}`}
               >
                  <CreditCard className="w-6 h-6"/>
                  <span className="text-xs">Cartão de Crédito</span>
               </button>
               <button 
                 onClick={() => setTipo('Conta Corrente')}
-                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border ${tipo === 'Conta Corrente' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${tipo === 'Conta Corrente' ? 'border-emerald-500 bg-emerald-900/20 text-emerald-400 font-bold shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-800 text-slate-500 hover:bg-slate-800/50'}`}
               >
                  <Landmark className="w-6 h-6"/>
                  <span className="text-xs">Conta Corrente</span>
@@ -115,7 +119,7 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
               <input 
                 type="text" value={nome} onChange={e => setNome(e.target.value)}
                 placeholder="Ex: Nubank, Azul Visa Infinite..."
-                className="w-full mt-1.5 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all shadow-sm"
+                className="w-full mt-1.5 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] transition-all shadow-inner"
               />
            </div>
 
@@ -128,7 +132,7 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
                  <input 
                    type="number" value={limite} onChange={e => setLimite(e.target.value)}
                    placeholder="0.00"
-                   className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white shadow-sm font-mono"
+                   className="w-full border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] shadow-inner font-mono transition-all"
                  />
               </div>
            </div>
@@ -139,14 +143,14 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
                    <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Dia Fechamento</label>
                    <input 
                      type="number" value={diaFechamento} onChange={e => setDiaFechamento(e.target.value)} placeholder="Ex: 5"
-                     className="w-full mt-1.5 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white shadow-sm font-mono text-center"
+                     className="w-full mt-1.5 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] shadow-inner font-mono text-center transition-all"
                    />
                 </div>
                 <div>
                    <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Dia Vencimento</label>
                    <input 
                      type="number" value={diaVencimento} onChange={e => setDiaVencimento(e.target.value)} placeholder="Ex: 15"
-                     className="w-full mt-1.5 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white shadow-sm font-mono text-center"
+                     className="w-full mt-1.5 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-slate-900/50 focus:bg-[#020617] shadow-inner font-mono text-center transition-all"
                    />
                 </div>
              </div>
@@ -159,8 +163,8 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
                     <button 
                       key={c.cor}
                       onClick={() => setCor(c.cor)}
-                      className={`w-8 h-8 rounded-full border-2 transition-transform ${cor === c.cor ? 'border-white ring-2 ring-slate-800 scale-110 shadow-md' : 'border-transparent hover:scale-105'}`}
-                      style={{ backgroundColor: c.cor }}
+                      className={`w-8 h-8 rounded-full border-2 transition-transform ${cor === c.cor ? 'border-white shadow-[0_0_15px_currentColor] scale-110' : 'border-slate-800 hover:scale-105 opacity-60 hover:opacity-100'}`}
+                      style={{ backgroundColor: c.cor, color: c.cor }}
                       title={c.nome}
                     />
                  ))}
@@ -169,11 +173,11 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
 
         </div>
         
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3 shrink-0 rounded-b-2xl">
-          <button onClick={onClose} className="flex-1 py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-100 transition-colors">
+        <div className="p-4 border-t border-slate-800/80 bg-slate-900/30 flex gap-3 shrink-0 rounded-b-2xl">
+          <button onClick={onClose} className="flex-1 py-3 bg-transparent border border-slate-700 text-slate-300 font-bold rounded-xl text-sm hover:bg-slate-800 transition-colors">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl text-sm flex items-center justify-center shadow-[0_8px_20px_rgb(79,70,229,0.3)] hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-purple-600 text-white font-bold rounded-xl text-sm flex items-center justify-center hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)]">
             {saving ? "Salvando..." : <><Save className="w-4 h-4 mr-2" /> Salvar</>}
           </button>
         </div>

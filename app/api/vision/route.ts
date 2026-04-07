@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-// Initialize the client. It will automatically use process.env.GEMINI_API_KEY
-const ai = new GoogleGenAI({});
+let ai: GoogleGenAI | null = null;
+if (process.env.GEMINI_API_KEY) {
+  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+}
 
 export async function POST(req: Request) {
+  if (!ai) {
+    return NextResponse.json({ error: 'Configuração da IA ausente (GEMINI_API_KEY não definida). Adicione a chave no painel da Vercel para usar OCR.' }, { status: 500 });
+  }
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File;
