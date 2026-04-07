@@ -75,7 +75,7 @@ export function ExtratoQueueProvider({ children }: { children: React.ReactNode }
       
       {/* Widget Global Visível em todas as telas */}
       {isUploading && (
-        <div className="fixed bottom-24 md:bottom-12 right-6 bg-[#060b18]/95 backdrop-blur-xl border border-purple-500/50 shadow-[0_0_30px_rgba(147,51,234,0.2)] p-4 rounded-2xl flex items-center gap-4 z-[9999] animate-in slide-in-from-bottom-5">
+         <div className="fixed top-20 right-4 md:right-6 bg-[#060b18]/95 backdrop-blur-xl border border-purple-500/50 shadow-[0_0_30px_rgba(147,51,234,0.2)] p-4 rounded-2xl flex items-center gap-4 z-[9999] animate-in slide-in-from-top-5">
            <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
            <div>
              <p className="text-sm font-bold text-slate-100">Lendo Extrato (IA)...</p>

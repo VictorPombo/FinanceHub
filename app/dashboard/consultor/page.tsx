@@ -12,18 +12,20 @@ export default async function ConsultorPage() {
   const activeUser = user;
   if (!activeUser) redirect("/");
 
-  // Fetch Lancamentos, Dividas and Configuracoes
+  // Fetch Lancamentos, Duda, Dividas and Configuracoes
   const [
     { data: lancamentos },
+    { data: dudaLancamentos },
     { data: dividas },
     { data: config }
   ] = await Promise.all([
     supabase.from("lancamentos").select("*").eq("user_id", activeUser.id).eq("status", "Confirmado"),
+    supabase.from("duda_lancamentos").select("*").eq("user_id", activeUser.id),
     supabase.from("dividas").select("*").eq("user_id", activeUser.id),
     supabase.from("configuracoes").select("saldo_inicial").eq("user_id", activeUser.id).single()
   ]);
 
-  const l = lancamentos || [];
+  const l = [...(lancamentos || []), ...(dudaLancamentos || [])];
   const d = dividas || [];
   const saldo_inicial = config?.saldo_inicial || 0;
 
@@ -155,8 +157,33 @@ export default async function ConsultorPage() {
         <p className="text-blue-100/60 text-sm mt-1 font-medium tracking-wide">Análise estrita baseada em regras cognitivas em tempo real</p>
       </div>
 
-      <div className="p-8 flex flex-col xl:flex-row gap-8 mx-auto w-full max-w-7xl">
+      <div className="p-4 md:p-8 flex flex-col xl:flex-row-reverse gap-8 mx-auto w-full max-w-7xl">
         
+        {/* Right column (Termometro) - Movido para o topo no Mobile com row-reverse */}
+        <div className="w-full xl:w-96 flex flex-col gap-6 shrink-0 z-10 relative">
+          <div className="glass-card p-6 md:p-8 flex flex-col items-center justify-center text-center xl:sticky top-6 border border-slate-800/80 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+            <Award className={`w-28 h-28 ${classifColor} mb-2 opacity-[0.08] absolute top-8 right-8`} />
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Termômetro</h3>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-8">Score Financeiro Combinado</p>
+            
+            <div className={`text-6xl md:text-7xl font-black font-mono mb-4 tracking-tighter ${classifColor} drop-shadow-md`}>
+              {score}
+            </div>
+            
+            <div className={`text-xl md:text-2xl font-black mb-8 md:mb-10 ${classifColor} tracking-widest uppercase`}>
+              {classifText}
+            </div>
+
+            <div className="w-full bg-slate-900 rounded-full h-5 relative overflow-hidden shadow-inner border border-slate-800">
+              <div className={`h-full rounded-full transition-all duration-1000 ease-out ${barraProgresso} shadow-md`} style={{ width: `${score}%` }}></div>
+            </div>
+            <div className="w-full flex justify-between text-[11px] uppercase font-bold text-slate-400 mt-3 tracking-wider">
+              <span>Crítico</span>
+              <span>Excelente</span>
+            </div>
+          </div>
+        </div>
+
         <div className="flex-1 flex flex-col gap-6">
           {/* Cards Diagnostico */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -233,31 +260,6 @@ export default async function ConsultorPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right column - Termometro */}
-        <div className="w-full xl:w-96 flex flex-col gap-6 shrink-0">
-          <div className="glass-card p-8 flex flex-col items-center justify-center text-center sticky top-6 border border-slate-800/80">
-            <Award className={`w-28 h-28 ${classifColor} mb-2 opacity-[0.08] absolute top-8 right-8`} />
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Termômetro</h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-8">Score Financeiro (0-100)</p>
-            
-            <div className={`text-7xl font-black font-mono mb-4 tracking-tighter ${classifColor} drop-shadow-md`}>
-              {score}
-            </div>
-            
-            <div className={`text-2xl font-black mb-10 ${classifColor} tracking-widest uppercase`}>
-              {classifText}
-            </div>
-
-            <div className="w-full bg-slate-900 rounded-full h-5 relative overflow-hidden shadow-inner border border-slate-800">
-              <div className={`h-full rounded-full transition-all duration-1000 ease-out ${barraProgresso} shadow-md`} style={{ width: `${score}%` }}></div>
-            </div>
-            <div className="w-full flex justify-between text-[11px] uppercase font-bold text-slate-400 mt-3 tracking-wider">
-              <span>Crítico</span>
-              <span>Excelente</span>
             </div>
           </div>
         </div>
