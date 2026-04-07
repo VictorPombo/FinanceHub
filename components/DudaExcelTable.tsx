@@ -368,17 +368,7 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
         <tr key={i} className="h-6">
            <td className="duda-row-number bg-[#E6E6E6] border-r border-b border-[#C0C0C0] text-center text-[10px] text-gray-500">{i + 1}</td>
            
-           {/* LEFT SIDE: Entradas */}
-           <td 
-             className="border border-[#D4D4D4] w-[14px] bg-[#F3F4F6] cursor-grab hover:bg-[#E5E7EB] drag-handle transition-colors"
-             draggable={isDraggableEntrada}
-             onDragStart={() => isDraggableEntrada && setDraggedRow({ type: 'Entrada', index: i })}
-             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-             onDrop={() => isDraggableEntrada && handleRowDrop('Entrada', i)}
-             title={isDraggableEntrada ? "Arraste para mover linha" : ""}
-           >
-              {isDraggableEntrada && <div className="w-1.5 h-3 border-l-2 border-r-2 border-slate-400 mx-auto opacity-50"></div>}
-           </td>
+
 
            {leftCols.map(colDef => {
               if (isEntradaSumRow && colDef.field === 'valor') {
@@ -393,17 +383,7 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
            <td className="border border-[#D4D4D4] w-[80px]"></td>
            <td className="border border-[#D4D4D4] w-[80px]"></td>
 
-           {/* RIGHT SIDE: Saídas */}
-           <td 
-             className="border border-[#D4D4D4] w-[14px] bg-[#F3F4F6] cursor-grab hover:bg-[#E5E7EB] drag-handle transition-colors"
-             draggable={isDraggableSaida}
-             onDragStart={() => isDraggableSaida && setDraggedRow({ type: 'Saída', index: i - 1 })}
-             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-             onDrop={() => isDraggableSaida && handleRowDrop('Saída', i - 1)}
-             title={isDraggableSaida ? "Arraste para mover linha" : ""}
-           >
-              {isDraggableSaida && <div className="w-1.5 h-3 border-l-2 border-r-2 border-slate-400 mx-auto opacity-50"></div>}
-           </td>
+
 
            {rightCols.map(colDef => {
               if (isSaidaSumRow && colDef.field === 'valor') {
@@ -430,8 +410,6 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
           <thead>
             <tr className="bg-[#E6E6E6] text-center border-b border-[#C0C0C0] text-[11px] text-[#333] select-none h-6">
                 <th className="font-normal border-r border-[#C0C0C0] w-[40px]"></th>
-                
-                <th className="font-normal border-r border-[#C0C0C0] w-[14px] bg-[#d9d9d9]" title="Handle Linhas (Esquerda)">↕</th>
                 {leftCols.map((col, idx) => (
                     <th 
                       key={col.id} 
@@ -449,8 +427,6 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
                 <th className="font-normal border-r border-[#C0C0C0]">Mkt</th>
                 <th className="font-normal border-r border-[#C0C0C0]">Imp</th>
                 <th className="font-normal border-r border-[#C0C0C0]">Custo</th>
-
-                <th className="font-normal border-r border-[#C0C0C0] w-[14px] bg-[#d9d9d9]" title="Handle Linhas (Direita)">↕</th>
                 {rightCols.map((col, idx) => (
                     <th 
                       key={col.id} 
