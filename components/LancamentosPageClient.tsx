@@ -51,7 +51,94 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
     });
   }, [data, selectedMonthKey, filterType, filterStatus, search]);
 
-  // ======== TEXTO IA HANDLER (Background with persistent banner) ========
+  // ======== LOCAL TEXT PARSER (no API, instant) ========
+  const parseTextLocally = (text: string, year: number): any[] => {
+    const results: any[] = [];
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    
+    let currentTipo: 'Entrada' | 'Saída' = 'Entrada';
+    let currentMonthNum = new Date().getMonth() + 1;
+
+    // Month name mapping
+    const monthMap: Record<string, number> = {
+      'janeiro': 1, 'fevereiro': 2, 'março': 3, 'marco': 3, 'abril': 4,
+      'maio': 5, 'junho': 6, 'julho': 7, 'agosto': 8,
+      'setembro': 9, 'outubro': 10, 'novembro': 11, 'dezembro': 12,
+      'jan': 1, 'fev': 2, 'mar': 3, 'abr': 4, 'mai': 5, 'jun': 6,
+      'jul': 7, 'ago': 8, 'set': 9, 'out': 10, 'nov': 11, 'dez': 12,
+    };
+
+    for (const line of lines) {
+      const lower = line.toLowerCase().replace(/[📆📅🗓️]/g, '').trim();
+      
+      // Detect month headers: "MARÇO", "ABRIL", "📆 MAIO", etc.
+      for (const [name, num] of Object.entries(monthMap)) {
+        if (lower.includes(name) && (lower.includes('📆') || lower.startsWith(name) || /^\w+$/.test(lower.replace(/\s/g, '')) || lower.includes('+'))) {
+          currentMonthNum = num;
+          break;
+        }
+      }
+
+      // Detect tipo sections
+      if (line.includes('📥') || /entradas/i.test(line) || /receitas/i.test(line)) {
+        currentTipo = 'Entrada';
+        continue;
+      }
+      if (line.includes('📤') || /sa[íi]das/i.test(line) || /despesas/i.test(line) || /gastos/i.test(line)) {
+        currentTipo = 'Saída';
+        continue;
+      }
+
+      // Skip summary/total lines
+      if (/total\s+(entradas|saídas|sa[íi]das)/i.test(line)) continue;
+      if (/sobra\s+m[eê]s/i.test(line)) continue;
+      if (/acumulado/i.test(line)) continue;
+      if (/saldo\s+(inicial|atual|final)/i.test(line)) continue;
+      if (/➡️/.test(line)) continue;
+      if (/🟢|📊|✅|⸻/.test(line) && !/•|—/.test(line)) continue;
+      if (/^\s*$/.test(line)) continue;
+      if (/balanço|financeiro/i.test(line) && !/•/.test(line)) continue;
+
+      // Parse transaction lines: "• Name — R$1.000,00 (10/04)" or "Name — R$1.000 (10/04)"
+      const txMatch = line.match(/[•\-\*]?\s*(.+?)\s*[—–-]\s*R\$\s*([\d.,]+)\s*(?:\((\d{1,2})\/(\d{1,2})\))?/i);
+      if (txMatch) {
+        const rawDesc = txMatch[1].replace(/[📍⚠️]/g, '').trim();
+        const rawVal = txMatch[2].replace(/\./g, '').replace(',', '.');
+        const day = txMatch[3] ? txMatch[3].padStart(2, '0') : '01';
+        const month = txMatch[4] ? txMatch[4].padStart(2, '0') : String(currentMonthNum).padStart(2, '0');
+        
+        // Detect recorrencia from markers
+        let recorrencia = 'Recorrente';
+        if (/unica|única|📍/i.test(line)) recorrencia = 'Única';
+        if (/ultima|última|⚠️/i.test(line)) recorrencia = 'Única';
+
+        // Auto-categorize
+        let categoria = 'Outros';
+        const descLower = rawDesc.toLowerCase();
+        if (/ipva|licenciamento|uber|99|gasolina|estacionamento/i.test(descLower)) categoria = 'Transporte';
+        else if (/condom[íi]nio|aluguel|moradia/i.test(descLower)) categoria = 'Moradia';
+        else if (/mercado|ifood|alimenta|restaurante|padaria|donuts/i.test(descLower)) categoria = 'Alimentação';
+        else if (/cart[aã]o|fatura|itau|nubank/i.test(descLower)) categoria = 'Serviços';
+        else if (/filmaker|design|marketing/i.test(descLower)) categoria = 'Serviços';
+        else if (currentTipo === 'Entrada') categoria = 'Recebimento';
+
+        const valor = parseFloat(rawVal);
+        if (!isNaN(valor) && valor > 0) {
+          results.push({
+            descricao: rawDesc.substring(0, 80),
+            valor: currentTipo === 'Saída' ? -valor : valor,
+            tipo: currentTipo,
+            data: `${year}-${month}-${day}`,
+            categoria,
+            recorrencia,
+          });
+        }
+      }
+    }
+    return results;
+  };
+
+  // ======== TEXTO IA HANDLER (Local-first, API fallback) ========
   const handleTextoIA = () => {
     if (!aiTextInput.trim()) { toast.error("Insira o texto primeiro"); return; }
     
@@ -61,49 +148,54 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
     setAiTextModalOpen(false);
     setAiTextInput("");
     setIsParsingText(true);
-    setParsingStatusMsg("🤖 Analisando texto com Inteligência Artificial...");
+    setParsingStatusMsg("⚡ Analisando texto localmente...");
     
     (async () => {
       try {
-        const res = await fetch('/api/parse-text', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: textToProcess, currentYear: yearToProcess })
-        });
-        const aiData = await res.json();
-        if (!res.ok) throw new Error(aiData.error || 'Erro na IA');
-        if (!aiData.transactions || aiData.transactions.length === 0) {
+        // STEP 1: Try local parser first (instant, no API)
+        let transactions = parseTextLocally(textToProcess, yearToProcess);
+        
+        // STEP 2: If local parser found nothing, fall back to AI
+        if (transactions.length === 0) {
+          setParsingStatusMsg("🤖 Texto não-estruturado detectado. Chamando IA...");
+          const res = await fetch('/api/parse-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textToProcess, currentYear: yearToProcess })
+          });
+          const aiData = await res.json();
+          if (!res.ok) throw new Error(aiData.error || 'Erro na IA');
+          transactions = (aiData.transactions || []).map((tx: any) => ({
+            ...tx,
+            valor: tx.tipo === 'Saída' ? -Math.abs(Number(tx.valor)) : Math.abs(Number(tx.valor)),
+          }));
+        }
+
+        if (transactions.length === 0) {
           toast.error("Nenhuma transação identificada no texto.");
           setIsParsingText(false);
           setParsingStatusMsg("");
           return;
         }
 
-        setParsingStatusMsg(`✅ ${aiData.transactions.length} transações encontradas! Salvando no banco...`);
+        setParsingStatusMsg(`✅ ${transactions.length} transações extraídas! Salvando...`);
         
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
         const targetTable = tableName || 'lancamentos';
         
-        const payloads = aiData.transactions.map((tx: any) => {
-          let finalVal = Number(tx.valor) || 0;
-          finalVal = tx.tipo === 'Saída' ? -Math.abs(finalVal) : Math.abs(finalVal);
-          
+        const payloads = transactions.map((tx: any) => {
           let safeDate = tx.data || `${yearToProcess}-${String(currentMonthIndex+1).padStart(2,'0')}-01`;
           if (safeDate.includes('/')) {
             const parts = safeDate.split('/');
             if (parts.length === 3) safeDate = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
             if (parts.length === 2) safeDate = `${yearToProcess}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
           }
-          if (safeDate.includes('-')) {
-            const p = safeDate.split('-');
-            if(p.length === 3) safeDate = `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
-          }
 
           return {
             user_id: user_id,
             descricao: tx.descricao || 'Desconhecido',
-            valor: finalVal,
+            valor: Number(tx.valor),
             data: safeDate,
             status: "Pago",
             tipo: tx.tipo,
