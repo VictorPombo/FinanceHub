@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { formatCurrency, getMesAnoKey, getMesAno } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -9,6 +9,7 @@ import {
   LineChart, Line 
 } from "recharts";
 import { TrendingUp, TrendingDown, CheckCircle2, Clock, Wallet, Bot, PencilLine } from "lucide-react";
+import AlertasFinn from "./AlertasFinn";
 
 interface Props {
   rawData: any[];
@@ -19,10 +20,27 @@ interface Props {
 export default function ResumoMensalClient({ rawData, config, user_id }: Props) {
   const [saldoInicialStr, setSaldoInicialStr] = useState(config?.saldo_inicial?.toString() || "0");
   const [origemFilter, setOrigemFilter] = useState<"Upload IA" | "Manual">("Manual");
-  const dataAtual = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(0);
-  const [selectedYear, setSelectedYear] = useState<number>(dataAtual.getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [realMonth, setRealMonth] = useState(-1);
+  const [realYear, setRealYear] = useState(-1);
   const supabase = createClient();
+
+  useEffect(() => {
+    const d = new Date();
+    setRealMonth(d.getMonth() + 1);
+    setRealYear(d.getFullYear());
+
+    const saved = localStorage.getItem("resumoOrigemFilter");
+    if (saved === "Upload IA" || saved === "Manual") {
+      setOrigemFilter(saved);
+    }
+  }, []);
+
+  const handleOrigemChange = (val: "Upload IA" | "Manual") => {
+    setOrigemFilter(val);
+    localStorage.setItem("resumoOrigemFilter", val);
+  };
 
   const handleUpdateSaldo = async () => {
     const val = Number(saldoInicialStr);
@@ -123,9 +141,18 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
           {/* Month/Year */}
           <div className="flex items-center bg-slate-900/80 rounded-xl p-1 border border-slate-800 shadow-inner">
              <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}
-               className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1.5 text-sm cursor-pointer">
+               className={`bg-transparent font-bold outline-none px-2 py-1.5 text-sm cursor-pointer transition-colors ${
+                 selectedMonth === realMonth && selectedYear === realYear 
+                   ? 'text-purple-400' 
+                   : 'text-slate-200'
+               }`}>
                 <option value={0} className="bg-slate-900">Todos</option>
-                {meses.map((m, i) => <option key={i} value={i+1} className="bg-slate-900">{m}</option>)}
+                {meses.map((m, i) => {
+                  const isCurrent = realMonth === i + 1 && selectedYear === realYear;
+                  return <option key={i} value={i+1} className="bg-slate-900">
+                    {m} {isCurrent ? '(Atual) 📍' : ''}
+                  </option>;
+                })}
              </select>
              <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
                className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1.5 text-sm border-l border-slate-700 cursor-pointer">
@@ -135,11 +162,11 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
 
           {/* Origem */}
           <div className="flex items-center bg-slate-900/80 rounded-xl p-1 border border-slate-800 shadow-inner">
-             <button onClick={() => setOrigemFilter("Manual")}
+             <button onClick={() => handleOrigemChange("Manual")}
                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${origemFilter === 'Manual' ? 'bg-pink-600/15 text-pink-400 shadow-[0_0_10px_rgba(219,39,119,0.15)]' : 'text-slate-500 hover:text-slate-300'}`}>
                 <PencilLine className="w-3.5 h-3.5" /> Manual
              </button>
-             <button onClick={() => setOrigemFilter("Upload IA")}
+             <button onClick={() => handleOrigemChange("Upload IA")}
                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${origemFilter === 'Upload IA' ? 'bg-emerald-600/15 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]' : 'text-slate-500 hover:text-slate-300'}`}>
                 <Bot className="w-3.5 h-3.5" /> Uploads IA
              </button>
@@ -147,23 +174,34 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
         </div>
       </div>
 
-      <div className="p-4 md:p-6">
+      <div className="p-4 md:p-6 pb-2">
+        <AlertasFinn userId={user_id} />
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 mb-6">
           
           {/* CAIXA */}
-          <div className="glass-card p-5 relative overflow-hidden group">
+          <div className="glass-card p-5 relative overflow-hidden group flex flex-col justify-between">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
-            <div className="flex items-center justify-between text-slate-400 mb-3">
-               <span className="font-bold text-[10px] tracking-[0.15em] uppercase">{isAllMonths ? 'Caixa Anual' : 'Caixa no Mês'}</span>
-               <Wallet className="w-4 h-4 text-purple-400"/>
+            <div>
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                 <span className="font-bold text-[10px] tracking-[0.15em] uppercase text-purple-400">Caixa Estimado (Acumulado)</span>
+                 <Wallet className="w-4 h-4 text-purple-400"/>
+              </div>
+              <div className="text-2xl md:text-3xl font-black text-slate-50 tracking-tighter font-mono mb-2">
+                 {formatCurrency(currentTotals.acumulado)}
+              </div>
+              
+              <div className="flex items-center justify-between text-slate-500 mb-1 mt-3 border-t border-slate-800/60 pt-3">
+                 <span className="font-bold text-[9px] tracking-[0.15em] uppercase">{isAllMonths ? 'Sobra Anual' : 'Caixa no Mês (Sobra)'}</span>
+              </div>
+              <div className={`text-lg font-black tracking-tighter font-mono mb-4 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                 {formatCurrency(currentTotals.sobra)}
+              </div>
             </div>
-            <div className="text-2xl md:text-3xl font-black text-slate-50 tracking-tighter font-mono mb-4">
-               {formatCurrency(currentTotals.acumulado)}
-            </div>
-            <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800/60 p-3 rounded-xl">
+
+            <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800/60 p-3 rounded-xl mt-auto">
                <div className="flex flex-col flex-1">
-                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.15em]">Saldo Inicial</span>
+                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.15em]">Saldo Inicial Base</span>
                  <div className="flex items-center gap-1 mt-0.5">
                    <span className="text-[10px] font-mono font-bold text-slate-400">R$</span>
                    <input type="number" value={saldoInicialStr} onChange={(e) => setSaldoInicialStr(e.target.value)} onBlur={handleUpdateSaldo}

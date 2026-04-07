@@ -219,6 +219,15 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
               setCurrentYear(Number(yearStr));
             }
           }
+          
+          // Trigger silent Finn background analysis
+          if (user_id) {
+             fetch("/api/finn-analyze", {
+                 method: "POST",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({ userId: user_id })
+             }).catch(console.error);
+          }
         }
         
         toast.success(`${insertedRows?.length} transações inseridas com sucesso!`, { duration: 5000 });

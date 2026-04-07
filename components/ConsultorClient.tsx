@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { formatCurrency, getMesAnoKey } from "@/lib/types";
 import { 
   PiggyBank, ArrowDownWideNarrow, TrendingUp, AlertTriangle, 
@@ -14,7 +14,7 @@ interface Props {
   dudaLancamentos: any[];
   iaLancamentos: any[];
   dividas: any[];
-  config: { saldo_inicial: number } | null;
+  config: { id?: string; saldo_inicial: number } | null;
   lancPrevistos: any[];
 }
 
@@ -26,6 +26,37 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
   const dataDeHoje = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(0); // 0 = Todos
   const [selectedYear, setSelectedYear] = useState<number>(dataDeHoje.getFullYear());
+
+  const [realMonth, setRealMonth] = useState(-1);
+  const [realYear, setRealYear] = useState(-1);
+
+  useEffect(() => {
+    const dt = new Date();
+    setRealMonth(dt.getMonth() + 1);
+    setRealYear(dt.getFullYear());
+  }, []);
+
+  const [loadingFinn, setLoadingFinn] = useState(false);
+  const [finnResponse, setFinnResponse] = useState<string | null>(null);
+
+  const handleAskFinn = async () => {
+    setLoadingFinn(true);
+    setFinnResponse(null);
+    try {
+      const res = await fetch("/api/ask-finn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: config?.id || "anon", dadosFinanceiros: activeTab === "Planilha Manual" ? lancamentos : iaLancamentos })
+      });
+      const data = await res.json();
+      if (data.response) setFinnResponse(data.response);
+      else setFinnResponse("Erro ao consultar Finn.");
+    } catch (e: any) {
+      setFinnResponse("Erro de rede.");
+    } finally {
+      setLoadingFinn(false);
+    }
+  };
 
   // Strict separation: each tab renders its own universe
   const allData = useMemo(() => {
@@ -228,10 +259,19 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
                 <select 
                   value={selectedMonth} 
                   onChange={e => setSelectedMonth(Number(e.target.value))}
-                  className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1.5 text-sm cursor-pointer"
+                  className={`bg-transparent font-bold outline-none px-2 py-1.5 text-sm cursor-pointer transition-colors ${
+                    selectedMonth === realMonth && selectedYear === realYear 
+                      ? 'text-purple-400' 
+                      : 'text-slate-200'
+                  }`}
                 >
                   <option value={0} className="bg-slate-900">Todos</option>
-                  {meses.map((m, i) => <option key={i} value={i+1} className="bg-slate-900">{m}</option>)}
+                  {meses.map((m, i) => {
+                    const isCurrent = realMonth === i + 1 && selectedYear === realYear;
+                    return <option key={i} value={i+1} className="bg-slate-900">
+                      {m} {isCurrent ? '(Atual) 📍' : ''}
+                    </option>;
+                  })}
                 </select>
                 <select 
                   value={selectedYear} 
@@ -287,6 +327,19 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
               <span>Crítico</span>
               <span>Excelente</span>
             </div>
+
+            <button onClick={handleAskFinn} disabled={loadingFinn} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 mt-5 rounded-xl transition-colors flex items-center justify-center gap-2">
+               {loadingFinn ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Bot className="w-4 h-4" />}
+               <span className="text-sm">Análise Detalhada (AI)</span>
+            </button>
+            
+            {finnResponse && (
+               <div className="mt-4 text-left p-4 bg-[#0F172A] border border-purple-500/30 rounded-xl shadow-lg relative">
+                 <div className="absolute -top-3 left-4 bg-[#020617] border border-slate-700 px-2 py-0.5 rounded text-[10px] font-black text-purple-400">FINN IA</div>
+                 <p className="text-xs text-slate-300 leading-relaxed font-medium whitespace-pre-wrap mt-2">{finnResponse}</p>
+                 <button onClick={() => setFinnResponse(null)} className="text-[10px] text-slate-500 hover:text-slate-300 uppercase tracking-widest font-black mt-3 block w-full text-center">Fechar</button>
+               </div>
+            )}
           </div>
 
           {/* Quick stats */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DudaExcelTable from "./DudaExcelTable";
 import { formatCurrency } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -24,6 +24,15 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
   
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState(new Date().getMonth());
+  
+  const [realMonthIndex, setRealMonthIndex] = useState(-1);
+  const [realYear, setRealYear] = useState(-1);
+
+  useEffect(() => {
+    const d = new Date();
+    setRealMonthIndex(d.getMonth());
+    setRealYear(d.getFullYear());
+  }, []);
   
   // Font States
   const [fontFamily, setFontFamily] = useState("Calibri");
@@ -198,6 +207,7 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
            <div className="flex items-end h-full pt-1">
              {MONTHS.map((monthStr, idx) => {
                const isActive = currentMonthIndex === idx;
+               const isRealCurrentMonth = idx === realMonthIndex && currentYear === realYear;
                return (
                  <button
                    key={idx}
@@ -205,13 +215,13 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
                    className={`
                       px-4 py-1 text-xs font-semibold border-t border-l border-r border-[#D4D4D4]
                       ${isActive 
-                        ? "bg-white text-[#217346] border-b-transparent shadow-[0_-2px_0_#217346_inset] h-[26px]" 
-                        : "bg-[#E6E6E6] text-gray-600 hover:bg-[#F3F3F3] h-[24px] mt-[2px]"}
+                        ? (isRealCurrentMonth ? "bg-white text-purple-700 border-b-transparent shadow-[0_-2px_0_#7e22ce_inset] h-[26px]" : "bg-white text-[#217346] border-b-transparent shadow-[0_-2px_0_#217346_inset] h-[26px]") 
+                        : (isRealCurrentMonth ? "bg-[#f3e8ff] text-purple-600 hover:bg-[#e9d5ff] h-[24px] mt-[2px]" : "bg-[#E6E6E6] text-gray-600 hover:bg-[#F3F3F3] h-[24px] mt-[2px]")}
                       rounded-t-sm mx-[1px] transition-colors whitespace-nowrap
                    `}
                    style={{ zIndex: isActive ? 10 : 1, marginBottom: isActive ? '-1px' : '0' }}
                  >
-                   {monthStr} ({currentYear})
+                   {monthStr} ({currentYear}) {isRealCurrentMonth && "📍"}
                  </button>
                );
              })}
