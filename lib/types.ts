@@ -33,6 +33,26 @@ export type Configuracao = {
   created_at: string;
 };
 
+export type FaturaCartao = {
+  mes: string; // Ex: "2026-04"
+  valor: number;
+  status: "Pendente" | "Pago" | "Atrasado";
+};
+
+export type Conta = {
+  id: string;
+  user_id: string;
+  nome: string;
+  tipo: "Conta Corrente" | "Cartão de Crédito";
+  cor: string;
+  saldo_limite: number;
+  dia_fechamento: number | null;
+  dia_vencimento: number | null;
+  faturas?: FaturaCartao[];
+  status: "Ativa" | "Arquivada";
+  created_at: string;
+};
+
 export const CATEGORIAS = [
   "Recebimento",
   "Moradia",

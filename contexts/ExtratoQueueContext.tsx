@@ -40,6 +40,13 @@ export function ExtratoQueueProvider({ children }: { children: React.ReactNode }
       formData.append('file', file);
       
       const res = await fetch('/api/vision/extrato', { method: 'POST', body: formData });
+      
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+         await res.text(); // consume the body
+         throw new Error('A Vercel (servidor) bloqueou seu upload. O arquivo do extrato é tão gigantesco que ultrapassou o limite de megabytes ou causou Timeout. Divida o extrato em meses de 30 dias.');
+      }
+
       const aiData = await res.json();
       
       if (!res.ok || !Array.isArray(aiData)) {
