@@ -133,3 +133,29 @@ create policy "Usuários podem ver suas próprias categorias" on public.categori
 create policy "Usuários podem inserir suas próprias categorias" on public.categorias for insert with check (auth.uid() = user_id);
 create policy "Usuários podem atualizar suas próprias categorias" on public.categorias for update using (auth.uid() = user_id);
 create policy "Usuários podem excluir suas próprias categorias" on public.categorias for delete using (auth.uid() = user_id);
+
+-- ==========================================
+-- 7. Tabela de Lançamentos IA (Extratos + Upload IA)
+-- ==========================================
+create table if not exists public.ia_lancamentos (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references auth.users not null,
+    data date not null,
+    descricao text not null,
+    categoria text,
+    tipo text not null check (tipo in ('Entrada', 'Saída')),
+    recorrencia text default 'Única',
+    parcela text,
+    valor numeric not null,
+    status text default 'Pago',
+    origem text default 'Upload IA',
+    observacoes text,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Segurança (RLS) para Lançamentos IA
+alter table public.ia_lancamentos enable row level security;
+create policy "Usuários podem ver seus lançamentos IA" on public.ia_lancamentos for select using (auth.uid() = user_id);
+create policy "Usuários podem inserir seus lançamentos IA" on public.ia_lancamentos for insert with check (auth.uid() = user_id);
+create policy "Usuários podem atualizar seus lançamentos IA" on public.ia_lancamentos for update using (auth.uid() = user_id);
+create policy "Usuários podem excluir seus lançamentos IA" on public.ia_lancamentos for delete using (auth.uid() = user_id);

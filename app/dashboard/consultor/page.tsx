@@ -26,12 +26,13 @@ export default async function ConsultorPage() {
   ]);
 
   const cleanLancamentos = (lancamentos || []).filter(r => r.origem !== "Extrato");
+  const cleanIaLancamentos = (iaLancamentos || []).filter(r => r.origem !== "Extrato");
 
   return (
     <ConsultorClient 
       lancamentos={cleanLancamentos}
       dudaLancamentos={dudaLancamentos || []}
-      iaLancamentos={iaLancamentos || []}
+      iaLancamentos={cleanIaLancamentos}
       dividas={dividas || []}
       config={config || null}
       lancPrevistos={lancPrevistos || []}

@@ -99,11 +99,23 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
 
   const anosOptions = [2024, 2025, 2026, 2027];
 
-  // Filtramos os totais apenas para o mes/ano selecionado
+  // Filtramos dados do mês selecionado a partir do rawData filtrado
   const mesKeySelecionado = getMesAno(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`);
   
   const currentMonthData = processedData.find(d => d.mes === mesKeySelecionado);
   
+  // Compute real pago/a receber and pago/a pagar from raw source data
+  const currentMonthRaw = rawData.filter((item: any) => {
+    const isCorrectMonth = getMesAnoKey(item.data) === `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+    const isCorrectOrigin = origemFilter === "Upload IA" ? item.origem === "Upload IA" : item.origem !== "Upload IA";
+    return isCorrectMonth && isCorrectOrigin;
+  });
+
+  const entradasPagas = currentMonthRaw.filter((r: any) => r.tipo === 'Entrada' && r.status === 'Pago').reduce((a: number, b: any) => a + Number(b.valor), 0);
+  const entradasAReceber = currentMonthRaw.filter((r: any) => r.tipo === 'Entrada' && r.status !== 'Pago').reduce((a: number, b: any) => a + Number(b.valor), 0);
+  const saidasPagas = Math.abs(currentMonthRaw.filter((r: any) => r.tipo === 'Saída' && r.status === 'Pago').reduce((a: number, b: any) => a + Number(b.valor), 0));
+  const saidasAPagar = Math.abs(currentMonthRaw.filter((r: any) => r.tipo === 'Saída' && r.status !== 'Pago').reduce((a: number, b: any) => a + Number(b.valor), 0));
+
   const currentTotals = { 
      entradas: currentMonthData?.entradas || 0, 
      saidas: currentMonthData?.saidas || 0, 
@@ -207,11 +219,11 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
             <div className="grid grid-cols-2 gap-3 mt-auto">
                <div className="flex flex-col bg-emerald-950/20 border border-emerald-900/30 p-2.5 rounded-xl">
                  <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Recebido</span>
-                 <span className="text-sm font-mono font-bold text-emerald-400 mt-1">{formatCurrency(currentTotals.entradas)}</span>
+                 <span className="text-sm font-mono font-bold text-emerald-400 mt-1">{formatCurrency(entradasPagas)}</span>
                </div>
-               <div className="flex flex-col bg-slate-900/40 border border-slate-800/80 p-2.5 rounded-xl opacity-50 grayscale">
-                 <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A receber</span>
-                 <span className="text-sm font-mono font-bold text-slate-400 mt-1">R$ 0,00</span>
+               <div className={`flex flex-col p-2.5 rounded-xl ${entradasAReceber > 0 ? 'bg-amber-950/20 border border-amber-900/30' : 'bg-slate-900/40 border border-slate-800/80 opacity-50'}`}>
+                 <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A receber</span>
+                 <span className="text-sm font-mono font-bold text-amber-400 mt-1">{formatCurrency(entradasAReceber)}</span>
                </div>
             </div>
           </div>
@@ -226,13 +238,13 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                {formatCurrency(Math.abs(currentTotals.saidas))}
             </div>
             <div className="grid grid-cols-2 gap-3 mt-auto">
-               <div className="flex flex-col bg-slate-900/40 border border-slate-800/80 p-2.5 rounded-xl opacity-50 grayscale">
-                 <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Pago</span>
-                 <span className="text-sm font-mono font-bold text-slate-400 mt-1">R$ 0,00</span>
+               <div className={`flex flex-col p-2.5 rounded-xl ${saidasPagas > 0 ? 'bg-red-950/20 border border-red-900/30' : 'bg-slate-900/40 border border-slate-800/80 opacity-50'}`}>
+                 <span className="text-[10px] text-red-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Pago</span>
+                 <span className="text-sm font-mono font-bold text-red-400 mt-1">{formatCurrency(saidasPagas)}</span>
                </div>
-               <div className="flex flex-col bg-red-950/20 border border-red-900/30 p-2.5 rounded-xl">
-                 <span className="text-[10px] text-red-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A pagar</span>
-                 <span className="text-sm font-mono font-bold text-red-400 mt-1">{formatCurrency(Math.abs(currentTotals.saidas))}</span>
+               <div className={`flex flex-col p-2.5 rounded-xl ${saidasAPagar > 0 ? 'bg-orange-950/20 border border-orange-900/30' : 'bg-slate-900/40 border border-slate-800/80 opacity-50'}`}>
+                 <span className="text-[10px] text-orange-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A pagar</span>
+                 <span className="text-sm font-mono font-bold text-orange-400 mt-1">{formatCurrency(saidasAPagar)}</span>
                </div>
             </div>
           </div>

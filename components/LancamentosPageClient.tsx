@@ -300,7 +300,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                               let finalVal = Number(tx.valor) || 0;
                               finalVal = tx.tipo === 'Saída' ? -Math.abs(finalVal) : Math.abs(finalVal);
                               
-                              // Normaize Data safely
+                              // Normalize Data safely
                               let safeDate = tx.data || `${yearToProcess}-${String(currentMonthIndex+1).padStart(2,'0')}-01`;
                               if (safeDate.includes('/')) {
                                   const parts = safeDate.split('/');
@@ -321,8 +321,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                                  tipo: tx.tipo,
                                  categoria: "Outros",
                                  recorrencia: "Única",
-                                 parcela: "1/1",
-                                 origem: "Upload IA"
+                                 parcela: "1/1"
                               };
                            });
 

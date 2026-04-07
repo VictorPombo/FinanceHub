@@ -87,7 +87,7 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
                </button>
                <button onClick={handleCopy} className="flex flex-col items-center justify-center text-[#555] hover:text-[#217346] transition-colors group">
                  <div className="w-8 h-8 bg-[#F3F4F6] group-hover:bg-[#E5E7EB] group-active:bg-gray-300 rounded mb-1 border border-gray-300 flex items-center justify-center transition-all bg-opacity-80">📋</div>
-                 <span className="text-[10px]">Colar Tabela</span>
+                 <span className="text-[10px]">Copiar</span>
                </button>
            </div>
            
