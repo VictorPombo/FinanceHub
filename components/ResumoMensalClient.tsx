@@ -283,26 +283,11 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 mb-6">
           
           {/* CAIXA */}
-          <div className="glass-card p-5 relative overflow-hidden group flex flex-col justify-between">
+          <div className="glass-card p-5 relative overflow-hidden group flex flex-col">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-600 to-indigo-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
-            <div>
-              <div className="flex items-center justify-between text-zinc-400 mb-1">
-                 <span className="font-bold text-[10px] tracking-[0.15em] uppercase text-violet-400">{isAllMonths ? 'Sobra Anual' : 'Caixa no Mês (Sobra)'}</span>
-                 <Wallet className="w-4 h-4 text-violet-400"/>
-              </div>
-              <div className={`text-2xl md:text-3xl font-black tracking-tighter font-mono mb-2 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                 {formatCurrency(currentTotals.sobra)}
-              </div>
-              
-              <div className="flex items-center justify-between text-zinc-500 mb-1 mt-3 border-t border-zinc-800/60 pt-3">
-                 <span className="font-bold text-[9px] tracking-[0.15em] uppercase">Caixa Estimado (Acumulado)</span>
-              </div>
-              <div className="text-lg font-black text-zinc-50 tracking-tighter font-mono mb-4">
-                 {formatCurrency(currentTotals.acumulado)}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 p-3 rounded-xl mt-auto">
+            
+            {/* Saldo Inicial - topo */}
+            <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 p-2.5 rounded-xl mb-4">
                <div className="flex flex-col flex-1">
                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Saldo Inicial Base</span>
                  <div className="flex items-center gap-1 mt-0.5">
@@ -310,6 +295,27 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                    <input type="number" value={saldoInicialStr} onChange={(e) => setSaldoInicialStr(e.target.value)} onBlur={handleUpdateSaldo}
                      className="w-24 bg-transparent border-b border-zinc-700 outline-none focus:border-violet-500 font-mono text-sm font-black text-zinc-200 transition-colors"/>
                  </div>
+               </div>
+               <Wallet className="w-4 h-4 text-violet-400"/>
+            </div>
+
+            {/* Sobra - hero */}
+            <div className="flex items-center justify-between text-zinc-400 mb-1">
+               <span className="font-bold text-[10px] tracking-[0.15em] uppercase text-violet-400">{isAllMonths ? 'Sobra Anual' : 'Caixa no Mês (Sobra)'}</span>
+            </div>
+            <div className={`text-2xl md:text-3xl font-black tracking-tighter font-mono mb-4 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+               {formatCurrency(currentTotals.sobra)}
+            </div>
+
+            {/* Acumulado + Mensal - inline bottom */}
+            <div className="grid grid-cols-2 gap-3 mt-auto">
+               <div className="flex flex-col bg-violet-950/15 border border-violet-900/25 p-3 rounded-xl">
+                 <span className="text-[9px] text-violet-400/80 font-bold uppercase tracking-widest">Acumulado</span>
+                 <span className="text-sm font-mono font-black text-zinc-100 mt-1">{formatCurrency(currentTotals.acumulado)}</span>
+               </div>
+               <div className={`flex flex-col p-3 rounded-xl ${currentTotals.sobra >= 0 ? 'bg-emerald-950/15 border border-emerald-900/25' : 'bg-red-950/15 border border-red-900/25'}`}>
+                 <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Mensal</span>
+                 <span className={`text-sm font-mono font-black mt-1 ${currentTotals.sobra >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(currentTotals.sobra)}</span>
                </div>
             </div>
           </div>
