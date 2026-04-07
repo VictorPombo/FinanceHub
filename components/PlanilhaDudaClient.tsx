@@ -8,8 +8,6 @@ interface Props {
   initialData: any[];
   user_id: string;
   userCategories: string[];
-  tableName?: string;
-  title?: string;
 }
 
 const MONTHS = [
@@ -17,7 +15,7 @@ const MONTHS = [
   "Jul", "Ago", "Set", "Out", "Nov", "Dez"
 ];
 
-export default function PlanilhaDudaClient({ initialData, user_id, userCategories, tableName, title }: Props) {
+export default function PlanilhaDudaClient({ initialData, user_id, userCategories }: Props) {
   const [data, setData] = useState(initialData);
   const [filterType, setFilterType] = useState<string>("Todos");
   
@@ -92,8 +90,8 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
         {/* Formula Bar */}
         <div className="bg-white flex items-center px-1 border-b border-[#D4D4D4] h-[26px]">
            <div className="w-10 text-center font-semibold text-gray-500 text-xs border-r border-[#D4D4D4] h-full flex items-center justify-center">fx</div>
-           <div className="flex-1 px-3 text-gray-400 text-xs italic font-bold">
-             {title || "Planilha Excel Oficial"}
+           <div className="flex-1 px-3 text-gray-400 text-xs italic">
+             Planilha Excel Oficial
            </div>
         </div>
         
@@ -134,7 +132,6 @@ export default function PlanilhaDudaClient({ initialData, user_id, userCategorie
           initialData={filteredData} 
           userId={user_id} 
           userCategories={userCategories}
-          tableName={tableName}
           onDataChange={(newData: any[]) => {
             const newIds = new Set(newData.map(n => n.id));
             const baseKeep = data.filter(d => !newIds.has(d.id) && !(d.data.startsWith(selectedMonthKey) && (filterType === 'Todos' || d.tipo === filterType)));

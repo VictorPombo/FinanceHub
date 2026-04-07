@@ -13,6 +13,7 @@ interface Props {
   onDataChange: (newData: any[]) => void;
   currentTabMonth: number;
   currentTabYear: number;
+  tableName?: string;
 }
 
 const PARCELAMENTO_OPTIONS = [
@@ -20,10 +21,11 @@ const PARCELAMENTO_OPTIONS = [
   "7x", "8x", "9x", "10x", "11x", "12x", "Fixo"
 ];
 
-export default function LancamentosTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear }: Props) {
+export default function LancamentosTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear, tableName }: Props) {
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
   const supabase = createClient();
+  const dbTable = tableName || "lancamentos";
 
   // --- ADD ENGINE ---
   const handleAddNew = async (form: any, isDesktop = false) => {
@@ -75,7 +77,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
        });
     }
 
-    const { data: generated, error } = await supabase.from("lancamentos").insert(rows).select();
+    const { data: generated, error } = await supabase.from(dbTable).insert(rows).select();
     toast.dismiss();
     if (error) {
        toast.error("Erro ao inserir!");
@@ -131,7 +133,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
         valor: baseValor,
         data: mobileForm.data
       };
-      const { error } = await supabase.from("lancamentos").update(updatePayload).eq("id", mobileForm.id);
+      const { error } = await supabase.from(dbTable).update(updatePayload).eq("id", mobileForm.id);
       toast.dismiss();
       if (error) toast.error("Erro ao salvar!");
       else {
@@ -169,14 +171,14 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
 
       setEditingCell(null);
       if (isNaN(nMeses) || nMeses <= 1) {
-         const { error } = await supabase.from("lancamentos").update({ recorrencia: "Única", parcela: "1/1" }).eq("id", id);
+         const { error } = await supabase.from(dbTable).update({ recorrencia: "Única", parcela: "1/1" }).eq("id", id);
          if (!error) onDataChange(initialData.map(d => d.id === id ? {...d, recorrencia: "Única", parcela: "1/1"} : d));
          return;
       }
 
       toast.loading(`Gerando parcelas futuras...`);
       const origParcela = recType === "Recorrente" ? "Fixa" : `1/${nMeses}`;
-      await supabase.from("lancamentos").update({ recorrencia: recType, parcela: origParcela }).eq("id", id);
+      await supabase.from(dbTable).update({ recorrencia: recType, parcela: origParcela }).eq("id", id);
       
       const baseDate = new Date(item.data + "T00:00:00");
       const forwardRows = [];
@@ -201,7 +203,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
          });
       }
 
-      const { data: generated, error } = await supabase.from("lancamentos").insert(forwardRows).select();
+      const { data: generated, error } = await supabase.from(dbTable).insert(forwardRows).select();
       toast.dismiss();
       if (error) {
          toast.error("Erro no motor de parcelamento");
@@ -228,7 +230,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     if (item.recorrencia === 'Recorrente') {
        if (window.confirm(`Este é um registro Fixo. Deseja aplicar a alteração para TODOS os meses subsequentes?`)) {
            toast.loading("Atualizando valores fixos futuros...");
-           const { error: errMass } = await supabase.from("lancamentos")
+           const { error: errMass } = await supabase.from(dbTable)
               .update(updatePayload)
               .eq("recorrencia", "Recorrente")
               .eq("descricao", item.descricao)
@@ -248,7 +250,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     onDataChange(optimisticData);
     setEditingCell(null);
 
-    const { error } = await supabase.from("lancamentos").update(updatePayload).eq("id", id);
+    const { error } = await supabase.from(dbTable).update(updatePayload).eq("id", id);
     if (error) toast.error("Erro ao salvar");
   };
 
@@ -266,7 +268,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     if (item.recorrencia === 'Recorrente') {
        if (window.confirm("Este lançamento é Fixo. Deseja excluir ele E TODOS OS FUTUROS subsequentes?")) {
           toast.loading("Excluindo...");
-          await supabase.from("lancamentos").delete()
+          await supabase.from(dbTable).delete()
               .eq("recorrencia", "Recorrente").eq("descricao", item.descricao).eq("tipo", item.tipo).gte("data", item.data);
           toast.dismiss();
           toast.success("Excluídos!");
@@ -278,7 +280,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     }
 
     onDataChange(initialData.filter((d) => d.id !== id));
-    await supabase.from("lancamentos").delete().eq("id", id);
+    await supabase.from(dbTable).delete().eq("id", id);
     toast.success("Excluído");
     if (isMobile) setMobileModalOpen(false);
   };

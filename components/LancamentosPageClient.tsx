@@ -11,6 +11,7 @@ interface Props {
   initialData: any[];
   user_id: string;
   userCategories: string[];
+  tableName?: string;
 }
 
 const MONTHS = [
@@ -18,7 +19,7 @@ const MONTHS = [
   "Jul", "Ago", "Set", "Out", "Nov", "Dez"
 ];
 
-export default function LancamentosPageClient({ initialData, user_id, userCategories }: Props) {
+export default function LancamentosPageClient({ initialData, user_id, userCategories, tableName }: Props) {
   const [data, setData] = useState(initialData);
   const [filterType, setFilterType] = useState<string>("Todos");
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
@@ -143,7 +144,8 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                     // Use client to insert
                     import('@/lib/supabase/client').then(async ({ createClient }) => {
                        const supabase = createClient();
-                       const { data: inserted, error } = await supabase.from('lancamentos').insert([dbPayload]).select().single();
+                       const targetTable = tableName || 'lancamentos';
+                       const { data: inserted, error } = await supabase.from(targetTable).insert([dbPayload]).select().single();
                        if (error) throw error;
                        
                        setData([inserted, ...data]);
@@ -173,6 +175,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
           initialData={filteredData} 
           userId={user_id} 
           userCategories={userCategories}
+          tableName={tableName}
           onDataChange={(newData: any[]) => {
             // Need to update the MASTER list (data), not just the filtered.
             // Since onDataChange currently acts like it returns exactly the same items but modified/inserted,
