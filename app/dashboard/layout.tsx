@@ -35,7 +35,7 @@ export default async function DashboardLayout({
 
       {/* Área de Conteúdo */}
       <main className="flex-1 overflow-auto bg-[#020617]">
-        <div className="w-full h-full min-h-max py-2 md:py-6 px-2 md:px-6">
+        <div className="w-full h-full min-h-max py-2 md:py-6 px-2 md:px-6 pb-28 md:pb-6">
           <div className="max-w-[1400px] mx-auto w-full h-full">
              {children}
           </div>

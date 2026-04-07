@@ -131,10 +131,10 @@ export default function CategoriasClient({ initialData, userId, initialCategorie
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full overflow-hidden bg-[#020617] text-slate-100 font-sans">
+    <div className="flex flex-col md:flex-row h-full overflow-y-auto md:overflow-hidden bg-[#020617] text-slate-100 font-sans">
       
       {/* Table & CRUD Section */}
-      <div className="w-full md:w-[60%] flex flex-col h-full overflow-hidden border-r border-slate-800/50 bg-[#020617]">
+      <div className="w-full md:w-[60%] flex flex-col h-auto min-h-[450px] md:h-full md:overflow-hidden border-b md:border-b-0 md:border-r border-slate-800/50 bg-[#020617]">
         
         {/* Adicionar Categoria UI */}
         <div className="p-4 border-b border-slate-800/60 bg-slate-900/30 shrink-0">
@@ -198,7 +198,7 @@ export default function CategoriasClient({ initialData, userId, initialCategorie
       </div>
 
       {/* Analytics Section */}
-      <div className="w-full md:w-[40%] h-full flex flex-col p-6 lg:p-8 bg-gradient-to-br from-[#020617] to-[#0f172a] shadow-inner relative">
+      <div className="w-full md:w-[40%] h-auto min-h-[450px] md:h-full flex flex-col p-6 lg:p-8 bg-gradient-to-br from-[#020617] to-[#0f172a] shadow-inner relative">
         <div className="flex-1 w-full bg-[#060b18] border border-slate-800/60 rounded-[2rem] p-6 shadow-2xl flex flex-col relative overflow-hidden backdrop-blur-xl">
           
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-emerald-500 to-rose-500 opacity-50"></div>

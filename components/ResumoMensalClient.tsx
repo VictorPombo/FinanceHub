@@ -137,7 +137,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
       <div className="p-6">
         {/* KPI Cards Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-purple-500/30 transition-all relative overflow-hidden group">
+          <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-purple-500/30 transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-50 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center justify-between text-slate-400 mb-2">
                <span className="font-bold text-sm tracking-widest uppercase">Saldo na Conta (Acumulado)</span>
@@ -163,7 +163,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
             </div>
           </div>
 
-          <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-emerald-500/30 transition-all relative overflow-hidden group">
+          <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-emerald-500/30 transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-600 to-teal-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center justify-between text-slate-400 mb-2">
                <span className="font-bold text-sm tracking-widest uppercase">Receitas ({origemFilter})</span>
@@ -184,7 +184,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
             </div>
           </div>
 
-          <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-red-500/30 transition-all relative overflow-hidden group">
+          <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-red-500/30 transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-rose-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center justify-between text-slate-400 mb-2">
                <span className="font-bold text-sm tracking-widest uppercase">Despesas ({origemFilter})</span>
@@ -239,8 +239,8 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
         </div>
 
         {/* Grid Table */}
-        <div className="bg-[#060b18] backdrop-blur-xl border border-slate-800/60 overflow-hidden mb-12 rounded-2xl shadow-2xl">
-          <table className="w-full text-left border-collapse">
+        <div className="bg-[#060b18] backdrop-blur-xl border border-slate-800/60 overflow-x-auto w-full mb-12 rounded-2xl shadow-2xl">
+          <table className="w-full min-w-[750px] md:min-w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#020617]">
                 <th className="w-[15%] px-5 py-4 text-xs font-bold uppercase tracking-widest border-b border-slate-800/60 text-slate-400">Mês</th>
