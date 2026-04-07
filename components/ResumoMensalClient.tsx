@@ -19,6 +19,9 @@ interface Props {
 export default function ResumoMensalClient({ rawData, config, user_id }: Props) {
   const [saldoInicialStr, setSaldoInicialStr] = useState(config?.saldo_inicial?.toString() || "0");
   const [origemFilter, setOrigemFilter] = useState<"Upload IA" | "Manual">("Manual");
+  const dataAtual = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(dataAtual.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(dataAtual.getFullYear());
   const supabase = createClient();
 
   const handleUpdateSaldo = async () => {
@@ -87,15 +90,26 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
     return result;
   }, [rawData, origemFilter, saldoInicialStr]);
 
-  const totals = processedData.reduce(
-    (acc, c) => {
-      acc.entradas += c.entradas;
-      acc.saidas += c.saidas;
-      acc.sobra += c.sobra;
-      return acc;
-    },
-    { entradas: 0, saidas: 0, sobra: 0 }
-  );
+  const mesesOptions = [
+    { value: 1, label: 'Jan' }, { value: 2, label: 'Fev' }, { value: 3, label: 'Mar' },
+    { value: 4, label: 'Abr' }, { value: 5, label: 'Mai' }, { value: 6, label: 'Jun' },
+    { value: 7, label: 'Jul' }, { value: 8, label: 'Ago' }, { value: 9, label: 'Set' },
+    { value: 10, label: 'Out' }, { value: 11, label: 'Nov' }, { value: 12, label: 'Dez' }
+  ];
+
+  const anosOptions = [2024, 2025, 2026, 2027];
+
+  // Filtramos os totais apenas para o mes/ano selecionado
+  const mesKeySelecionado = getMesAno(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`);
+  
+  const currentMonthData = processedData.find(d => d.mes === mesKeySelecionado);
+  
+  const totals = { 
+     entradas: currentMonthData?.entradas || 0, 
+     saidas: currentMonthData?.saidas || 0, 
+     sobra: currentMonthData?.sobra || 0,
+     acumulado: currentMonthData?.acumulado || Number(saldoInicialStr) || 0
+  };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto w-full bg-[#020617] text-slate-100 font-sans">
@@ -106,8 +120,27 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
            <h1 className="text-2xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-emerald-400 mb-1">
              Resumo Inteligente
            </h1>
-           <p className="text-sm font-medium text-slate-400">Visão consolidada do seu patrimônio por competência e origem.</p>
+           <p className="text-sm font-medium text-slate-400">Visão consolidada do mês selecionado e evolução histórica.</p>
         </div>
+
+        <div className="flex items-center gap-3">
+          {/* Month/Year Filter */}
+          <div className="flex items-center bg-slate-900/50 rounded-xl p-1 border border-slate-800 shadow-inner">
+             <select 
+               value={selectedMonth} 
+               onChange={e => setSelectedMonth(Number(e.target.value))}
+               className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1 text-sm cursor-pointer"
+             >
+                {mesesOptions.map(m => <option key={m.value} value={m.value} className="bg-slate-900 text-slate-200">{m.label}</option>)}
+             </select>
+             <select 
+               value={selectedYear} 
+               onChange={e => setSelectedYear(Number(e.target.value))}
+               className="bg-transparent text-slate-200 font-bold outline-none px-2 py-1 text-sm border-l border-slate-700 cursor-pointer"
+             >
+                {anosOptions.map(y => <option key={y} value={y} className="bg-slate-900 text-slate-200">{y}</option>)}
+             </select>
+          </div>
 
         {/* The Origem Filter */}
         <div className="flex items-center bg-slate-900/50 rounded-xl p-1 border border-slate-800 shadow-inner">
@@ -124,6 +157,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
               <Bot className="w-4 h-4" /> Uploads IA
            </button>
         </div>
+        </div>
       </div>
 
       <div className="p-6">
@@ -132,11 +166,11 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
           <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-purple-500/30 transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-50 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center justify-between text-slate-400 mb-2">
-               <span className="font-bold text-sm tracking-widest uppercase">Saldo na Conta (Acumulado)</span>
+               <span className="font-bold text-sm tracking-widest uppercase">Caixa no Mês Atual</span>
                <span className="p-2 bg-purple-950/30 rounded-xl"><BarChart2 className="w-5 h-5 text-purple-400"/></span>
             </div>
             <div className="text-3xl md:text-4xl font-black text-slate-50 tracking-tighter mt-1 mb-4 font-mono">
-               {formatCurrency(totals.sobra + Number(saldoInicialStr))}
+               {formatCurrency(totals.acumulado)}
             </div>
             <div className="flex items-center gap-3 mt-auto bg-slate-900/40 border border-slate-800/80 p-3 rounded-xl hover:bg-slate-900/80 transition-colors">
                <div className="flex flex-col flex-1">

@@ -15,9 +15,9 @@ export default async function ResumoMensalPage() {
     .eq("user_id", activeUser.id)
     .single();
 
-  // Fetch Duda (Manual)
+  // Fetch Lançamentos genéricos (Manual)
   const { data: dudaRows } = await supabase
-    .from("duda_lancamentos")
+    .from("lancamentos")
     .select("*")
     .eq("user_id", activeUser.id)
     .in("status", ["Pago", "Concluído", "Confirmado", "Em aberto"]);
