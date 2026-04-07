@@ -8,13 +8,13 @@ export default function TabsNavigation() {
   const pathname = usePathname();
 
   const tabs = [
-    { href: "/dashboard/lancamentos", icon: <ListOrdered className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Lançamentos" },
     { href: "/dashboard/resumo", icon: <BarChart2 className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Resumo" },
+    { href: "/dashboard/lancamentos", icon: <ListOrdered className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Lançamentos" },
     { href: "/dashboard/contas", icon: <CreditCard className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Cartões" },
     { href: "/dashboard/extratos", icon: <FileText className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Extratos Auto" },
     { href: "/dashboard/consultor", icon: <Bot className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Consultor IA" },
     { href: "/dashboard/categorias", icon: <Tags className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Categorias" },
-    { href: "/dashboard/duda", icon: <ListOrdered className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Duda" },
+    { href: "/dashboard/duda", icon: <ListOrdered className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Planilha Duda" },
   ];
 
   return (

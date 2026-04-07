@@ -26,7 +26,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        router.push("/dashboard/lancamentos");
+        router.push("/dashboard/resumo");
         router.refresh();
       }
     } else {
@@ -35,7 +35,7 @@ export default function LoginPage() {
         setError(error.message);
       } else {
         if (data.session) {
-          router.push("/dashboard/lancamentos");
+          router.push("/dashboard/resumo");
           router.refresh();
         } else {
           setSuccess("Conta criada! Verifique seu email ou faça login.");

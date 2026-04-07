@@ -14,38 +14,10 @@ interface Props {
   currentTabYear: number;
 }
 
-const PARCELAMENTO_OPTIONS = [
-  "1x (Única)", "2x", "3x", "4x", "5x", "6x", 
-  "7x", "8x", "9x", "10x", "11x", "12x", "Fixo"
-];
-
 export default function DudaExcelTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear }: Props) {
-  const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ side: 'left' | 'right', index: number, field: string } | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
   const supabase = createClient();
-
-  const handleGhostClick = async (focusField: string) => {
-    const tempId = `temp-${Date.now()}`;
-    const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
-    const tempItem = {
-      id: tempId,
-      user_id: userId,
-      data: defaultDate,
-      descricao: "",
-      categoria: "Outros",
-      tipo: "Saída", // Defaulting to Saída for newly started ghost rows
-      recorrencia: "Única",
-      parcela: "1/1",
-      valor: 0,
-      status: "Em aberto",
-      isDraft: true
-    };
-
-    onDataChange([...initialData, tempItem]);
-    setTimeout(() => {
-        setEditingCell({ id: tempId, field: focusField });
-    }, 50);
-  };
 
   useEffect(() => {
     if (editingCell && inputRef.current) {
@@ -53,217 +25,94 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
     }
   }, [editingCell]);
 
-  const updateItem = async (id: string, field: string, value: any, itemType: string) => {
-    const itemIndex = initialData.findIndex((i) => i.id === id);
-    if (itemIndex === -1) return;
-    const item = initialData[itemIndex];
-    const isTemp = String(id).startsWith("temp-");
+  // Separate data keeping their visual index intact
+  const entradas = initialData.filter(d => d.tipo === "Entrada");
+  const saidas = initialData.filter(d => d.tipo === "Saída");
 
-    if (field === "parcelamento") {
-      if (isTemp) {
-         toast.error("Preencha descrição ou valor antes de parcelar.");
-         setEditingCell(null);
-         return;
-      }
-      let nMeses = 1;
-      let recType = "Parcelado";
-      if (value === "Fixo") {
-        nMeses = 12;
-        recType = "Recorrente";
-      } else {
-        nMeses = parseInt(value);
-      }
-
-      setEditingCell(null);
-      if (isNaN(nMeses) || nMeses <= 1) {
-         const { error } = await supabase.from("duda_lancamentos").update({ recorrencia: "Única", parcela: "1/1" }).eq("id", id);
-         if (!error) onDataChange(initialData.map(d => d.id === id ? {...d, recorrencia: "Única", parcela: "1/1"} : d));
-         return;
-      }
-
-      toast.loading(`Gerando parcelas futuras...`);
-      const origParcela = recType === "Recorrente" ? "Fixa" : `1/${nMeses}`;
-      await supabase.from("duda_lancamentos").update({ recorrencia: recType, parcela: origParcela }).eq("id", id);
-      
-      const baseDate = new Date(item.data + "T00:00:00");
-      const forwardRows = [];
-      
-      for (let i = 1; i < nMeses; i++) {
-         const future = new Date(baseDate);
-         future.setMonth(future.getMonth() + i);
-         const yyyy = future.getFullYear();
-         const mm = String(future.getMonth() + 1).padStart(2, '0');
-         const dd = String(future.getDate()).padStart(2, '0');
-         
-         forwardRows.push({
-           user_id: userId,
-           data: `${yyyy}-${mm}-${dd}`,
-           descricao: item.descricao,
-           categoria: item.categoria,
-           tipo: item.tipo,
-           recorrencia: recType,
-           parcela: recType === "Recorrente" ? "Fixa" : `${i+1}/${nMeses}`,
-           valor: item.valor,
-           status: "Em aberto"
-         });
-      }
-
-      const { data: generated, error } = await supabase.from("duda_lancamentos").insert(forwardRows).select();
-      toast.dismiss();
-      if (error) {
-         toast.error("Erro no motor de parcelamento");
-      } else {
-         toast.success("Mágica de parcelamento concluída!");
-         const origUpdated = { ...item, recorrencia: recType, parcela: origParcela };
-         onDataChange([...initialData.map(d => d.id === id ? origUpdated : d), ...(generated || [])]);
-      }
-      return;
-    }
+  const updateItem = async (isEntrada: boolean, index: number, field: string, value: any) => {
+    const list = isEntrada ? entradas : saidas;
+    const item = list[index];
+    const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
 
     const updatePayload: any = {};
-    if (field === "valor_digitado") { 
-      let newValor = Math.abs(Number(String(value).replace(',', '.')));
-      newValor = item.tipo === "Saída" ? -newValor : newValor;
-      updatePayload.valor = newValor;
+    if (field === "valor") {
+        const valNum = Math.abs(Number(String(value).replace(',', '.')));
+        updatePayload.valor = isEntrada ? valNum : -valNum;
     } else {
-      updatePayload[field] = value;
-      if (field === "tipo") {
-          updatePayload.valor = value === "Saída" ? -Math.abs(item.valor) : Math.abs(item.valor);
-      }
+        updatePayload[field] = value;
     }
 
-    if (item.recorrencia === 'Recorrente') {
-       if (window.confirm(`Este é um registro Fixo. Deseja aplicar essa alteração para TODOS os meses futuros vinculados?`)) {
-           toast.loading("Atualizando valores fixos futuros...");
-           const { error: errMass } = await supabase.from("duda_lancamentos")
-              .update(updatePayload)
-              .eq("recorrencia", "Recorrente")
-              .eq("descricao", item.descricao)
-              .eq("tipo", item.tipo)
-              .gte("data", item.data);
-              
-           toast.dismiss();
-           if (errMass) { toast.error("Erro ao atualizar!"); return; }
-           toast.success("Atualizado!");
-           window.location.reload();
-           return;
-       }
-    }
-
-    const optimisticData = [...initialData];
-    optimisticData[itemIndex] = { ...item, ...updatePayload };
-    onDataChange(optimisticData);
-    setEditingCell(null);
-
-    // Salvar no BD
-    if (isTemp) {
-        const finalDesc = optimisticData[itemIndex].descricao;
-        const finalVal = Math.abs(optimisticData[itemIndex].valor);
-        
-        if (!finalDesc || finalVal === 0) {
-             return;
-        }
-
-        const payloadToInsert = { ...optimisticData[itemIndex] };
-        delete payloadToInsert.id;
-        delete payloadToInsert.isDraft;
-        
+    // Ghost insertion
+    if (!item) {
+        if (!value) return; // ignore empty typing on ghosts
+        const payloadToInsert = {
+            user_id: userId,
+            data: defaultDate,
+            descricao: isEntrada && field === 'descricao' ? value : "",
+            categoria: isEntrada && field === 'categoria' ? value : "Outros",
+            tipo: isEntrada ? "Entrada" : "Saída",
+            recorrencia: "Única",
+            parcela: "1/1",
+            valor: field === 'valor' ? updatePayload.valor : 0,
+            status: "Em aberto"
+        };
         const { data, error } = await supabase.from("duda_lancamentos").insert([payloadToInsert]).select().single();
-        if (data) onDataChange(optimisticData.map(d => d.id === id ? data : d));
-        else if (error) toast.error("Erro ao salvar");
+        if (data) {
+            onDataChange([...initialData, data]);
+        }
     } else {
-        const { error } = await supabase.from("duda_lancamentos").update(updatePayload).eq("id", id);
+        // Update existing
+        const optimisticData = initialData.map(d => d.id === item.id ? { ...d, ...updatePayload } : d);
+        onDataChange(optimisticData);
+        
+        const { error } = await supabase.from("duda_lancamentos").update(updatePayload).eq("id", item.id);
         if (error) toast.error("Erro ao salvar");
     }
+    setEditingCell(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, id: string, field: string, type: string) => {
+  const handleKeyDown = (e: React.KeyboardEvent, isEntrada: boolean, index: number, field: string) => {
     if (e.key === "Escape") setEditingCell(null);
     if (e.key === "Enter") {
-      updateItem(id, field, (e.target as HTMLInputElement).value, type);
-    }
-    // Delete handling simply by pressing Delete on an empty cell
-    if (e.key === "Delete" || e.key === "Backspace") {
-      const val = (e.target as HTMLInputElement).value;
-      if (!val && !id.startsWith("temp-")) {
-          // You could trigger deleteItem(id) here, but left out for safety
-      }
+      updateItem(isEntrada, index, field, (e.target as HTMLInputElement).value);
     }
   };
 
-  const renderCell = (item: any, field: string, width: string, type: "text" | "number" | "select" | "date" = "text", options?: string[]) => {
-    const isEditing = editingCell?.id === item.id && editingCell?.field === field;
-    const isGhost = item.id.startsWith("ghost-");
+  const renderCellLeft = (index: number, colLetter: string, field: string, width: string) => {
+    const item = entradas[index];
+    const isEditing = editingCell?.side === 'left' && editingCell?.index === index && editingCell?.field === field;
     
-    let displayValue = item[field] || "";
-    if (field === "valor_digitado" && !isGhost) {
-      displayValue = formatCurrency(item.valor);
+    let displayValue = item ? item[field] : "";
+    if (field === "valor" && item) {
+       displayValue = item.valor !== 0 ? formatCurrency(item.valor) : "";
     }
-    if (field === "parcelamento") {
-       if (item.recorrencia === "Única") displayValue = "1x (Única)";
-       else if (item.recorrencia === "Recorrente") displayValue = "Fixo";
-       else if (item.parcela) {
-          const matched = item.parcela.match(/\/(\d+)/);
-          displayValue = matched ? `${matched[1]}x` : item.parcela;
-       }
-    }
-    if (field === "data" && !isEditing && !isGhost && displayValue) {
-       const parts = displayValue.split('-');
-       if (parts.length === 3) displayValue = `${parts[2]}/${parts[1]}`;
-    }
-
-    const canEdit = field !== "id" && field !== "valor_final" && field !== "parcela";
-    if (isGhost && !isEditing) displayValue = ""; 
-
-    let editValue = item[field] || "";
-    if (field === "valor_digitado") {
+    let editValue = item ? item[field] : "";
+    if (field === "valor" && item) {
        editValue = item.valor !== 0 ? Math.abs(item.valor).toString() : "";
-       if (isGhost) editValue = "";
-    } else if (field === "parcelamento") {
-       editValue = displayValue;
     }
 
-    let textClass = "";
-    if (field === "valor_digitado" && !isGhost) {
-      textClass = item.valor < 0 ? "duda-text-saida" : "duda-text-entrada";
-    }
+    const type = field === "valor" ? "number" : "text";
 
     return (
       <td 
-        className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1`}
+        className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4]`}
         style={{ width, minWidth: width, maxWidth: width }}
-        onDoubleClick={() => canEdit && !isGhost && setEditingCell({ id: item.id, field })}
-        onClick={() => {
-           if (!canEdit) return;
-           if (isGhost) handleGhostClick(field);
-           else setEditingCell({ id: item.id, field });
-        }}
+        onDoubleClick={() => setEditingCell({ side: 'left', index, field })}
+        onClick={() => { if(!item) setEditingCell({ side: 'left', index, field }) }}
       >
         {isEditing ? (
-          type === "select" ? (
-            <select
-              ref={inputRef as React.RefObject<HTMLSelectElement>}
-              className="duda-inline-select"
-              defaultValue={editValue}
-              onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
-              onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
-            >
-              <option value="" disabled>Selecionar...</option>
-              {options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          ) : (
-            <input
-              ref={inputRef as React.RefObject<HTMLInputElement>}
-              type={type}
-              className="duda-inline-input"
-              defaultValue={editValue}
-              onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
-              onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
-              step={type === "number" ? "0.01" : undefined}
-            />
-          )
+          <input
+            ref={inputRef as React.RefObject<HTMLInputElement>}
+            type={type}
+            className="duda-inline-input"
+            defaultValue={editValue}
+            placeholder={!item && field === 'descricao' ? 'Cliente' : ''}
+            onBlur={(e) => updateItem(true, index, field, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e, true, index, field)}
+            step={type === "number" ? "0.01" : undefined}
+          />
         ) : (
-          <div className={`truncate ${textClass} px-1 relative ${field === 'valor_digitado' ? 'text-right' : ''}`}>
+          <div className={`truncate px-1 relative ${field === 'valor' ? 'text-right' : ''}`}>
              <span>{displayValue}</span>
           </div>
         )}
@@ -271,88 +120,146 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
     );
   };
 
-  const renderRow = (item: any, sequenceIndex: number, isBalanco: boolean = false) => {
-    const isGhost = item.id.startsWith("ghost-");
+  const renderCellRight = (index: number, colLetter: string, field: string, width: string) => {
+     // G1 is reserved for visual "SAIDAS" string in the screenshot
+     if (index === 0 && colLetter === 'G') {
+        return (
+           <td className="border border-[#D4D4D4] text-red-600 font-bold px-2 relative" style={{ width, minWidth: width, maxWidth: width }}>
+               SAIDAS
+           </td>
+        );
+     }
+     if (index === 0 && colLetter === 'H') {
+         // H1 is just empty next to SAIDAS
+         return <td className="border border-[#D4D4D4]" style={{ width, minWidth: width, maxWidth: width }}></td>;
+     }
 
-    if (isBalanco) {
-       return (
-          <tr key={item.id} className="font-bold bg-[#E6E6E6]/50">
-             <td className="duda-row-number">{sequenceIndex + 1}</td>
-             <td className="border border-[#D4D4D4] px-2 text-right">TOTAL RESULTADO:</td>
-             <td className="border border-[#D4D4D4] px-2 text-right duda-text-saida text-[15px]">{formatCurrency(item.valor)}</td>
-             <td colSpan={5} className="border border-[#D4D4D4]"></td>
-          </tr>
-       );
-    }
-
-    return (
-      <tr key={item.id} className={isGhost ? "duda-ghost-row" : ""}>
-        <td className="duda-row-number">
-           {sequenceIndex + 1}
-        </td>
-        {renderCell(item, "descricao", "280px")}
-        {renderCell(item, "tipo", "100px", "select", ["Entrada", "Saída"])}
-        {renderCell(item, "valor_digitado", "120px", "number")}
-        {renderCell(item, "parcelamento", "120px", "select", PARCELAMENTO_OPTIONS)}
-        <td className="text-center text-[#555] px-2 border border-[#D4D4D4]" style={{width: '70px'}}>
-           {item.parcela || ""}
-        </td>
-        {renderCell(item, "data", "100px", "date")}
-        {renderCell(item, "status", "100px", "select", ["Pago", "Em aberto"])}
-        {renderCell(item, "categoria", "150px", "select", userCategories && userCategories.length > 0 ? userCategories : [])}
-      </tr>
-    );
+     // Map array index for Right side (it starts at index 1 visually but maps to array index 0)
+     const dataIndex = index - 1;
+     const item = saidas[dataIndex];
+     const isEditing = editingCell?.side === 'right' && editingCell?.index === dataIndex && editingCell?.field === field;
+     
+     let displayValue = item ? item[field] : "";
+     if (field === "valor" && item) {
+        displayValue = item.valor !== 0 ? formatCurrency(Math.abs(item.valor)) : "";
+     }
+     let editValue = item ? item[field] : "";
+     if (field === "valor" && item) {
+        editValue = item.valor !== 0 ? Math.abs(item.valor).toString() : "";
+     }
+ 
+     const type = field === "valor" ? "number" : "text";
+ 
+     return (
+       <td 
+         className={`${isEditing ? "duda-cell-editing" : ""} cursor-cell !px-1 border border-[#D4D4D4]`}
+         style={{ width, minWidth: width, maxWidth: width }}
+         onDoubleClick={() => setEditingCell({ side: 'right', index: dataIndex, field })}
+         onClick={() => { if(!item) setEditingCell({ side: 'right', index: dataIndex, field }) }}
+       >
+         {isEditing ? (
+           <input
+             ref={inputRef as React.RefObject<HTMLInputElement>}
+             type={type}
+             className="duda-inline-input"
+             defaultValue={editValue}
+             placeholder={!item && field === 'descricao' ? 'Descrição saída' : ''}
+             onBlur={(e) => updateItem(false, dataIndex, field, e.target.value)}
+             onKeyDown={(e) => handleKeyDown(e, false, dataIndex, field)}
+             step={type === "number" ? "0.01" : undefined}
+           />
+         ) : (
+           <div className={`truncate px-1 relative ${field === 'valor' ? 'text-right' : ''}`}>
+              <span>{displayValue}</span>
+           </div>
+         )}
+       </td>
+     );
   };
 
-  const entradas = initialData.filter(d => d.tipo === "Entrada");
-  const saidas = initialData.filter(d => d.tipo === "Saída");
-  const totalGeral = entradas.reduce((a,c) => a + Number(c.valor), 0) + saidas.reduce((a,c) => a + Number(c.valor), 0);
+  const totalEntradas = entradas.reduce((acc, curr) => acc + Number(curr.valor), 0);
+  const totalSaidas = saidas.reduce((acc, curr) => acc + Number(curr.valor), 0); // saidas are negative already
+  const caixaLivre = totalEntradas + totalSaidas;
 
-  // Ghost rows until we hit ~40 rows minimum
-  const totalRealRows = initialData.length;
-  const paddingRowsNeeded = Math.max(30, 40 - totalRealRows);
-  const ghostRows = Array.from({length: paddingRowsNeeded}).map((_, i) => ({
-    id: `ghost-${i}`, tipo: "Saída", descricao: "", categoria: "", valor: 0, status: "", data: ""
-  }));
+  const maxRowsCount = Math.max(entradas.length + 5, saidas.length + 6, 60);
+
+  const rows = [];
+  for (let i = 0; i < maxRowsCount; i++) {
+     
+     // Row Sum logic just mimicking the screenshot exactly!
+     // We will drop the sums visually at the end of the lists.
+     const isEntradaSumRow = i === entradas.length + 2;
+     const isSaidaSumRow = i === saidas.length + 3;
+
+     rows.push(
+        <tr key={i} className="h-6">
+           <td className="duda-row-number bg-[#E6E6E6] border-r border-b border-[#C0C0C0] text-center text-[10px] text-gray-500">{i + 1}</td>
+           
+           {/* LEFT SIDE: Entradas */}
+           {/* A */} {renderCellLeft(i, 'A', 'descricao', '140px')}
+           {/* B */} {renderCellLeft(i, 'B', 'categoria', '140px')}
+           {/* C */} {isEntradaSumRow ? (
+               <td className="border border-[#D4D4D4] px-1 text-right font-bold bg-yellow-200">{formatCurrency(totalEntradas)}</td>
+           ) : renderCellLeft(i, 'C', 'valor', '100px')}
+           
+           {/* MIDDLE SPACERS: D, E, F */}
+           <td className="border border-[#D4D4D4] w-[80px]"></td>
+           <td className="border border-[#D4D4D4] w-[80px]"></td>
+           <td className="border border-[#D4D4D4] w-[80px]"></td>
+
+           {/* RIGHT SIDE: Saídas */}
+           {/* G */} {renderCellRight(i, 'G', 'descricao', '180px')}
+           {/* H */} {isSaidaSumRow ? (
+               <td className="border border-[#D4D4D4] px-1 text-right font-bold bg-yellow-200 text-red-600">{formatCurrency(Math.abs(totalSaidas))}</td>
+           ) : renderCellRight(i, 'H', 'valor', '100px')}
+
+           {/* END SPACERS: I, J, K */}
+           <td className="border border-[#D4D4D4] w-[80px]"></td>
+           <td className="border border-[#D4D4D4] w-[80px]"></td>
+           <td className="border border-[#D4D4D4] w-[80px]"></td>
+
+           {/* L: Caixa Livre Label */}
+           {i === 0 ? (
+               <td className="border border-[#D4D4D4] px-2 font-semibold">Caixa &quot;Livre&quot;</td>
+           ) : (
+               <td className="border border-[#D4D4D4] w-[100px]"></td>
+           )}
+
+           {/* M: Caixa Livre Value */}
+           {i === 0 ? (
+               <td className="border border-[#D4D4D4] px-2 text-right">{totalEntradas > 0 || totalSaidas < 0 ? caixaLivre.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ""}</td>
+           ) : (
+               <td className="border border-[#D4D4D4] w-[100px]"></td>
+           )}
+        </tr>
+     );
+  }
 
   return (
-    <table className="duda-excel-table">
-        <thead>
-        <tr>
-            <th className="duda-row-number bg-[#E6E6E6] z-20 border-b-0 border-r border-[#C0C0C0]" style={{width: '40px'}}></th>
-            <th className="duda-header-letter" style={{width: '280px'}}>A</th>
-            <th className="duda-header-letter" style={{width: '100px'}}>B</th>
-            <th className="duda-header-letter" style={{width: '120px'}}>C</th>
-            <th className="duda-header-letter" style={{width: '120px'}}>D</th>
-            <th className="duda-header-letter" style={{width: '70px'}}>E</th>
-            <th className="duda-header-letter" style={{width: '100px'}}>F</th>
-            <th className="duda-header-letter" style={{width: '100px'}}>G</th>
-            <th className="duda-header-letter" style={{width: '150px'}}>H</th>
-        </tr>
-        <tr className="bg-white">
-            <td className="duda-row-number">1</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Descrição</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Tipo</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Valor</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Parcelamento</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Parc.</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Data</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Status</td>
-            <td className="border border-[#D4D4D4] font-bold text-center">Categoria</td>
-        </tr>
-        </thead>
-        <tbody>
-        {initialData.map((item, i) => renderRow(item, i + 1))}
-        
-        {/* Balanço is a special row right after the real rows */}
-        {initialData.length > 0 && renderRow({ id: 'balanco', valor: totalGeral }, initialData.length + 1, true)}
-
-        {/* The rest are ghost rows filling the pure white spreadsheet feeling */}
-        {ghostRows.map((item, i) => {
-            const index = initialData.length + (initialData.length > 0 ? 1 : 0) + i + 1;
-            return renderRow(item, index);
-        })}
-        </tbody>
-    </table>
+    <div className="w-full overflow-x-auto relative mt-2 bg-white min-h-[700px] border border-[#d4d4d4] shadow-sm flex">
+       <table className="duda-excel-table border-collapse table-fixed w-max text-[#000000] text-[12px] font-sans">
+          <thead>
+            <tr className="bg-[#E6E6E6] text-center border-b border-[#C0C0C0] text-[11px] text-[#333] select-none h-6">
+                <th className="font-normal border-r border-[#C0C0C0] w-[40px]"></th>
+                <th className="font-normal border-r border-[#C0C0C0]">A</th>
+                <th className="font-normal border-r border-[#C0C0C0]">B</th>
+                <th className="font-normal border-r border-[#C0C0C0]">C</th>
+                <th className="font-normal border-r border-[#C0C0C0]">D</th>
+                <th className="font-normal border-r border-[#C0C0C0]">E</th>
+                <th className="font-normal border-r border-[#C0C0C0]">F</th>
+                <th className="font-normal border-r border-[#C0C0C0]">G</th>
+                <th className="font-normal border-r border-[#C0C0C0]">H</th>
+                <th className="font-normal border-r border-[#C0C0C0]">I</th>
+                <th className="font-normal border-r border-[#C0C0C0]">J</th>
+                <th className="font-normal border-r border-[#C0C0C0]">K</th>
+                <th className="font-normal border-r border-[#C0C0C0]">L</th>
+                <th className="font-normal border-r border-[#C0C0C0]">M</th>
+            </tr>
+          </thead>
+          <tbody>
+             {rows}
+          </tbody>
+       </table>
+    </div>
   );
 }
