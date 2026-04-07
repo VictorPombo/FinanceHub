@@ -19,15 +19,13 @@ export default async function ResumoMensalPage() {
   const { data: dudaRows } = await supabase
     .from("lancamentos")
     .select("*")
-    .eq("user_id", activeUser.id)
-    .in("status", ["Pago", "Concluído", "Confirmado", "Em aberto"]);
+    .eq("user_id", activeUser.id);
 
   // Fetch IA (Extratos)
   const { data: iaRows } = await supabase
     .from("ia_lancamentos")
     .select("*")
-    .eq("user_id", activeUser.id)
-    .in("status", ["Pago", "Concluído", "Confirmado", "Em aberto"]);
+    .eq("user_id", activeUser.id);
 
   // Inject logical origem flag, but completely ignore legacy internal origins that Lancamentos itself hides
   const manual = (dudaRows || [])
