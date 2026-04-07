@@ -137,40 +137,86 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
          </div>
        ) : (
          <>
-       {/* UPLOAD ZONE */}
+        {/* UPLOAD ZONE & PASTE JSON */}
        {!previewItems && (
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* OPTION 1: Direto do Banco */}
-            <div className="glass-card p-8 text-center flex flex-col items-center justify-center border border-purple-500/20 hover:border-purple-500/40 transition-all">
-               <div className="w-14 h-14 bg-purple-900/30 text-purple-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
-                  <UploadCloud className="w-7 h-7"/>
-               </div>
-               <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Leitura de PDF</h2>
-               <p className="text-slate-500 text-xs max-w-[250px] mx-auto mb-5">
-                  Suba o <b>PDF original do seu banco</b>. Recomendado: fragmentos de <b>até 30 dias</b> para evitar bloqueios de peso (Limites da Vercel).
-               </p>
-               
-               <label className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] flex items-center gap-2 text-sm w-full md:w-auto justify-center">
-                  {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Anexar O PDF (Banco)</>}
-                  <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
-               </label>
-            </div>
+         <div className="flex flex-col gap-4">
+           {/* FIRST ROW: 2 BUTTONS */}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* OPTION 1: Direto do Banco */}
+              <div className="glass-card p-8 text-center flex flex-col items-center justify-center border border-purple-500/20 hover:border-purple-500/40 transition-all">
+                 <div className="w-14 h-14 bg-purple-900/30 text-purple-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
+                    <UploadCloud className="w-7 h-7"/>
+                 </div>
+                 <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Leitura de PDF</h2>
+                 <p className="text-slate-500 text-xs max-w-[250px] mx-auto mb-5">
+                    Suba o <b>PDF original do seu banco</b>. Recomendado: fragmentos de <b>até 30 dias</b> para evitar bloqueios de peso (Limites da Vercel).
+                 </p>
+                 
+                 <label className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                    {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Anexar O PDF (Banco)</>}
+                    <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
+                 </label>
+              </div>
 
-            {/* OPTION 2: Extrato Comprimido */}
-            <div className="glass-card p-8 text-center flex flex-col items-center justify-center border border-emerald-500/20 hover:border-emerald-500/40 transition-all">
-               <div className="w-14 h-14 bg-emerald-900/30 text-emerald-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
-                  <FileText className="w-7 h-7"/>
-               </div>
-               <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Leitura Instantânea (JSON)</h2>
-               <p className="text-slate-500 text-xs max-w-[250px] mx-auto mb-5">
-                  Suba o extrato convertido em <b>.JSON</b> via Claude. Arquivo não passa pela IA (0 segundos). Ilimitado (10 anos+).
+              {/* OPTION 2: Extrato Comprimido via Upload */}
+              <div className="glass-card p-8 text-center flex flex-col items-center justify-center border border-emerald-500/20 hover:border-emerald-500/40 transition-all">
+                 <div className="w-14 h-14 bg-emerald-900/30 text-emerald-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+                    <FileText className="w-7 h-7"/>
+                 </div>
+                 <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Arquivo Instantâneo (JSON)</h2>
+                 <p className="text-slate-500 text-xs max-w-[250px] mx-auto mb-5">
+                    Suba o extrato convertido em <b>.JSON</b> via Claude. Leitura instantânea sem bloqueios (0 segundos). 10 anos+.
+                 </p>
+                 
+                 <label className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                    {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Enviar Arquivo .JSON</>}
+                    <input type="file" accept=".json,application/json" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
+                 </label>
+              </div>
+           </div>
+
+           {/* TEXTAREA JSON */}
+           <div className="glass-card p-6 border border-emerald-500/20 hover:border-emerald-500/40 transition-all flex flex-col items-center justify-center">
+               <h2 className="text-sm font-bold text-slate-200 mb-1">Colar Código (JSON) Diretamente</h2>
+               <p className="text-slate-500 text-[11px] mb-3 max-w-lg text-center">
+                  Tem o texto JSON do Claude em mãos? Cole ele diretamente na caixa abaixo para processamento instantâneo.
                </p>
                
-               <label className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2 text-sm w-full md:w-auto justify-center">
-                  {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Anexar Arquivo JSON</>}
-                  <input type="file" accept=".json,application/json" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
-               </label>
-            </div>
+               <textarea 
+                  className="w-full max-w-3xl h-32 md:h-48 bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500/50 transition-colors mb-4 placeholder-slate-600"
+                  placeholder={`{\n  "lancamentos": [\n    {\n      "data": "2026-04-06",\n      "descricao": "PIX TRANSF",\n      "valor_brl": 4100.00,\n      "tipo": "credit"\n    }\n  ]\n}`}
+                  id="json-textarea-input"
+               />
+
+               <button 
+                  onClick={() => {
+                     const val = (document.getElementById('json-textarea-input') as HTMLTextAreaElement)?.value || '';
+                     if(!val.trim()) return toast.error('Cole o JSON primeiro.');
+                     try {
+                        const parsed = JSON.parse(val);
+                        let items: any[] = [];
+                        if (Array.isArray(parsed)) { items = parsed; }
+                        else if (parsed.lancamentos && Array.isArray(parsed.lancamentos)) {
+                           items = parsed.lancamentos.map((l: any) => ({
+                               data: l.data || '',
+                               descricao: l.descricao || '',
+                               valor: typeof l.valor_brl !== 'undefined' ? Math.abs(l.valor_brl) : Math.abs(l.valor || 0),
+                               tipo: (l.tipo === 'credit' || l.tipo === 'Entrada') ? 'Entrada' : 'Saída',
+                               categoria: l.categoria || 'Outros'
+                           }));
+                        } else { throw new Error("Raiz não encontrada. Use um Array ou root {'lancamentos': []}"); }
+                        
+                        // Sanitize
+                        setPreviewItems(items);
+                        toast.success(`${items.length} itens extraídos instantaneamente!`);
+                        (document.getElementById('json-textarea-input') as HTMLTextAreaElement).value = '';
+                     } catch(err: any) { toast.error("Falha ao ler JSON: " + err.message); }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-sm"
+               >
+                  Analisar Variável e Ir Para Planilha
+               </button>
+           </div>
          </div>
        )}
 
