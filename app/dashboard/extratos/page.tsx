@@ -12,13 +12,10 @@ export default async function ExtratosPage() {
     redirect("/");
   }
 
-  // Fetch Lancamentos de Origem = Extrato
-  // Limit to avoid huge payloads if not necessary, but since it's an import page we want to see recent imports.
   const { data: historico } = await supabase
-    .from("lancamentos")
+    .from("ia_lancamentos")
     .select("*")
     .eq("user_id", user.id)
-    .eq("origem", "Extrato")
     .order("created_at", { ascending: false })
     .limit(100);
 

@@ -18,7 +18,7 @@ interface Props {
 
 export default function ResumoMensalClient({ rawData, config, user_id }: Props) {
   const [saldoInicialStr, setSaldoInicialStr] = useState(config?.saldo_inicial?.toString() || "0");
-  const [origemFilter, setOrigemFilter] = useState<"Todos" | "Upload IA" | "Manual">("Todos");
+  const [origemFilter, setOrigemFilter] = useState<"Upload IA" | "Manual">("Manual");
   const supabase = createClient();
 
   const handleUpdateSaldo = async () => {
@@ -44,11 +44,9 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
   const processedData = useMemo(() => {
     // A. Filtrar
     const filtered = rawData.filter((item: any) => {
-      // By default, if it has 'criado_por', it might be 'Upload IA'
-      const isAI = item.criado_por === "Upload IA" || item.origem === "Extrato";
+      const isAI = item.origem === "Upload IA";
       if (origemFilter === "Upload IA") return isAI;
       if (origemFilter === "Manual") return !isAI;
-      return true;
     });
 
     // B. Grouping
@@ -114,22 +112,16 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
         {/* The Origem Filter */}
         <div className="flex items-center bg-slate-900/50 rounded-xl p-1 border border-slate-800 shadow-inner">
            <button 
-             onClick={() => setOrigemFilter("Todos")}
-             className={`flex-1 md:flex-none flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${origemFilter === 'Todos' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.2)]' : 'text-slate-500 hover:text-slate-300'}`}
+             onClick={() => setOrigemFilter("Manual")}
+             className={`flex-1 md:flex-none flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${origemFilter === 'Manual' ? 'bg-pink-600/20 text-pink-400 shadow-[0_0_15px_rgba(219,39,119,0.2)]' : 'text-slate-500 hover:text-slate-300'}`}
            >
-              <ListFilter className="w-4 h-4" /> Geral
+              <PencilLine className="w-4 h-4" /> Planilha Manual
            </button>
            <button 
              onClick={() => setOrigemFilter("Upload IA")}
              className={`flex-1 md:flex-none flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${origemFilter === 'Upload IA' ? 'bg-emerald-600/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'text-slate-500 hover:text-slate-300'}`}
            >
               <Bot className="w-4 h-4" /> Uploads IA
-           </button>
-           <button 
-             onClick={() => setOrigemFilter("Manual")}
-             className={`flex-1 md:flex-none flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${origemFilter === 'Manual' ? 'bg-pink-600/20 text-pink-400 shadow-[0_0_15px_rgba(219,39,119,0.2)]' : 'text-slate-500 hover:text-slate-300'}`}
-           >
-              <PencilLine className="w-4 h-4" /> Planilha Manual
            </button>
         </div>
       </div>

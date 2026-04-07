@@ -12,6 +12,7 @@ interface Props {
   onDataChange: (newData: any[]) => void;
   currentTabMonth: number;
   currentTabYear: number;
+  tableName?: string;
 }
 
 interface ColDef {
@@ -32,10 +33,11 @@ const DEFAULT_RIGHT_COLS: ColDef[] = [
   { id: 'R2', field: 'valor', defaultLabel: 'H', width: '100px' },
 ];
 
-export default function DudaExcelTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear }: Props) {
+export default function DudaExcelTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear, tableName }: Props) {
   const [editingCell, setEditingCell] = useState<{ side: 'left' | 'right', index: number, field: string } | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
   const supabase = createClient();
+  const dbTable = tableName || "duda_lancamentos";
 
   // Column Orders
   const [leftCols, setLeftCols] = useState(DEFAULT_LEFT_COLS);
@@ -92,7 +94,7 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
             status: "Em aberto",
             ordem: list.length // Put at bottom
         };
-        const { data, error } = await supabase.from("duda_lancamentos").insert([payloadToInsert]).select().single();
+        const { data, error } = await supabase.from(dbTable).insert([payloadToInsert]).select().single();
         if (data) {
             onDataChange([...initialData, data]); 
         }
@@ -100,7 +102,7 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
         const optimisticData = initialData.map(d => d.id === item.id ? { ...d, ...updatePayload } : d);
         onDataChange(optimisticData);
         
-        const { error } = await supabase.from("duda_lancamentos").update(updatePayload).eq("id", item.id);
+        const { error } = await supabase.from(dbTable).update(updatePayload).eq("id", item.id);
         if (error) toast.error("Erro ao salvar");
     }
     setEditingCell(null);
@@ -154,7 +156,7 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
       // Async DB Sync - We do it in background without blocking
       updatedList.forEach(item => {
          if (item.id) {
-             supabase.from("duda_lancamentos").update({ ordem: item.ordem }).eq("id", item.id).then();
+             supabase.from(dbTable).update({ ordem: item.ordem }).eq("id", item.id).then();
          }
       });
   };
@@ -223,14 +225,14 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
     toast.success("Quadrado movido!");
 
     // Atualização Assíncrona no Banco (Background)
-    await supabase.from("duda_lancamentos").update({ [colDefField]: colDefField === 'valor' ? 0 : emptyVal }).eq("id", srcItem.id);
+    await supabase.from(dbTable).update({ [colDefField]: colDefField === 'valor' ? 0 : emptyVal }).eq("id", srcItem.id);
     
     if (targetItem && targetId) {
         let finalValToSave = srcVal;
         if (colDefField === 'valor') finalValToSave = isEntrada ? Math.abs(Number(srcVal)) : -Math.abs(Number(srcVal));
-        await supabase.from("duda_lancamentos").update({ [colDefField]: finalValToSave }).eq("id", targetId);
+        await supabase.from(dbTable).update({ [colDefField]: finalValToSave }).eq("id", targetId);
     } else if (targetPayloadToInsert) {
-        const { data } = await supabase.from("duda_lancamentos").insert([targetPayloadToInsert]).select().single();
+        const { data } = await supabase.from(dbTable).insert([targetPayloadToInsert]).select().single();
         if (data) {
            list[targetIndex] = data;
            setter([...list]);

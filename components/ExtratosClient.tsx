@@ -55,7 +55,7 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
         };
      });
 
-     const { data: inserted, error } = await supabase.from('lancamentos').insert(payload).select();
+     const { data: inserted, error } = await supabase.from('ia_lancamentos').insert(payload).select();
      
      if (error) {
         toast.error("Erro ao salvar no banco de dados.", { id: toastId });
@@ -68,7 +68,7 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
 
   const handleDeleteHistory = async (id: string) => {
      if(!window.confirm("Deseja deletar essa transação do extrato importado? O valor será removido do saldo.")) return;
-     const { error } = await supabase.from('lancamentos').delete().eq('id', id);
+     const { error } = await supabase.from('ia_lancamentos').delete().eq('id', id);
      if (!error) {
         setHistory(history.filter(h => h.id !== id));
         toast.success("Transação excluída!");
@@ -158,7 +158,7 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
                   <ArrowRightLeft className="w-4 h-4 text-slate-500" /> Histórico de Extratos Automáticos
                </h3>
                <span className="text-xs text-slate-400 font-medium bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50 shadow-sm flex items-center gap-1">
-                 <Info className="w-3 h-3"/> Reflete no Resumo
+                 <Info className="w-3 h-3"/> Reflete no Resumo IA
                </span>
             </div>
             
