@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-inter" });
+const outfit = Outfit({ 
+  subsets: ["latin"], 
+  weight: ["300", "400", "500", "600", "700", "800", "900"], 
+  variable: "--font-outfit" 
+});
+
+const jetbrains = JetBrains_Mono({ 
+  subsets: ["latin"], 
+  weight: ["400", "500", "700", "800"], 
+  variable: "--font-jetbrains" 
+});
 
 export const metadata: Metadata = {
   title: "💰 FinanceHub - Controle Financeiro Pessoal",
@@ -17,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.variable} font-sans antialiased bg-[#020617] text-slate-200 selection:bg-purple-500/30`}>
+      <body className={`${outfit.variable} ${jetbrains.variable} font-sans antialiased bg-[#020617] text-slate-200 selection:bg-purple-500/30`}>
         <Toaster
           position="top-right"
           toastOptions={{
@@ -25,6 +35,7 @@ export default function RootLayout({
             style: {
               borderRadius: "4px",
               fontSize: "13px",
+              fontFamily: "var(--font-outfit)",
             },
           }}
         />

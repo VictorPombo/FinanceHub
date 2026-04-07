@@ -123,7 +123,7 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
 
     const updatePayload: any = {};
     if (field === "valor_digitado") { 
-      let newValor = Math.abs(Number(value));
+      let newValor = Math.abs(Number(String(value).replace(',', '.')));
       newValor = item.tipo === "Saída" ? -newValor : newValor;
       updatePayload.valor = newValor;
     } else {
@@ -131,6 +131,24 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
       if (field === "tipo") {
           updatePayload.valor = value === "Saída" ? -Math.abs(item.valor) : Math.abs(item.valor);
       }
+    }
+
+    if (item.recorrencia === 'Recorrente') {
+       if (window.confirm(`Este é um registro Fixo. Deseja aplicar essa alteração para TODOS os meses futuros vinculados?`)) {
+           toast.loading("Atualizando valores fixos futuros...");
+           const { error: errMass } = await supabase.from("duda_lancamentos")
+              .update(updatePayload)
+              .eq("recorrencia", "Recorrente")
+              .eq("descricao", item.descricao)
+              .eq("tipo", item.tipo)
+              .gte("data", item.data);
+              
+           toast.dismiss();
+           if (errMass) { toast.error("Erro ao atualizar!"); return; }
+           toast.success("Atualizado!");
+           window.location.reload();
+           return;
+       }
     }
 
     const optimisticData = [...initialData];
@@ -171,7 +189,23 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
        onDataChange(initialData.filter(d => d.id !== id));
        return;
     }
-    if (!window.confirm("Deseja realmente excluir este lançamento da Duda?")) return;
+    const item = initialData.find(d => d.id === id);
+    if (!item) return;
+
+    if (item.recorrencia === 'Recorrente') {
+       if (window.confirm("Este lançamento é Fixo. Deseja excluir ele E TODOS OS FUTUROS subsequentes?")) {
+          toast.loading("Excluindo...");
+          await supabase.from("duda_lancamentos").delete()
+              .eq("recorrencia", "Recorrente").eq("descricao", item.descricao).eq("tipo", item.tipo).gte("data", item.data);
+          toast.dismiss();
+          toast.success("Excluídos!");
+          window.location.reload();
+          return;
+       }
+    } else {
+       if (!window.confirm("Deseja realmente excluir este lançamento da Duda?")) return;
+    }
+
     onDataChange(initialData.filter((d) => d.id !== id));
     await supabase.from("duda_lancamentos").delete().eq("id", id);
     toast.success("Excluído");

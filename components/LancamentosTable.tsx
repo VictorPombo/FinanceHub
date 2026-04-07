@@ -215,7 +215,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
 
     const updatePayload: any = {};
     if (field === "valor_digitado") { 
-      let newValor = Math.abs(Number(value));
+      let newValor = Math.abs(Number(String(value).replace(',', '.')));
       newValor = item.tipo === "Saída" ? -newValor : newValor;
       updatePayload.valor = newValor;
     } else {
@@ -223,6 +223,24 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
       if (field === "tipo") {
           updatePayload.valor = value === "Saída" ? -Math.abs(item.valor) : Math.abs(item.valor);
       }
+    }
+
+    if (item.recorrencia === 'Recorrente') {
+       if (window.confirm(`Este é um registro Fixo. Deseja aplicar a alteração para TODOS os meses subsequentes?`)) {
+           toast.loading("Atualizando valores fixos futuros...");
+           const { error: errMass } = await supabase.from("lancamentos")
+              .update(updatePayload)
+              .eq("recorrencia", "Recorrente")
+              .eq("descricao", item.descricao)
+              .eq("tipo", item.tipo)
+              .gte("data", item.data);
+              
+           toast.dismiss();
+           if (errMass) { toast.error("Erro ao atualizar!"); return; }
+           toast.success("Atualizado!");
+           window.location.reload();
+           return;
+       }
     }
 
     const optimisticData = [...initialData];
@@ -242,7 +260,23 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
   };
 
   const deleteItem = async (id: string, isMobile = false) => {
-    if (!window.confirm("Deseja realmente excluir este lançamento?")) return;
+    const item = initialData.find(d => d.id === id);
+    if (!item) return;
+
+    if (item.recorrencia === 'Recorrente') {
+       if (window.confirm("Este lançamento é Fixo. Deseja excluir ele E TODOS OS FUTUROS subsequentes?")) {
+          toast.loading("Excluindo...");
+          await supabase.from("lancamentos").delete()
+              .eq("recorrencia", "Recorrente").eq("descricao", item.descricao).eq("tipo", item.tipo).gte("data", item.data);
+          toast.dismiss();
+          toast.success("Excluídos!");
+          window.location.reload();
+          return;
+       }
+    } else {
+       if (!window.confirm("Deseja realmente excluir este lançamento?")) return;
+    }
+
     onDataChange(initialData.filter((d) => d.id !== id));
     await supabase.from("lancamentos").delete().eq("id", id);
     toast.success("Excluído");

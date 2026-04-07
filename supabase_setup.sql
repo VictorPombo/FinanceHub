@@ -91,25 +91,6 @@ create policy "Usuários podem inserir suas próprias contas" on public.contas f
 create policy "Usuários podem atualizar suas próprias contas" on public.contas for update using (auth.uid() = user_id);
 create policy "Usuários podem excluir suas próprias contas" on public.contas for delete using (auth.uid() = user_id);
 
-ntos da Duda" on public.duda_lancamentos for update using (auth.uid() = user_id);
-create policy "Usuários podem excluir seus próprios lançamentos da Duda" on public.duda_lancamentos for delete using (auth.uid() = user_id);
-
--- ==========================================
--- 6. Tabela de Categorias
--- ==========================================
-create table if not exists public.categorias (
-    id uuid default uuid_generate_v4() primary key,
-    user_id uuid references auth.users not null,
-    nome text not null,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Segurança (RLS) para Categorias
-alter table public.categorias enable row level security;
-create policy "Usuários podem ver suas próprias categorias" on public.categorias for select using (auth.uid() = user_id);
-create policy "Usuários podem inserir suas próprias categorias" on public.categorias for insert with check (auth.uid() = user_id);
-create policy "Usuários podem atualizar suas próprias categorias" on public.categorias for update using (auth.uid() = user_id);
-create policy "Usuários podem excluir suas próprias categorias" on public.categorias for delete using (auth.uid() = user_id);
 -- ==========================================
 -- 5. Tabela da Planilha Duda (Isolada)
 -- ==========================================
@@ -132,4 +113,22 @@ create table if not exists public.duda_lancamentos (
 alter table public.duda_lancamentos enable row level security;
 create policy "Usuários podem ver seus próprios lançamentos da Duda" on public.duda_lancamentos for select using (auth.uid() = user_id);
 create policy "Usuários podem inserir seus próprios lançamentos da Duda" on public.duda_lancamentos for insert with check (auth.uid() = user_id);
-create policy "Usuários podem atualizar seus próprios lançame
+create policy "Usuários podem atualizar seus próprios lançamentos da Duda" on public.duda_lancamentos for update using (auth.uid() = user_id);
+create policy "Usuários podem excluir seus próprios lançamentos da Duda" on public.duda_lancamentos for delete using (auth.uid() = user_id);
+
+-- ==========================================
+-- 6. Tabela de Categorias
+-- ==========================================
+create table if not exists public.categorias (
+    id uuid default uuid_generate_v4() primary key,
+    user_id uuid references auth.users not null,
+    nome text not null,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Segurança (RLS) para Categorias
+alter table public.categorias enable row level security;
+create policy "Usuários podem ver suas próprias categorias" on public.categorias for select using (auth.uid() = user_id);
+create policy "Usuários podem inserir suas próprias categorias" on public.categorias for insert with check (auth.uid() = user_id);
+create policy "Usuários podem atualizar suas próprias categorias" on public.categorias for update using (auth.uid() = user_id);
+create policy "Usuários podem excluir suas próprias categorias" on public.categorias for delete using (auth.uid() = user_id);
