@@ -21,7 +21,7 @@ interface Props {
 export default function ResumoMensalClient({ rawData, config, user_id }: Props) {
   const [saldoInicialStr, setSaldoInicialStr] = useState(config?.saldo_inicial?.toString() || "0");
   const [origemFilter, setOrigemFilter] = useState<"Upload IA" | "Manual">("Manual");
-  const [selectedMonth, setSelectedMonth] = useState<number>(0);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [realMonth, setRealMonth] = useState(-1);
   const [realYear, setRealYear] = useState(-1);
