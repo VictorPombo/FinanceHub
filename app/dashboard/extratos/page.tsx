@@ -23,10 +23,10 @@ export default async function ExtratosPage() {
     .limit(100);
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#f4f5f7]">
-      <div className="bg-white border-b border-gray-200 px-6 py-6 shadow-sm shrink-0">
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Importação de Extratos</h1>
-        <p className="text-slate-500 mt-1 max-w-2xl font-medium text-sm">
+    <div className="w-full h-full flex flex-col bg-[#020617]">
+      <div className="bg-[#0F172A] border-b border-slate-800/80 px-6 py-6 shadow-sm shrink-0">
+        <h1 className="text-2xl font-black text-slate-100 tracking-tight">Importação de Extratos</h1>
+        <p className="text-slate-400 mt-1 max-w-2xl font-medium text-sm">
           Faça upload da foto ou PDF do seu extrato bancário. A Inteligência Artificial lerá todas as transações, organizará as categorias e integrará tudo ao seu Saldo Mensal sem poluir seus Lançamentos Manuais.
         </p>
       </div>

@@ -22,11 +22,11 @@ export default async function ContasPage() {
   const safeContas = contas || [];
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#f4f5f7]">
+    <div className="w-full h-full flex flex-col bg-[#020617]">
       {/* Top Banner similar to the screenshots for Accounts */}
-      <div className="bg-white border-b border-gray-200 px-6 py-8 shadow-sm">
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Meus Cartões e Contas</h1>
-        <p className="text-slate-500 mt-1 max-w-2xl font-medium">
+      <div className="bg-[#0F172A] border-b border-slate-800/80 px-6 py-8 shadow-sm">
+        <h1 className="text-2xl font-black text-slate-100 tracking-tight">Meus Cartões e Contas</h1>
+        <p className="text-slate-400 mt-1 max-w-2xl font-medium">
           Organize suas finanças centralizando contas bancárias e gerencie a fatura, limites e datas de fechamento dos seus cartões de crédito.
         </p>
       </div>

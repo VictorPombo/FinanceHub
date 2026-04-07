@@ -147,7 +147,7 @@ export default async function ConsultorPage() {
 
 
   return (
-    <div className="flex flex-col h-full bg-[#F8FAFC] overflow-y-auto w-full">
+    <div className="flex flex-col h-full bg-[#020617] overflow-y-auto w-full">
       <div className="bg-gradient-to-r from-[#0F172A] to-[#1E293B] p-6 w-full shrink-0 border-b border-[#3B82F6]/30 shadow-lg relative z-20">
         <h1 className="text-white font-extrabold text-2xl flex items-center gap-3 tracking-wide uppercase">
           🤖 Consultor de Telemetria Financeira
@@ -173,8 +173,8 @@ export default async function ConsultorPage() {
             <div className={`glass-card p-6 border-l-[6px] 
                 ${percComprometida < 50 ? 'border-l-emerald-500' : percComprometida <= 70 ? 'border-l-amber-500' : 'border-l-rose-500'} hover:shadow-premium-hover transition-all duration-300`}>
                <h3 className="text-xs text-slate-500 font-bold tracking-widest uppercase mb-2">📌 Renda Comprometida</h3>
-               <span className="text-3xl font-black font-mono tracking-tight text-slate-800">{percComprometida.toFixed(1)}%</span>
-               <p className="text-xs text-slate-500 mt-2 font-semibold bg-slate-100 py-1 px-2 rounded w-fit">
+               <span className="text-3xl font-black font-mono tracking-tight text-slate-200">{percComprometida.toFixed(1)}%</span>
+               <p className="text-xs text-slate-200 mt-2 font-semibold bg-slate-800 py-1 px-2 rounded w-fit">
                  {percComprometida < 50 && "🟢 Saudável"}
                  {percComprometida >= 50 && percComprometida <= 70 && "🟡 Atenção"}
                  {percComprometida > 70 && percComprometida < 90 && "🔴 Alerta"}
@@ -187,7 +187,7 @@ export default async function ConsultorPage() {
                <h3 className="text-xs text-slate-500 font-bold tracking-widest uppercase mb-2">💸 Maior Saída</h3>
                {maiorGasto ? (
                  <>
-                  <span className="text-xl font-bold font-sans text-slate-800 truncate mb-1">{maiorGasto.descricao}</span>
+                  <span className="text-xl font-bold font-sans text-slate-200 truncate mb-1">{maiorGasto.descricao}</span>
                   <span className="text-red-500 font-mono font-black tracking-tight text-lg">{formatCurrency(Math.abs(Number(maiorGasto.valor)))}</span>
                  </>
                ) : <span className="text-slate-400 italic text-sm">Sem registros</span>}
@@ -203,7 +203,7 @@ export default async function ConsultorPage() {
             {/* Card 5 */}
             <div className="glass-card p-6 border-l-[6px] border-l-indigo-500 hover:shadow-premium-hover transition-all duration-300">
                <h3 className="text-xs text-slate-500 font-bold tracking-widest uppercase mb-2">📈 Evolução Histórica</h3>
-               <span className="text-lg font-black font-sans text-slate-800 leading-tight block mt-1">
+               <span className="text-lg font-black font-sans text-slate-200 leading-tight block mt-1">
                  {(sobraAtual - sobraPrev) > 0 ? `Melhora de ${formatCurrency(sobraAtual - sobraPrev)}` : `Queda de ${formatCurrency(Math.abs(sobraAtual - sobraPrev))}`}
                </span>
                <span className="text-xs text-slate-400 mt-1 block">vs mês anterior</span>
@@ -212,7 +212,7 @@ export default async function ConsultorPage() {
             {/* Card 6 */}
             <div className="glass-card p-6 border-l-[6px] border-l-teal-500 hover:shadow-premium-hover transition-all duration-300">
                <h3 className="text-xs text-slate-500 font-bold tracking-widest uppercase mb-2">🔮 Fechamento Previsto</h3>
-               <span className="text-2xl font-black font-mono tracking-tight text-slate-800 px-1 truncate block mb-1">{formatCurrency(projecaoFinal)}</span>
+               <span className="text-2xl font-black font-mono tracking-tight text-slate-200 px-1 truncate block mb-1">{formatCurrency(projecaoFinal)}</span>
                <p className="text-xs text-slate-500 font-medium">{projecaoFinal > 0 ? "O mês terminará no azul" : "Atenção máxima."}</p>
             </div>
             
@@ -226,10 +226,10 @@ export default async function ConsultorPage() {
             <div className="flex flex-col gap-4 mt-5">
               {conselhos.map((c, i) => (
                 <div key={i} className={`glass-card p-5 border-l-[6px] ${c.color} flex items-start gap-4 hover:-translate-y-1 transition-transform duration-300`}>
-                  <div className="p-3 bg-slate-50 rounded-xl shadow-inner mt-1">{c.icon}</div>
+                  <div className="p-3 bg-slate-800/50 rounded-xl shadow-inner mt-1">{c.icon}</div>
                   <div>
-                    <h4 className="font-extrabold text-slate-800 text-sm mb-1 uppercase tracking-wide">{c.title}</h4>
-                    <p className="text-slate-600 text-sm leading-relaxed">{c.desc}</p>
+                    <h4 className="font-extrabold text-slate-100 text-sm mb-1 uppercase tracking-wide">{c.title}</h4>
+                    <p className="text-slate-400 text-sm leading-relaxed">{c.desc}</p>
                   </div>
                 </div>
               ))}
@@ -239,7 +239,7 @@ export default async function ConsultorPage() {
 
         {/* Right column - Termometro */}
         <div className="w-full xl:w-96 flex flex-col gap-6 shrink-0">
-          <div className="glass-card p-8 flex flex-col items-center justify-center text-center sticky top-6 border border-slate-200">
+          <div className="glass-card p-8 flex flex-col items-center justify-center text-center sticky top-6 border border-slate-800/80">
             <Award className={`w-28 h-28 ${classifColor} mb-2 opacity-[0.08] absolute top-8 right-8`} />
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Termômetro</h3>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-8">Score Financeiro (0-100)</p>
@@ -252,7 +252,7 @@ export default async function ConsultorPage() {
               {classifText}
             </div>
 
-            <div className="w-full bg-slate-100 rounded-full h-5 relative overflow-hidden shadow-inner border border-slate-200">
+            <div className="w-full bg-slate-900 rounded-full h-5 relative overflow-hidden shadow-inner border border-slate-800">
               <div className={`h-full rounded-full transition-all duration-1000 ease-out ${barraProgresso} shadow-md`} style={{ width: `${score}%` }}></div>
             </div>
             <div className="w-full flex justify-between text-[11px] uppercase font-bold text-slate-400 mt-3 tracking-wider">

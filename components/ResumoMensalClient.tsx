@@ -49,7 +49,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
       if (origemFilter === "Upload IA") return isAI;
       if (origemFilter === "Manual") return !isAI;
       return true;
-    }).filter(i => i.status === "Pago" || i.status === "Confirmado");
+    });
 
     // B. Grouping
     const grouped: Record<string, { entradas: number; saidas: number }> = {};
@@ -140,7 +140,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
           <div className="bg-[#060b18] backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-800/60 flex flex-col hover:border-purple-500/30 transition-all relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-50 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center justify-between text-slate-400 mb-2">
-               <span className="font-bold text-sm tracking-widest uppercase">Acumulado</span>
+               <span className="font-bold text-sm tracking-widest uppercase">Saldo na Conta (Acumulado)</span>
                <span className="p-2 bg-purple-950/30 rounded-xl"><BarChart2 className="w-5 h-5 text-purple-400"/></span>
             </div>
             <div className="text-3xl md:text-4xl font-black text-slate-50 tracking-tighter mt-1 mb-4 font-mono">
