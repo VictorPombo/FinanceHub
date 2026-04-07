@@ -59,7 +59,10 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
            valor: finalValor,
            tipo: finalTipo,
            data: safeDate,
-           categoria: (item.categoria || "Outros").substring(0, 100)
+           categoria: (item.categoria || "Outros").substring(0, 100),
+           recorrencia: 'Única',
+           status: 'Pago',
+           origem: 'Upload IA'
         };
      });
      
