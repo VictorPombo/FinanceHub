@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/types";
 import { UploadCloud, FileText, CheckCircle2, ArrowRightLeft, Trash2, Loader2, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { useExtratoQueue } from "@/contexts/ExtratoQueueContext";
 
 interface ExtratoItem {
   id?: string;
@@ -18,8 +19,7 @@ interface ExtratoItem {
 
 export default function ExtratosClient({ userId, initialHistory }: { userId: string, initialHistory: any[] }) {
   const [history, setHistory] = useState(initialHistory);
-  const [isUploading, setIsUploading] = useState(false);
-  const [previewItems, setPreviewItems] = useState<ExtratoItem[] | null>(null);
+  const { isUploading, uploadExtrato, previewItems, setPreviewItems } = useExtratoQueue();
   
   const supabase = createClient();
 
@@ -27,35 +27,9 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    const toastId = toast.loading("Lendo Extrato Bancário. Isso pode levar alguns segundos...");
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const res = await fetch('/api/vision/extrato', { method: 'POST', body: formData });
-      const aiData = await res.json();
-      
-      if (!res.ok || !Array.isArray(aiData)) {
-         throw new Error(aiData.error || 'Falha ao extrair itens estruturados do documento.');
-      }
-      
-      if (aiData.length === 0) {
-         toast.error("Nenhuma transação encontrada na imagem.", { id: toastId });
-         setIsUploading(false);
-         return;
-      }
-
-      setPreviewItems(aiData);
-      toast.success(`${aiData.length} transações encontradas!`, { id: toastId });
-      
-    } catch (err: any) {
-      toast.error(err.message, { id: toastId });
-    } finally {
-      setIsUploading(false);
-      e.target.value = '';
-    }
+    // Fire and Forget para Background
+    uploadExtrato(file);
+    e.target.value = '';
   };
 
   const handleConfirmImport = async () => {
