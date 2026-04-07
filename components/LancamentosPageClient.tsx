@@ -12,6 +12,7 @@ interface Props {
   user_id: string;
   userCategories: string[];
   tableName?: string;
+  isReadOnly?: boolean;
 }
 
 const MONTHS = [
@@ -19,7 +20,7 @@ const MONTHS = [
   "Jul", "Ago", "Set", "Out", "Nov", "Dez"
 ];
 
-export default function LancamentosPageClient({ initialData, user_id, userCategories, tableName }: Props) {
+export default function LancamentosPageClient({ initialData, user_id, userCategories, tableName, isReadOnly }: Props) {
   const [data, setData] = useState(initialData);
   const [filterType, setFilterType] = useState<string>("Todos");
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
@@ -111,75 +112,79 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
               />
             </div>
             
-            <label className="flex items-center justify-center w-8 h-[28px] bg-indigo-600 hover:bg-indigo-700 text-white rounded cursor-pointer transition-colors shadow-sm relative group">
-              <input 
-                type="file" 
-                accept="image/*,application/pdf"
-                className="hidden" 
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
+            {!isReadOnly && (
+              <>
+                <label className="flex items-center justify-center w-8 h-[28px] bg-indigo-600 hover:bg-indigo-700 text-white rounded cursor-pointer transition-colors shadow-sm relative group">
+                  <input 
+                    type="file" 
+                    accept="image/*,application/pdf"
+                    className="hidden" 
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      const toastId = toast.loading('Lendo comprovante com IA...');
+                      try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const res = await fetch('/api/vision', { method: 'POST', body: formData });
+                        const aiData = await res.json();
+                        
+                        if (!res.ok || !aiData.descricao || aiData.valor === undefined) {
+                           throw new Error(aiData.error || 'Não foi possível extrair os dados');
+                        }
+                        
+                        // Insert directly to supabase
+                        const dbPayload = {
+                          user_id: user_id,
+                          descricao: aiData.descricao,
+                          valor: aiData.tipo === "Saída" ? -Math.abs(aiData.valor) : Math.abs(aiData.valor),
+                          data: aiData.data || new Date().toISOString().split('T')[0],
+                          status: "Pago",
+                          tipo: aiData.tipo || "Saída",
+                          categoria: "Outros", // AI could extract this too in the future
+                          criado_por: "Upload IA"
+                        };
+                        
+                        // Use client to insert
+                        import('@/lib/supabase/client').then(async ({ createClient }) => {
+                           const supabase = createClient();
+                           const targetTable = tableName || 'lancamentos';
+                           const { data: inserted, error } = await supabase.from(targetTable).insert([dbPayload]).select().single();
+                           if (error) throw error;
+                           
+                           setData([inserted, ...data]);
+                           toast.success('Leitura Concluída e Lançamento inserido!', { id: toastId });
+                        });
+                        
+                      } catch (err: any) {
+                        toast.error(err.message, { id: toastId });
+                      } finally {
+                        e.target.value = ''; // Reset file input
+                      }
+                    }}
+                  />
+                  <span className="text-sm rounded-md"><Bot className="w-4 h-4"/></span>
                   
-                  const toastId = toast.loading('Lendo comprovante com IA...');
-                  try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    const res = await fetch('/api/vision', { method: 'POST', body: formData });
-                    const aiData = await res.json();
-                    
-                    if (!res.ok || !aiData.descricao || aiData.valor === undefined) {
-                       throw new Error(aiData.error || 'Não foi possível extrair os dados');
-                    }
-                    
-                    // Insert directly to supabase
-                    const dbPayload = {
-                      user_id: user_id,
-                      descricao: aiData.descricao,
-                      valor: aiData.tipo === "Saída" ? -Math.abs(aiData.valor) : Math.abs(aiData.valor),
-                      data: aiData.data || new Date().toISOString().split('T')[0],
-                      status: "Pago",
-                      tipo: aiData.tipo || "Saída",
-                      categoria: "Outros", // AI could extract this too in the future
-                      criado_por: "Upload IA"
-                    };
-                    
-                    // Use client to insert
-                    import('@/lib/supabase/client').then(async ({ createClient }) => {
-                       const supabase = createClient();
-                       const targetTable = tableName || 'lancamentos';
-                       const { data: inserted, error } = await supabase.from(targetTable).insert([dbPayload]).select().single();
-                       if (error) throw error;
-                       
-                       setData([inserted, ...data]);
-                       toast.success('Leitura Concluída e Lançamento inserido!', { id: toastId });
-                    });
-                    
-                  } catch (err: any) {
-                    toast.error(err.message, { id: toastId });
-                  } finally {
-                    e.target.value = ''; // Reset file input
-                  }
-                }}
-              />
-              <span className="text-sm rounded-md"><Bot className="w-4 h-4"/></span>
-              
-              {/* Tooltip */}
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                Scanner de Comprovante IA
-              </div>
-            </label>
+                  {/* Tooltip */}
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    Scanner de Comprovante IA
+                  </div>
+                </label>
 
-            <button 
-              onClick={() => setAiTextModalOpen(true)}
-              className="flex items-center justify-center w-8 h-[28px] bg-purple-600 hover:bg-purple-700 text-white rounded cursor-pointer transition-colors shadow-sm relative group"
-            >
-              <MessageSquareText className="w-4 h-4"/>
-              {/* Tooltip */}
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                Lote por Texto IA
-              </div>
-            </button>
+                <button 
+                  onClick={() => setAiTextModalOpen(true)}
+                  className="flex items-center justify-center w-8 h-[28px] bg-purple-600 hover:bg-purple-700 text-white rounded cursor-pointer transition-colors shadow-sm relative group"
+                >
+                  <MessageSquareText className="w-4 h-4"/>
+                  {/* Tooltip */}
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                    Lote por Texto IA
+                  </div>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

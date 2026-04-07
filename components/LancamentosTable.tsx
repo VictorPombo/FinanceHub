@@ -14,6 +14,7 @@ interface Props {
   currentTabMonth: number;
   currentTabYear: number;
   tableName?: string;
+  isReadOnly?: boolean;
 }
 
 const PARCELAMENTO_OPTIONS = [
@@ -21,7 +22,7 @@ const PARCELAMENTO_OPTIONS = [
   "7x", "8x", "9x", "10x", "11x", "12x", "Fixo"
 ];
 
-export default function LancamentosTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear, tableName }: Props) {
+export default function LancamentosTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear, tableName, isReadOnly }: Props) {
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
   const supabase = createClient();
@@ -305,7 +306,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
        if (parts.length === 3) displayValue = `${parts[2]}/${parts[1]}`;
     }
 
-    const canEdit = field !== "id" && field !== "valor_final" && field !== "parcela";
+    const canEdit = !isReadOnly && field !== "id" && field !== "valor_final" && field !== "parcela";
 
     let editValue = item[field] || "";
     if (field === "valor_digitado") {

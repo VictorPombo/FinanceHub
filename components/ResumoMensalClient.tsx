@@ -104,12 +104,18 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
   
   const currentMonthData = processedData.find(d => d.mes === mesKeySelecionado);
   
-  const totals = { 
+  const currentTotals = { 
      entradas: currentMonthData?.entradas || 0, 
      saidas: currentMonthData?.saidas || 0, 
      sobra: currentMonthData?.sobra || 0,
      acumulado: currentMonthData?.acumulado || Number(saldoInicialStr) || 0
   };
+
+  const tableTotals = processedData.reduce((acc, curr) => ({
+    entradas: acc.entradas + curr.entradas,
+    saidas: acc.saidas + curr.saidas,
+    sobra: acc.sobra + curr.sobra
+  }), { entradas: 0, saidas: 0, sobra: 0 });
 
   return (
     <div className="flex flex-col h-full overflow-y-auto w-full bg-[#020617] text-slate-100 font-sans">
@@ -170,7 +176,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                <span className="p-2 bg-purple-950/30 rounded-xl"><BarChart2 className="w-5 h-5 text-purple-400"/></span>
             </div>
             <div className="text-3xl md:text-4xl font-black text-slate-50 tracking-tighter mt-1 mb-4 font-mono">
-               {formatCurrency(totals.acumulado)}
+               {formatCurrency(currentTotals.acumulado)}
             </div>
             <div className="flex items-center gap-3 mt-auto bg-slate-900/40 border border-slate-800/80 p-3 rounded-xl hover:bg-slate-900/80 transition-colors">
                <div className="flex flex-col flex-1">
@@ -196,12 +202,12 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                <span className="p-2 bg-emerald-950/30 rounded-xl"><TrendingUp className="w-5 h-5 text-emerald-400"/></span>
             </div>
             <div className="text-3xl md:text-4xl font-black text-emerald-400 tracking-tighter mt-1 mb-4 font-mono shadow-emerald-500/20 drop-shadow-md">
-               {formatCurrency(totals.entradas)}
+               {formatCurrency(currentTotals.entradas)}
             </div>
             <div className="grid grid-cols-2 gap-3 mt-auto">
                <div className="flex flex-col bg-emerald-950/20 border border-emerald-900/30 p-2.5 rounded-xl">
                  <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3"/> Recebido</span>
-                 <span className="text-sm font-mono font-bold text-emerald-400 mt-1">{formatCurrency(totals.entradas)}</span>
+                 <span className="text-sm font-mono font-bold text-emerald-400 mt-1">{formatCurrency(currentTotals.entradas)}</span>
                </div>
                <div className="flex flex-col bg-slate-900/40 border border-slate-800/80 p-2.5 rounded-xl opacity-50 grayscale">
                  <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A receber</span>
@@ -217,7 +223,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                <span className="p-2 bg-red-950/30 rounded-xl"><TrendingDown className="w-5 h-5 text-red-500"/></span>
             </div>
             <div className="text-3xl md:text-4xl font-black text-red-500 tracking-tighter mt-1 mb-4 font-mono shadow-red-500/20 drop-shadow-md">
-               {formatCurrency(Math.abs(totals.saidas))}
+               {formatCurrency(Math.abs(currentTotals.saidas))}
             </div>
             <div className="grid grid-cols-2 gap-3 mt-auto">
                <div className="flex flex-col bg-slate-900/40 border border-slate-800/80 p-2.5 rounded-xl opacity-50 grayscale">
@@ -226,7 +232,7 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                </div>
                <div className="flex flex-col bg-red-950/20 border border-red-900/30 p-2.5 rounded-xl">
                  <span className="text-[10px] text-red-500 font-bold flex items-center gap-1 uppercase tracking-widest"><Clock className="w-3 h-3"/> A pagar</span>
-                 <span className="text-sm font-mono font-bold text-red-400 mt-1">{formatCurrency(Math.abs(totals.saidas))}</span>
+                 <span className="text-sm font-mono font-bold text-red-400 mt-1">{formatCurrency(Math.abs(currentTotals.saidas))}</span>
                </div>
             </div>
           </div>
@@ -307,9 +313,9 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
             <tfoot>
               <tr className="bg-gradient-to-r from-purple-950/30 to-slate-900/80 text-purple-200 border-t-2 border-purple-900/50">
                 <td className="font-black text-sm uppercase tracking-widest border-r border-slate-800/50 px-5 py-5 text-slate-100">BALANÇO TOTAL</td>
-                <td className="text-right font-mono text-base font-black border-r border-slate-800/50 text-emerald-400 px-5 py-5">{formatCurrency(totals.entradas)}</td>
-                <td className="text-right font-mono text-base font-black border-r border-slate-800/50 text-red-500 px-5 py-5">{formatCurrency(totals.saidas)}</td>
-                <td className={`text-right font-mono text-base font-black border-r border-slate-800/50 px-5 py-5 ${totals.sobra < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{formatCurrency(totals.sobra)}</td>
+                <td className="text-right font-mono text-base font-black border-r border-slate-800/50 text-emerald-400 px-5 py-5">{formatCurrency(tableTotals.entradas)}</td>
+                <td className="text-right font-mono text-base font-black border-r border-slate-800/50 text-red-500 px-5 py-5">{formatCurrency(tableTotals.saidas)}</td>
+                <td className={`text-right font-mono text-base font-black border-r border-slate-800/50 px-5 py-5 ${tableTotals.sobra < 0 ? 'text-red-500' : 'text-emerald-400'}`}>{formatCurrency(tableTotals.sobra)}</td>
                 <td colSpan={3}></td>
               </tr>
             </tfoot>

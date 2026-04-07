@@ -37,6 +37,7 @@ export default async function PlanilhaIaPage() {
       user_id={user.id} 
       userCategories={customCategories}
       tableName="ia_lancamentos"
+      isReadOnly={true}
     />
   );
 }
