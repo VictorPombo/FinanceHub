@@ -299,14 +299,30 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                            const payloads = aiData.transactions.map((tx: any) => {
                               let finalVal = Number(tx.valor) || 0;
                               finalVal = tx.tipo === 'Saída' ? -Math.abs(finalVal) : Math.abs(finalVal);
+                              
+                              // Normaize Data safely
+                              let safeDate = tx.data || `${yearToProcess}-${String(currentMonthIndex+1).padStart(2,'0')}-01`;
+                              if (safeDate.includes('/')) {
+                                  const parts = safeDate.split('/');
+                                  if (parts.length === 3) safeDate = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                              }
+                              // Ensure mm and dd are padded if separated by dash
+                              if (safeDate.includes('-')) {
+                                  const p = safeDate.split('-');
+                                  if(p.length === 3) safeDate = `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
+                              }
+
                               return {
                                  user_id: user_id,
-                                 descricao: tx.descricao,
+                                 descricao: tx.descricao || 'Desconhecido',
                                  valor: finalVal,
-                                 data: tx.data || `${yearToProcess}-${String(currentMonthIndex+1).padStart(2,'0')}-01`,
-                                 status: "Pago", // assume pago se tá em balanço
+                                 data: safeDate,
+                                 status: "Pago",
                                  tipo: tx.tipo,
-                                 categoria: "Outros"
+                                 categoria: "Outros",
+                                 recorrencia: "Única",
+                                 parcela: "1/1",
+                                 origem: "Upload IA"
                               };
                            });
 
@@ -315,6 +331,19 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
 
                            setData(prev => [...(insertedRows || []), ...prev]);
                            toast.success(`${insertedRows?.length} transações inseridas com sucesso!`, { id: toastId, duration: 4000 });
+                           
+                           // Jump to the month of the first inserted row to immediately show feedback
+                           if (insertedRows && insertedRows.length > 0) {
+                               const firstDate = insertedRows[0].data; // YYYY-MM-DD
+                               if (firstDate) {
+                                  const monthStr = firstDate.split('-')[1];
+                                  const yearStr = firstDate.split('-')[0];
+                                  if (monthStr && yearStr) {
+                                      setCurrentMonthIndex(Number(monthStr) - 1);
+                                      setCurrentYear(Number(yearStr));
+                                  }
+                               }
+                           }
                         } catch (err: any) {
                            toast.error(err.message, { id: toastId });
                         }
