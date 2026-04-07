@@ -106,6 +106,7 @@ create table if not exists public.duda_lancamentos (
     valor numeric not null,
     status text not null,
     observacoes text,
+    ordem integer default 0,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
