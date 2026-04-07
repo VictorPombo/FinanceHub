@@ -29,8 +29,11 @@ export default async function ResumoMensalPage() {
     .eq("user_id", activeUser.id)
     .in("status", ["Pago", "Concluído", "Confirmado", "Em aberto"]);
 
-  // Inject logical origem flag
-  const manual = (dudaRows || []).map(r => ({ ...r, origem: "Manual" }));
+  // Inject logical origem flag, but completely ignore legacy internal origins that Lancamentos itself hides
+  const manual = (dudaRows || [])
+    .filter(r => r.origem !== "Extrato")  // Filters OUT ghost files from legacy uploads
+    .map(r => ({ ...r, origem: "Manual" }));
+    
   const ia = (iaRows || []).map(r => ({ ...r, origem: "Upload IA" }));
 
   // Combina para a página cliente

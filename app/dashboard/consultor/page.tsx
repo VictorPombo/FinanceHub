@@ -25,9 +25,11 @@ export default async function ConsultorPage() {
     supabase.from("lancamentos").select("*").eq("user_id", activeUser.id).eq("status", "Previsto")
   ]);
 
+  const cleanLancamentos = (lancamentos || []).filter(r => r.origem !== "Extrato");
+
   return (
     <ConsultorClient 
-      lancamentos={lancamentos || []}
+      lancamentos={cleanLancamentos}
       dudaLancamentos={dudaLancamentos || []}
       iaLancamentos={iaLancamentos || []}
       dividas={dividas || []}
