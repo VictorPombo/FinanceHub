@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import LancamentosTotalizers from "./LancamentosTotalizers";
 import LancamentosTable from "./LancamentosTable";
 import { getMesAnoKey } from "@/lib/types";
-import { Search, ChevronLeft, ChevronRight, Bot } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Bot, MessageSquareText, X, Save } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -24,6 +24,9 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
   const [filterType, setFilterType] = useState<string>("Todos");
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
   const [search, setSearch] = useState("");
+  const [aiTextModalOpen, setAiTextModalOpen] = useState(false);
+  const [aiTextInput, setAiTextInput] = useState("");
+  const [isParsingText, setIsParsingText] = useState(false);
   
   // Year and Month State
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -166,6 +169,17 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                 Scanner de Comprovante IA
               </div>
             </label>
+
+            <button 
+              onClick={() => setAiTextModalOpen(true)}
+              className="flex items-center justify-center w-8 h-[28px] bg-purple-600 hover:bg-purple-700 text-white rounded cursor-pointer transition-colors shadow-sm relative group"
+            >
+              <MessageSquareText className="w-4 h-4"/>
+              {/* Tooltip */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] whitespace-nowrap px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                Lote por Texto IA
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -192,6 +206,97 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
           currentTabYear={currentYear}
         />
       </div>
+
+      {/* AI TEXT PARSING MODAL */}
+      {aiTextModalOpen && (
+         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in p-4">
+            <div className="bg-[#0f172a] border border-slate-700 rounded-3xl shadow-2xl p-6 w-full max-w-2xl flex flex-col gap-4 animate-in zoom-in-95">
+               <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center gap-3">
+                     <div className="p-2 bg-purple-600/20 text-purple-400 rounded-xl">
+                        <MessageSquareText className="w-5 h-5"/>
+                     </div>
+                     <div>
+                       <h2 className="text-xl font-black text-slate-200">Importação em Lote via Texto (IA)</h2>
+                       <p className="text-xs text-slate-400 font-medium mt-1">Cole resumos de balanços, e-mails ou mensagens para registrar tudo de uma vez.</p>
+                     </div>
+                  </div>
+                  <button onClick={() => !isParsingText && setAiTextModalOpen(false)} className="p-2 bg-slate-800/50 rounded-full active:scale-95 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all">
+                     <X className="w-5 h-5" />
+                  </button>
+               </div>
+
+               <textarea 
+                  disabled={isParsingText}
+                  value={aiTextInput}
+                  onChange={(e) => setAiTextInput(e.target.value)}
+                  placeholder="Ex:&#10;Entradas:&#10;João da silva R$350,00 12/05&#10;Piscina R$ 100,00 (05/05)..." 
+                  className="w-full h-64 bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-slate-300 text-sm font-mono outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 resize-none no-scrollbar disabled:opacity-50"
+               />
+
+               <div className="flex justify-end gap-3 mt-2">
+                  <button 
+                     disabled={isParsingText}
+                     onClick={async () => {
+                        if (!aiTextInput.trim()) { toast.error("Insira o texto primeiro"); return; }
+                        setIsParsingText(true);
+                        const toastId = toast.loading("Analisando transcrições financeiras...");
+                        try {
+                           const res = await fetch('/api/parse-text', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ text: aiTextInput, currentYear })
+                           });
+                           const aiData = await res.json();
+                           if (!res.ok) throw new Error(aiData.error || 'Erro na IA');
+                           if (!aiData.transactions || aiData.transactions.length === 0) {
+                              toast.error("Nenhuma transação identificada.", { id: toastId });
+                              setIsParsingText(false);
+                              return;
+                           }
+
+                           toast.loading(`Encontradas ${aiData.transactions.length} transações. Inserindo no banco...`, { id: toastId });
+                           
+                           const { createClient } = await import('@/lib/supabase/client');
+                           const supabase = createClient();
+                           const targetTable = tableName || 'lancamentos';
+                           
+                           const payloads = aiData.transactions.map((tx: any) => {
+                              let finalVal = Number(tx.valor) || 0;
+                              finalVal = tx.tipo === 'Saída' ? -Math.abs(finalVal) : Math.abs(finalVal);
+                              return {
+                                 user_id: user_id,
+                                 descricao: tx.descricao,
+                                 valor: finalVal,
+                                 data: tx.data || `${currentYear}-${String(currentMonthIndex+1).padStart(2,'0')}-01`,
+                                 status: "Pago", // assume pago se tá em balanço
+                                 tipo: tx.tipo,
+                                 categoria: "Outros", 
+                                 criado_por: "Upload IA Lote"
+                              };
+                           });
+
+                           const { data: insertedRows, error } = await supabase.from(targetTable).insert(payloads).select();
+                           if (error) throw error;
+
+                           setData([...(insertedRows || []), ...data]);
+                           toast.success(`${insertedRows?.length} transações inseridas com sucesso!`, { id: toastId, duration: 4000 });
+                           setAiTextInput("");
+                           setAiTextModalOpen(false);
+                        } catch (err: any) {
+                           toast.error(err.message, { id: toastId });
+                        } finally {
+                           setIsParsingText(false);
+                        }
+                     }}
+                     className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl px-6 py-3 font-bold shadow-lg shadow-purple-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                  >
+                     {isParsingText ? "PROCESSANDO..." : <><Bot className="w-5 h-5"/> GERAR LANÇAMENTOS</>}
+                  </button>
+               </div>
+            </div>
+         </div>
+      )}
     </div>
   );
 }
