@@ -36,24 +36,41 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
      if (!previewItems || previewItems.length === 0) return;
      const toastId = toast.loading("Registrando transações...");
      const payload = previewItems.map(item => {
-        const absValor = Math.abs(Number(item.valor));
-        const finalValor = item.tipo === 'Saída' ? -absValor : absValor;
+        // Sanitize Valor
+        let parsedVal = typeof item.valor === 'string' ? Number((item.valor as string).replace(/\./g, '').replace(',', '.')) : Number(item.valor);
+        if (isNaN(parsedVal)) parsedVal = 0;
+        const absValor = Math.abs(parsedVal);
+        
+        // Sanitize Tipo
+        const isEntrada = String(item.tipo).toLowerCase().trim().includes("entrada");
+        const finalTipo = isEntrada ? 'Entrada' : 'Saída';
+        const finalValor = finalTipo === 'Saída' ? -absValor : absValor;
+
+        // Sanitize Data
+        let safeDate = item.data || new Date().toISOString().split('T')[0];
+        if (safeDate.includes('/')) {
+           const parts = safeDate.split('/');
+           if (parts.length === 3) safeDate = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        }
+
         return {
            user_id: userId,
-           descricao: item.descricao,
+           descricao: (item.descricao || "Lançamento via Extrato").substring(0, 255),
            valor: finalValor,
-           tipo: item.tipo,
-           data: item.data || new Date().toISOString().split('T')[0],
-           categoria: item.categoria || "Outros",
+           tipo: finalTipo,
+           data: safeDate,
+           categoria: (item.categoria || "Outros").substring(0, 100),
            status: "Pago",
            recorrencia: "Única",
            parcela: "1/1",
            origem: "Extrato"
         };
      });
+     
      const { data: inserted, error } = await supabase.from('ia_lancamentos').insert(payload).select();
      if (error) {
-        toast.error("Erro ao salvar.", { id: toastId });
+        console.error("Supabase Insert Error:", error);
+        toast.error(`Erro: ${error.message || "Falha ao salvar."}`, { id: toastId, duration: 6000 });
      } else {
         toast.success("Importação concluída!", { id: toastId });
         setHistory([...(inserted || []), ...history].slice(0, 100));
