@@ -17,7 +17,7 @@ export default async function ConsultorPage() {
     { data: config },
     { data: lancPrevistos }
   ] = await Promise.all([
-    supabase.from("lancamentos").select("*").eq("user_id", activeUser.id).eq("status", "Confirmado"),
+    supabase.from("lancamentos").select("*").eq("user_id", activeUser.id).in("status", ["Pago", "Concluído", "Confirmado", "Em aberto"]),
     supabase.from("duda_lancamentos").select("*").eq("user_id", activeUser.id),
     supabase.from("ia_lancamentos").select("*").eq("user_id", activeUser.id),
     supabase.from("dividas").select("*").eq("user_id", activeUser.id),

@@ -17,19 +17,18 @@ interface Props {
   lancPrevistos: any[];
 }
 
-type TabType = "Geral" | "Lançamentos" | "Planilha Excel" | "Uploads IA";
+type TabType = "Geral" | "Lançamentos" | "Uploads IA";
 
 export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancamentos, dividas, config, lancPrevistos }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>("Geral");
 
   const l = useMemo(() => {
     switch(activeTab) {
-      case "Geral": return [...lancamentos, ...dudaLancamentos, ...iaLancamentos];
+      case "Geral": return [...lancamentos, ...iaLancamentos];
       case "Lançamentos": return [...lancamentos];
-      case "Planilha Excel": return [...dudaLancamentos];
       case "Uploads IA": return [...iaLancamentos];
     }
-  }, [activeTab, lancamentos, dudaLancamentos, iaLancamentos]);
+  }, [activeTab, lancamentos, iaLancamentos]);
 
   const d = dividas || [];
   const saldo_inicial = config?.saldo_inicial || 0;
@@ -166,9 +165,6 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
           </button>
           <button onClick={() => setActiveTab("Lançamentos")} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'Lançamentos' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/50' : 'text-slate-400 bg-slate-900/50 border border-transparent hover:text-slate-200'}`}>
             <PencilLine className="w-4 h-4" /> Lançamentos
-          </button>
-          <button onClick={() => setActiveTab("Planilha Excel")} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'Planilha Excel' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/50' : 'text-slate-400 bg-slate-900/50 border border-transparent hover:text-slate-200'}`}>
-            <FileSpreadsheet className="w-4 h-4" /> Planilha Excel
           </button>
           <button onClick={() => setActiveTab("Uploads IA")} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'Uploads IA' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/50' : 'text-slate-400 bg-slate-900/50 border border-transparent hover:text-slate-200'}`}>
             <Bot className="w-4 h-4" /> Uploads IA

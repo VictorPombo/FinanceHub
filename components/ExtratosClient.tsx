@@ -75,6 +75,19 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
      }
   };
 
+  const handleDeleteAll = async () => {
+     if(!window.confirm("Deseja APAGAR TODOS os Lançamentos e Extratos capturados pela IA? Isso esvaziará a Planilha IA inteira.")) return;
+     const toastId = toast.loading("Apagando registros...");
+     const { error } = await supabase.from('ia_lancamentos').delete().eq('user_id', userId);
+     
+     if (error) {
+        toast.error("Erro ao limpar dados", { id: toastId });
+     } else {
+        setHistory([]);
+        toast.success("Todos os registros da IA foram excluídos!", { id: toastId });
+     }
+  };
+
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
        
