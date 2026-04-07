@@ -60,12 +60,12 @@ export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
       saldo_limite: Number(limite),
       dia_fechamento: isNaN(parsedFechamento!) || parsedFechamento === 0 ? null : parsedFechamento,
       dia_vencimento: isNaN(parsedVencimento!) || parsedVencimento === 0 ? null : parsedVencimento,
-      status: conta?.status || "Ativas"
+      status: conta?.status || "Ativa"
     };
 
     if (conta?.id) {
       const { data, error } = await supabase.from('contas').update(payload).eq('id', conta.id).select().single();
-      if (error) toast.error("Erro ao atualizar");
+      if (error) { console.error(error); toast.error("Erro ao atualizar"); }
       else {
          onSave(data);
          toast.success("Atualizado");

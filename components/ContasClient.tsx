@@ -25,7 +25,7 @@ interface Props {
 
 export default function ContasClient({ initialData, userId }: Props) {
   const [data, setData] = useState<Conta[]>(initialData);
-  const [activeTab, setActiveTab] = useState<"Ativas" | "Arquivadas">("Ativas");
+  const [activeTab, setActiveTab] = useState<"Ativa" | "Arquivada">("Ativa");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingConta, setEditingConta] = useState<Conta | null>(null);
   
@@ -45,10 +45,10 @@ export default function ContasClient({ initialData, userId }: Props) {
   };
 
   const handleArchive = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === "Ativas" ? "Arquivadas" : "Ativas";
+    const newStatus = currentStatus === "Ativa" ? "Arquivada" : "Ativa";
     const { error } = await supabase.from('contas').update({ status: newStatus }).eq('id', id);
     if (!error) {
-       toast.success(newStatus === "Arquivadas" ? "Conta arquivada" : "Conta ativada");
+       toast.success(newStatus === "Arquivada" ? "Conta arquivada" : "Conta ativada");
        setData(data.map(c => c.id === id ? { ...c, status: newStatus } : c));
     }
   };
@@ -61,14 +61,14 @@ export default function ContasClient({ initialData, userId }: Props) {
          
          <div className="flex items-center gap-2 p-1 bg-slate-900/80 rounded-xl w-full md:w-max">
            <button 
-             onClick={() => setActiveTab("Ativas")}
-             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Ativas' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'}`}
+             onClick={() => setActiveTab("Ativa")}
+             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Ativa' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'}`}
            >
              Ativas
            </button>
            <button 
-             onClick={() => setActiveTab("Arquivadas")}
-             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Arquivadas' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'}`}
+             onClick={() => setActiveTab("Arquivada")}
+             className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'Arquivada' ? 'bg-purple-600/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'}`}
            >
              Arquivadas
            </button>
