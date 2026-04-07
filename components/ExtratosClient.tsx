@@ -14,30 +14,24 @@ interface ExtratoItem {
   tipo: string;
   data: string;
   categoria: string;
-  status?: string; // used locally before saving
+  status?: string;
 }
 
 export default function ExtratosClient({ userId, initialHistory }: { userId: string, initialHistory: any[] }) {
   const [history, setHistory] = useState(initialHistory);
   const { isUploading, uploadExtrato, previewItems, setPreviewItems } = useExtratoQueue();
-  
   const supabase = createClient();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Fire and Forget para Background
     uploadExtrato(file);
     e.target.value = '';
   };
 
   const handleConfirmImport = async () => {
      if (!previewItems || previewItems.length === 0) return;
-     
      const toastId = toast.loading("Registrando transações...");
-     
-     // Build Payload
      const payload = previewItems.map(item => {
         const absValor = Math.abs(Number(item.valor));
         const finalValor = item.tipo === 'Saída' ? -absValor : absValor;
@@ -48,87 +42,73 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
            tipo: item.tipo,
            data: item.data || new Date().toISOString().split('T')[0],
            categoria: item.categoria || "Outros",
-           status: "Pago", // Extrato already happened usually
+           status: "Pago",
            recorrencia: "Única",
            parcela: "1/1",
-           origem: "Extrato" // The Magic Key!
+           origem: "Extrato"
         };
      });
-
      const { data: inserted, error } = await supabase.from('ia_lancamentos').insert(payload).select();
-     
      if (error) {
-        toast.error("Erro ao salvar no banco de dados.", { id: toastId });
+        toast.error("Erro ao salvar.", { id: toastId });
      } else {
-        toast.success("Importação Concluída com sucesso!", { id: toastId });
-        setHistory([...(inserted || []), ...history].slice(0, 100)); // Update history
+        toast.success("Importação concluída!", { id: toastId });
+        setHistory([...(inserted || []), ...history].slice(0, 100));
         setPreviewItems(null);
      }
   };
 
   const handleDeleteHistory = async (id: string) => {
-     if(!window.confirm("Deseja deletar essa transação do extrato importado? O valor será removido do saldo.")) return;
+     if(!window.confirm("Deletar esta transação do extrato?")) return;
      const { error } = await supabase.from('ia_lancamentos').delete().eq('id', id);
      if (!error) {
         setHistory(history.filter(h => h.id !== id));
-        toast.success("Transação excluída!");
+        toast.success("Excluída!");
      }
   };
 
   const handleDeleteAll = async () => {
-     if(!window.confirm("Deseja APAGAR TODOS os Lançamentos e Extratos capturados pela IA? Isso esvaziará a Planilha IA inteira.")) return;
-     const toastId = toast.loading("Apagando registros...");
+     if(!window.confirm("APAGAR TODOS os lançamentos IA? Isso esvaziará a Planilha IA inteira.")) return;
+     const toastId = toast.loading("Apagando...");
      const { error } = await supabase.from('ia_lancamentos').delete().eq('user_id', userId);
-     
-     if (error) {
-        toast.error("Erro ao limpar dados", { id: toastId });
-     } else {
-        setHistory([]);
-        toast.success("Todos os registros da IA foram excluídos!", { id: toastId });
-     }
+     if (error) { toast.error("Erro", { id: toastId }); }
+     else { setHistory([]); toast.success("Todos os registros excluídos!", { id: toastId }); }
   };
 
-
-
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full pb-20 md:pb-0">
        
+       {/* UPLOAD ZONE */}
        {!previewItems && (
-         <div className="bg-[#0B1121]/90 backdrop-blur-xl rounded-2xl p-8 shadow-sm border border-slate-800/80 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-purple-900/30 text-purple-400 rounded-full flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.2)]">
-               <UploadCloud className="w-8 h-8"/>
+         <div className="glass-card p-8 text-center flex flex-col items-center justify-center">
+            <div className="w-14 h-14 bg-purple-900/30 text-purple-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
+               <UploadCloud className="w-7 h-7"/>
             </div>
-            <h2 className="text-xl font-bold text-slate-100 tracking-tight mb-2">Importar Arquivo de Extrato</h2>
-            <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
-               Arraste sua foto ou PDF do extrato bancário aqui. Nossa IA lerá todas as linhas e categorizará sozinho.
+            <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Importar Extrato</h2>
+            <p className="text-slate-500 text-xs max-w-md mx-auto mb-5">
+               Arraste sua foto ou PDF do extrato bancário. A IA lerá todas as linhas e categorizará automaticamente.
             </p>
             
-            <label className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold cursor-pointer transition-colors shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)] flex items-center gap-2">
-               {isUploading ? <><Loader2 className="w-5 h-5 animate-spin" /> Processando...</> : <><FileText className="w-5 h-5" /> Selecionar Arquivo</>}
-               <input 
-                  type="file" 
-                  accept="image/*,application/pdf"
-                  className="hidden" 
-                  onChange={handleFileUpload}
-                  disabled={isUploading}
-               />
+            <label className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] flex items-center gap-2 text-sm">
+               {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</> : <><FileText className="w-4 h-4" /> Selecionar Arquivo</>}
+               <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
             </label>
          </div>
        )}
 
-       {/* PREVIEW MODE AFTER UPLOAD */}
+       {/* PREVIEW */}
        {previewItems && (
-         <div className="bg-[#0B1121]/90 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-slate-800/80">
-            <div className="flex items-center justify-between mb-6">
-               <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Transações Detectadas ({previewItems.length})
+         <div className="glass-card p-5">
+            <div className="flex items-center justify-between mb-5">
+               <h2 className="text-base font-bold text-slate-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" /> {previewItems.length} Transações Detectadas
                </h2>
                <div className="flex gap-2">
-                  <button onClick={() => setPreviewItems(null)} className="px-4 py-2 text-sm font-bold text-slate-400 hover:bg-slate-800/50 rounded-lg transition-colors">
+                  <button onClick={() => setPreviewItems(null)} className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:bg-slate-800/50 rounded-lg transition-colors">
                      Cancelar
                   </button>
-                  <button onClick={handleConfirmImport} className="px-4 py-2 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
-                     Confirmar e Salvar Tudo
+                  <button onClick={handleConfirmImport} className="px-4 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-[0_0_10px_rgba(16,185,129,0.2)] transition-all">
+                     Salvar Tudo
                   </button>
                </div>
             </div>
@@ -137,24 +117,24 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead>
                      <tr className="border-b border-slate-800 text-slate-500">
-                        <th className="py-3 px-4 font-bold text-[10px] uppercase tracking-wider">Data</th>
-                        <th className="py-3 px-4 font-bold text-[10px] uppercase tracking-wider">Descrição</th>
-                        <th className="py-3 px-4 font-bold text-[10px] uppercase tracking-wider">Categoria / Tipo</th>
-                        <th className="py-3 px-4 font-bold text-[10px] uppercase tracking-wider text-right">Valor</th>
+                        <th className="py-2.5 px-3 font-bold text-[9px] uppercase tracking-wider">Data</th>
+                        <th className="py-2.5 px-3 font-bold text-[9px] uppercase tracking-wider">Descrição</th>
+                        <th className="py-2.5 px-3 font-bold text-[9px] uppercase tracking-wider">Cat. / Tipo</th>
+                        <th className="py-2.5 px-3 font-bold text-[9px] uppercase tracking-wider text-right">Valor</th>
                      </tr>
                   </thead>
                   <tbody>
                      {previewItems.map((item, idx) => (
-                        <tr key={idx} className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 transition-colors">
-                           <td className="py-3 px-4 text-slate-400">{item.data}</td>
-                           <td className="py-3 px-4 text-slate-200 font-semibold">{item.descricao}</td>
-                           <td className="py-3 px-4">
-                              <span className="bg-slate-800/50 text-slate-400 px-2 py-1 rounded text-xs mr-2 border border-slate-700/50">{item.categoria}</span>
-                              <span className={`px-2 py-1 rounded text-xs font-bold border ${item.tipo === 'Entrada' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/50' : 'bg-red-950/40 text-red-500 border-red-900/50'}`}>
+                        <tr key={idx} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/20 transition-colors">
+                           <td className="py-2.5 px-3 text-slate-400 text-xs">{item.data}</td>
+                           <td className="py-2.5 px-3 text-slate-200 font-semibold text-xs">{item.descricao}</td>
+                           <td className="py-2.5 px-3">
+                              <span className="bg-slate-800/50 text-slate-400 px-1.5 py-0.5 rounded text-[10px] mr-1 border border-slate-700/50">{item.categoria}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${item.tipo === 'Entrada' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/50' : 'bg-red-950/40 text-red-500 border-red-900/50'}`}>
                                  {item.tipo}
                               </span>
                            </td>
-                           <td className={`py-3 px-4 text-right font-mono font-bold ${item.tipo === 'Entrada' ? 'text-emerald-400' : 'text-slate-300'}`}>
+                           <td className={`py-2.5 px-3 text-right font-mono font-bold text-xs ${item.tipo === 'Entrada' ? 'text-emerald-400' : 'text-slate-300'}`}>
                               {formatCurrency(item.valor)}
                            </td>
                         </tr>
@@ -165,24 +145,21 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
          </div>
        )}
 
-       {/* HISTORY VIEWER */}
+       {/* HISTORY */}
        {!previewItems && history.length > 0 && (
-         <div className="bg-[#0B1121]/50 rounded-2xl shadow-sm border border-slate-800/80 overflow-hidden backdrop-blur-sm">
-            <div className="bg-slate-900/40 border-b border-slate-800 px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-               <div className="flex flex-col gap-1">
-                  <h3 className="font-bold text-slate-300 flex items-center gap-2">
-                     <ArrowRightLeft className="w-4 h-4 text-slate-500" /> Histórico de Extratos Automáticos
+         <div className="glass-card overflow-hidden">
+            <div className="bg-slate-900/40 border-b border-slate-800/60 px-5 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+               <div className="flex flex-col gap-0.5">
+                  <h3 className="font-bold text-sm text-slate-300 flex items-center gap-2">
+                     <ArrowRightLeft className="w-4 h-4 text-slate-500" /> Histórico de Extratos
                   </h3>
-                  <span className="text-xs text-slate-400 font-medium bg-slate-800/50 px-2 py-1 rounded w-fit border border-slate-700/50 shadow-sm flex items-center gap-1">
+                  <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
                     <Info className="w-3 h-3"/> Reflete no Resumo IA
                   </span>
                </div>
-               <button 
-                 onClick={handleDeleteAll}
-                 className="px-3 py-1.5 text-xs font-bold text-red-500 bg-red-950/20 hover:bg-red-900/40 border border-red-900/30 rounded-lg transition-colors flex items-center gap-1.5 mt-2 md:mt-0"
-               >
-                 <Trash2 className="w-3.5 h-3.5"/>
-                 Limpar Planilha IA Inteira
+               <button onClick={handleDeleteAll}
+                 className="px-3 py-1.5 text-[10px] font-bold text-red-500 bg-red-950/20 hover:bg-red-900/30 border border-red-900/30 rounded-lg transition-colors flex items-center gap-1">
+                 <Trash2 className="w-3 h-3"/> Limpar Tudo
                </button>
             </div>
             
@@ -190,32 +167,32 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead>
                      <tr className="border-b border-slate-800 text-slate-500">
-                        <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider">Data</th>
-                        <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider">Descrição / Categoria</th>
-                        <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider">Tipo</th>
-                        <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider">Valor</th>
-                        <th className="py-3 px-6 font-bold text-[10px] uppercase tracking-wider text-right">Ação</th>
+                        <th className="py-2.5 px-5 font-bold text-[9px] uppercase tracking-wider">Data</th>
+                        <th className="py-2.5 px-5 font-bold text-[9px] uppercase tracking-wider">Descrição</th>
+                        <th className="py-2.5 px-5 font-bold text-[9px] uppercase tracking-wider">Tipo</th>
+                        <th className="py-2.5 px-5 font-bold text-[9px] uppercase tracking-wider">Valor</th>
+                        <th className="py-2.5 px-5 font-bold text-[9px] uppercase tracking-wider text-right">Ação</th>
                      </tr>
                   </thead>
                   <tbody>
                      {history.map((item, idx) => (
-                        <tr key={idx} className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 transition-colors">
-                           <td className="py-3 px-6 text-slate-400">{item.data.split('-').length === 3 ? item.data.split('-').reverse().join('/') : item.data}</td>
-                           <td className="py-3 px-6">
-                              <p className="text-slate-200 font-semibold">{item.descricao}</p>
-                              <p className="text-xs text-slate-500">{item.categoria}</p>
+                        <tr key={idx} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/20 transition-colors">
+                           <td className="py-2.5 px-5 text-slate-400 text-xs">{item.data?.split('-').length === 3 ? item.data.split('-').reverse().join('/') : item.data}</td>
+                           <td className="py-2.5 px-5">
+                              <p className="text-slate-200 font-semibold text-xs">{item.descricao}</p>
+                              <p className="text-[10px] text-slate-600">{item.categoria}</p>
                            </td>
-                           <td className="py-3 px-6">
-                              <span className={`px-2 py-1 rounded text-xs font-bold border ${item.tipo === 'Entrada' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/50' : 'bg-red-950/40 text-red-500 border-red-900/50'}`}>
+                           <td className="py-2.5 px-5">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${item.tipo === 'Entrada' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/50' : 'bg-red-950/40 text-red-500 border-red-900/50'}`}>
                                  {item.tipo}
                               </span>
                            </td>
-                           <td className={`py-3 px-6 font-mono font-bold ${item.tipo === 'Entrada' ? 'text-emerald-400' : 'text-slate-300'}`}>
+                           <td className={`py-2.5 px-5 font-mono font-bold text-xs ${item.tipo === 'Entrada' ? 'text-emerald-400' : 'text-slate-300'}`}>
                               {formatCurrency(Math.abs(item.valor))}
                            </td>
-                           <td className="py-3 px-6 text-right">
-                              <button onClick={() => handleDeleteHistory(item.id)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">
-                                 <Trash2 className="w-4 h-4"/>
+                           <td className="py-2.5 px-5 text-right">
+                              <button onClick={() => handleDeleteHistory(item.id)} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/20 rounded-lg transition-colors">
+                                 <Trash2 className="w-3.5 h-3.5"/>
                               </button>
                            </td>
                         </tr>
@@ -225,7 +202,6 @@ export default function ExtratosClient({ userId, initialHistory }: { userId: str
             </div>
          </div>
        )}
-
     </div>
   );
 }

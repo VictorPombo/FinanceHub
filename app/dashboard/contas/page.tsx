@@ -24,11 +24,9 @@ export default async function ContasPage() {
   return (
     <div className="w-full h-full flex flex-col bg-[#020617]">
       {/* Top Banner similar to the screenshots for Accounts */}
-      <div className="bg-[#0F172A] border-b border-slate-800/80 px-6 py-8 shadow-sm">
-        <h1 className="text-2xl font-black text-slate-100 tracking-tight">Meus Cartões e Contas</h1>
-        <p className="text-slate-400 mt-1 max-w-2xl font-medium">
-          Organize suas finanças centralizando contas bancárias e gerencie a fatura, limites e datas de fechamento dos seus cartões de crédito.
-        </p>
+      <div className="bg-gradient-to-b from-[#0F172A] to-transparent px-5 md:px-6 py-5 md:py-6 shrink-0">
+        <h1 className="text-xl md:text-2xl font-black text-slate-100 tracking-tight">Cartões e Contas</h1>
+        <p className="text-slate-500 mt-0.5 text-xs md:text-sm font-medium">Gerencie faturas, limites e controle de pagamento.</p>
       </div>
       
       <div className="flex-1 overflow-auto p-4 md:p-6 no-scrollbar">

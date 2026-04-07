@@ -2,64 +2,65 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ListOrdered, BarChart2, Bot, CreditCard, Tags, FileText } from "lucide-react";
+import { LayoutDashboard, ListOrdered, CreditCard, FileText, Bot, Tags, Table2 } from "lucide-react";
 
 export default function TabsNavigation() {
   const pathname = usePathname();
 
   const tabs = [
-    { href: "/dashboard/resumo", icon: <BarChart2 className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Resumo" },
-    { href: "/dashboard/lancamentos", icon: <ListOrdered className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Lançamentos" },
-    { href: "/dashboard/contas", icon: <CreditCard className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Cartões" },
-    { href: "/dashboard/extratos", icon: <FileText className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Extratos Auto" },
-    { href: "/dashboard/planilha-ia", icon: <ListOrdered className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Planilha IA" },
-    { href: "/dashboard/consultor", icon: <Bot className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Consultor IA" },
-    { href: "/dashboard/categorias", icon: <Tags className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Categorias" },
-    { href: "/dashboard/duda", icon: <ListOrdered className="w-5 h-5 md:w-4 md:h-4 md:mr-2" />, label: "Planilha Excel" },
+    { href: "/dashboard/resumo", icon: LayoutDashboard, label: "Resumo", short: "Resumo" },
+    { href: "/dashboard/lancamentos", icon: ListOrdered, label: "Lançamentos", short: "Lançar" },
+    { href: "/dashboard/contas", icon: CreditCard, label: "Cartões", short: "Cartões" },
+    { href: "/dashboard/extratos", icon: FileText, label: "Extratos Auto", short: "Extratos" },
+    { href: "/dashboard/planilha-ia", icon: Bot, label: "Planilha IA", short: "Plan. IA" },
+    { href: "/dashboard/consultor", icon: Bot, label: "Consultor IA", short: "Consult." },
+    { href: "/dashboard/categorias", icon: Tags, label: "Categorias", short: "Categ." },
+    { href: "/dashboard/duda", icon: Table2, label: "Planilha Excel", short: "Excel" },
   ];
 
   return (
     <>
-      <div className="hidden md:flex items-center px-6 py-2 gap-2">
+      {/* DESKTOP TABS */}
+      <div className="hidden md:flex items-center px-4 py-2 gap-1.5 overflow-x-auto no-scrollbar">
         {tabs.map((tab) => {
           const isActive = pathname.startsWith(tab.href);
+          const Icon = tab.icon;
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex items-center px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-full
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all duration-200 rounded-xl whitespace-nowrap
                 ${isActive 
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30 shadow-[0_0_15px_rgba(147,51,234,0.3)]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800 border border-transparent"
+                  ? "bg-purple-600/15 text-purple-400 border border-purple-500/25 shadow-[0_0_20px_rgba(147,51,234,0.15)]" 
+                  : "bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 border border-transparent"
                 }
               `}
             >
-              <span className={`flex items-center justify-center ${isActive ? 'text-purple-400' : 'text-slate-500 group-hover:text-slate-400'}`}>
-                {tab.icon}
-              </span> 
+              <Icon className={`w-4 h-4 ${isActive ? 'text-purple-400' : 'text-slate-500'}`} />
               {tab.label}
             </Link>
           );
         })}
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#020617]/90 backdrop-blur-xl border-t border-slate-800 z-[100] pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-        <div className="flex items-center justify-around h-16">
+      {/* MOBILE BOTTOM NAV - scrollable with 3D depth */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#020617]/95 backdrop-blur-2xl border-t border-slate-800/80 z-[100] pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.9)]">
+        <div className="flex items-center overflow-x-auto no-scrollbar h-16 px-1 gap-0.5">
           {tabs.map((tab) => {
             const isActive = pathname.startsWith(tab.href);
+            const Icon = tab.icon;
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
-                  isActive ? "text-purple-400" : "text-slate-500"
+                className={`flex flex-col items-center justify-center min-w-[60px] h-full px-2 transition-all duration-200 shrink-0 ${
+                  isActive ? "text-purple-400" : "text-slate-600 active:text-slate-400"
                 }`}
               >
-                <div className={`p-1 rounded-full ${isActive ? 'bg-purple-900/40 shadow-[0_0_10px_rgba(147,51,234,0.3)]' : ''}`}>
-                   {tab.icon}
+                <div className={`p-1.5 rounded-xl mb-0.5 transition-all ${isActive ? 'bg-purple-900/50 shadow-[0_0_12px_rgba(147,51,234,0.3)]' : ''}`}>
+                   <Icon className="w-5 h-5"/>
                 </div>
-                <span className="text-[10px] font-semibold tracking-tight">{tab.label.split(" ")[0]}</span>
+                <span className="text-[9px] font-bold tracking-tight leading-none">{tab.short}</span>
               </Link>
             );
           })}

@@ -19,23 +19,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Nenhum texto enviado.' }, { status: 400 });
     }
 
-    const systemPrompt = `Você é um leitor de recibos financeiros e anotações financeiras ultra inteligente.
-O usuário vai enviar um bloco de texto informal contendo transações financeiras.
-Sua missão é extrair TODAS as transações e retornar estritamente um array JSON de objetos.
+    const yearToUse = currentYear || new Date().getFullYear();
 
-Regras para cada transação:
-1. "descricao": Nome de quem pagou ou recebeu, ou do serviço (ex: "Junior", "Catão Itaú", "Condomínio"). Max 4 palavras.
-2. "valor": Numero float (positivo). Exemplo: se no texto diz R$ 1.500,00 volte 1500.0.
-3. "tipo": string estrita "Entrada" (receitas/ganhos) ou "Saída" (despesas/pagamentos/gastos). Preste atenção ao contexto do bloco, o usuário geralmente separa por '📥 Entradas' e '📤 Saídas'.
-4. "data": String no formato "YYYY-MM-DD". Se o usuário citou "15/04", verifique o contexto do ano no texto ou utilize o ano atual que é passado: ${currentYear || new Date().getFullYear()}.
+    const systemPrompt = `Você é um assistente financeiro ultra-preciso que extrai transações de textos informais.
 
-Retorne APENAS um JSON válido. Por exemplo, se houver duas linhas:
+O usuário vai enviar um bloco de texto contendo transações financeiras. Sua missão é identificar TODAS as transações e retornar um array JSON.
+
+REGRAS OBRIGATÓRIAS:
+1. "descricao": Nome curto de quem pagou/recebeu ou do serviço. Máximo 4 palavras. Capitalizado.
+2. "valor": Número decimal positivo. "R$ 1.500,00" → 1500.0, "R$45,90" → 45.9, "350" → 350.0
+3. "tipo": EXATAMENTE "Entrada" ou "Saída". Use o contexto:
+   - Palavras como "recebido", "entrada", "recebi", "pagamento de", "pix de", "salário", "freelance": → "Entrada"
+   - Palavras como "paguei", "gastei", "compra", "fatura", "aluguel", "conta", "ifood", "uber", "saída": → "Saída"
+   - Se o texto tem seções como "Entradas:" ou "Receitas:", tudo abaixo até a próxima seção é Entrada
+   - Se o texto tem seções como "Saídas:" ou "Despesas:" ou "Gastos:", tudo abaixo é Saída
+4. "data": String "YYYY-MM-DD". 
+   - Se o texto diz "12/05": → "${yearToUse}-05-12"
+   - Se diz "05 de abril": → "${yearToUse}-04-05"
+   - Se não há data, use "${yearToUse}-${String(new Date().getMonth()+1).padStart(2,'0')}-01"
+5. "categoria": Tente categorizar: "Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Serviços", "Educação", "Recebimento", "Investimento", ou "Outros"
+
+EXEMPLO DE SAÍDA:
 [
-  { "descricao": "Cartão de Crédito", "valor": 5540.23, "tipo": "Saída", "data": "2026-05-10" },
-  { "descricao": "João Pix", "valor": 300.00, "tipo": "Entrada", "data": "2026-05-11" }
+  { "descricao": "Aluguel", "valor": 1200.0, "tipo": "Saída", "data": "${yearToUse}-04-10", "categoria": "Moradia" },
+  { "descricao": "Freelance João", "valor": 800.0, "tipo": "Entrada", "data": "${yearToUse}-04-15", "categoria": "Recebimento" }
 ]
 
-Retorne um array JSON vazio [] se não encontrar absolutamente nada. Não inclua Markdown envolta (como \`\`\`json).`;
+Retorne APENAS o JSON puro. Sem markdown, sem \`\`\`json. Array vazio [] se nada encontrado.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -56,7 +66,7 @@ Retorne um array JSON vazio [] se não encontrar absolutamente nada. Não inclua
        parsedData = JSON.parse(responseText.trim().replace(/^```json/i, '').replace(/```$/i, '').trim());
        if (!Array.isArray(parsedData)) parsedData = [parsedData];
     } catch {
-       throw new Error("Falha ao ler JSON da resposta: " + responseText);
+       throw new Error("Falha ao ler JSON da resposta: " + responseText.substring(0, 200));
     }
 
     return NextResponse.json({ transactions: parsedData });
