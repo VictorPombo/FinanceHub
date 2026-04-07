@@ -47,31 +47,52 @@ EXEMPLO DE SAÍDA:
 
 Retorne APENAS o JSON puro. Sem markdown, sem \`\`\`json. Array vazio [] se nada encontrado.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        { role: 'user', parts: [
-            { text: systemPrompt },
-            { text: "Texto do usuário:\n" + text }
-        ] }
-      ],
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
+    // Retry up to 3 times with exponential backoff for 503 errors
+    let lastError: any = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [
+            { role: 'user', parts: [
+                { text: systemPrompt },
+                { text: "Texto do usuário:\n" + text }
+            ] }
+          ],
+          config: {
+            responseMimeType: "application/json",
+          }
+        });
 
-    const responseText = response.text || '[]';
-    let parsedData = [];
-    try {
-       parsedData = JSON.parse(responseText.trim().replace(/^```json/i, '').replace(/```$/i, '').trim());
-       if (!Array.isArray(parsedData)) parsedData = [parsedData];
-    } catch {
-       throw new Error("Falha ao ler JSON da resposta: " + responseText.substring(0, 200));
+        const responseText = response.text || '[]';
+        let parsedData = [];
+        try {
+           parsedData = JSON.parse(responseText.trim().replace(/^```json/i, '').replace(/```$/i, '').trim());
+           if (!Array.isArray(parsedData)) parsedData = [parsedData];
+        } catch {
+           throw new Error("Falha ao ler JSON da resposta: " + responseText.substring(0, 200));
+        }
+
+        return NextResponse.json({ transactions: parsedData });
+      } catch (e: any) {
+        lastError = e;
+        const msg = e?.message || '';
+        const is503 = msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('overloaded') || msg.includes('high demand');
+        if (is503 && attempt < 2) {
+          await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
+          continue;
+        }
+        throw e;
+      }
     }
 
-    return NextResponse.json({ transactions: parsedData });
+    throw lastError;
   } catch (error: any) {
     console.error('Text Parsing Error:', error);
+    const msg = error?.message || '';
+    if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('overloaded')) {
+      return NextResponse.json({ error: 'A IA está sobrecarregada no momento. Tente novamente em alguns segundos.' }, { status: 503 });
+    }
     return NextResponse.json({ error: error.message || 'Falha ao processar texto com IA' }, { status: 500 });
   }
 }
