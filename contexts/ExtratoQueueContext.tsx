@@ -32,6 +32,31 @@ export function ExtratoQueueProvider({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   const uploadExtrato = async (file: File) => {
+    
+    // FAST PATH: Se for um JSON do Claude, processa localmente instantaneamente!
+    if (file.type === "application/json" || file.name.endsWith(".json")) {
+       try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+          if (!Array.isArray(parsed)) throw new Error("O JSON precisa ser um Array.");
+          
+          setPreviewItems(parsed);
+          
+          if (pathname !== '/dashboard/extratos') {
+             toast((t) => (
+               <span className="flex items-center gap-2 cursor-pointer" onClick={() => {toast.dismiss(t.id); router.push('/dashboard/extratos');}}>
+                 Extração de {parsed.length} itens via JSON finalizada! <b>Clique para revisar</b>.
+               </span>
+             ), { duration: 10000 });
+          } else {
+             toast.success(`Leitura JSON completa: ${parsed.length} transações prontas para revisão!`);
+          }
+       } catch (err: any) {
+          toast.error("Erro ao tentar ler o arquivo JSON fornecido: " + err.message);
+       }
+       return; // Não envia pra API, encerra aqui.
+    }
+
     setIsUploading(true);
     toast.success("Extrato em processamento pela IA em 2º Plano! Continue usando o app livremente.", { duration: 4000 });
     

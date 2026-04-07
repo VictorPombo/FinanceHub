@@ -161,14 +161,14 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
                <div className="w-14 h-14 bg-emerald-900/30 text-emerald-400 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
                   <FileText className="w-7 h-7"/>
                </div>
-               <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Leitura Comprimida (Ilimitado)</h2>
+               <h2 className="text-lg font-black text-slate-100 tracking-tight mb-1">Leitura Instantânea (JSON)</h2>
                <p className="text-slate-500 text-xs max-w-[250px] mx-auto mb-5">
-                  Suba o extrato em formato <b>texto/CSV</b> (já comprimido via ChatGPT/Claude). Sem riscos de limite de peso. Ilimitado para +90 dias.
+                  Suba o extrato convertido em <b>.JSON</b> via Claude. Arquivo não passa pela IA (0 segundos). Ilimitado (10 anos+).
                </p>
                
                <label className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2 text-sm w-full md:w-auto justify-center">
-                  {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Anexar Extrato (.txt/.csv)</>}
-                  <input type="file" accept=".txt,.csv" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
+                  {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : <><FileText className="w-4 h-4" /> Anexar Arquivo JSON</>}
+                  <input type="file" accept=".json,application/json" className="hidden" onChange={handleFileUpload} disabled={isUploading}/>
                </label>
             </div>
          </div>
