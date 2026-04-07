@@ -148,3 +148,114 @@ body {
   box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
   border-radius: 12px;
 }
+
+/* ========================================================== */
+/* MICROSOFT EXCEL REALISTIC THEME (PLANILHA DUDA - ONLY)    */
+/* ========================================================== */
+
+.duda-container {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  font-family: Calibri, 'Inter', sans-serif !important;
+}
+
+.duda-excel-table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  font-size: 14px;
+  background-color: #FFFFFF;
+}
+
+.duda-excel-table th {
+  background: #E6E6E6;
+  color: #333333;
+  font-weight: normal;
+  border: 1px solid #C0C0C0;
+  padding: 4px 8px;
+  text-align: center;
+  position: relative;
+  box-sizing: border-box;
+  font-family: Calibri, 'Inter', sans-serif;
+  user-select: none;
+  cursor: default;
+}
+
+/* Letras A, B, C... */
+.duda-header-letter {
+  background: linear-gradient(to bottom, #F3F3F3, #E6E6E6);
+  border: 1px solid #C0C0C0;
+  text-align: center;
+  font-size: 13px;
+  color: #333333;
+  padding: 2px 0;
+  user-select: none;
+}
+
+.duda-excel-table td {
+  border: 1px solid #D4D4D4;
+  padding: 2px 6px;
+  height: 22px; /* typical excel row height */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #000000;
+  font-family: Calibri, 'Inter', sans-serif;
+}
+
+.duda-excel-table tr:hover td {
+  background-color: #F8F9FA;
+}
+
+/* Selected/Editing Cell */
+.duda-cell-editing {
+  outline: 2px solid #217346 !important;
+  outline-offset: -1px;
+  background-color: #FFFFFF !important;
+  z-index: 10;
+  position: relative;
+}
+
+/* Excel Row Number (1, 2, 3...) */
+.duda-row-number {
+  background: #E6E6E6 !important;
+  color: #333333;
+  text-align: center;
+  font-size: 13px;
+  width: 40px;
+  min-width: 40px;
+  border: 1px solid #C0C0C0 !important;
+  user-select: none;
+  position: sticky;
+  left: 0;
+  z-index: 15;
+}
+
+/* Excel Inputs */
+.duda-inline-input, .duda-inline-select {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #000000;
+  font-family: Calibri, inherit;
+  font-size: 14px;
+}
+
+.duda-inline-select option {
+  background: #FFFFFF;
+  color: #000000;
+}
+
+/* Custom Colors for text */
+.duda-text-saida { color: #C00000; } /* Excel Red */
+.duda-text-entrada { color: #00B050; } /* Excel Green */
+
+/* Duda Ghost rows look exactly like normal empty cells */
+.duda-ghost-row td {
+  color: transparent;
+}
+.duda-ghost-row td.duda-row-number {
+  color: #333333;
+}
