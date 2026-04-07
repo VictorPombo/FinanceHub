@@ -2,15 +2,26 @@ import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
 export const maxDuration = 60;
+export const runtime = 'edge';
 
 let ai: GoogleGenAI | null = null;
 if (process.env.GEMINI_API_KEY) {
   ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 export async function POST(req: Request) {
   if (!ai) {
-    return NextResponse.json({ error: 'Configuração da IA ausente (GEMINI_API_KEY não definida). Adicione a chave no painel da Vercel para usar OCR.' }, { status: 500 });
+    return NextResponse.json({ error: 'Configuração da IA ausente (GEMINI_API_KEY não definida).' }, { status: 500 });
   }
   try {
     const formData = await req.formData();
@@ -21,7 +32,7 @@ export async function POST(req: Request) {
     }
 
     const buffer = await file.arrayBuffer();
-    const base64Image = Buffer.from(buffer).toString('base64');
+    const base64Image = arrayBufferToBase64(buffer);
     const mimeType = file.type || 'image/jpeg';
 
     const systemPrompt = `Você é um especialista financeiro focado na leitura de extratos bancários Brasileiros (Itaú, Bradesco, Nubank, etc).
