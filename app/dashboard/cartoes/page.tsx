@@ -4,7 +4,7 @@ import ContasClient from "@/components/ContasClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ContasPage() {
+export default async function CartoesPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -25,12 +25,12 @@ export default async function ContasPage() {
     <div className="w-full h-full flex flex-col bg-[#020617]">
       {/* Top Banner similar to the screenshots for Accounts */}
       <div className="bg-gradient-to-b from-[#0F172A] to-transparent px-5 md:px-6 py-5 md:py-6 shrink-0">
-        <h1 className="text-xl md:text-2xl font-black text-slate-100 tracking-tight">Contas Bancárias</h1>
-        <p className="text-slate-500 mt-0.5 text-xs md:text-sm font-medium">Gerencie o saldo das suas contas correntes ou investimentos.</p>
+        <h1 className="text-xl md:text-2xl font-black text-slate-100 tracking-tight">Cartões de Crédito</h1>
+        <p className="text-slate-500 mt-0.5 text-xs md:text-sm font-medium">Gerencie faturas, limites e datas de fechamento.</p>
       </div>
       
       <div className="flex-1 overflow-auto p-4 md:p-6 no-scrollbar">
-         <ContasClient initialData={safeContas} userId={user.id} pageType="Contas" />
+         <ContasClient initialData={safeContas} userId={user.id} pageType="Cartões" />
       </div>
     </div>
   );

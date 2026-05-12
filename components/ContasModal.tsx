@@ -19,6 +19,7 @@ interface Props {
   userId: string;
   onClose: () => void;
   onSave: (saved: any) => void;
+  defaultTipo?: string;
 }
 
 const CORES = [
@@ -32,9 +33,9 @@ const CORES = [
   { cor: '#27272a', nome: 'Preto Black/Infinite' },
 ];
 
-export default function ContasModal({ conta, userId, onClose, onSave }: Props) {
+export default function ContasModal({ conta, userId, onClose, onSave, defaultTipo }: Props) {
   const [nome, setNome] = useState(conta?.nome || "");
-  const [tipo, setTipo] = useState(conta?.tipo || "Cartão de Crédito");
+  const [tipo, setTipo] = useState(conta?.tipo || defaultTipo || "Cartão de Crédito");
   const [cor, setCor] = useState(conta?.cor || CORES[0].cor);
   const [limite, setLimite] = useState(conta?.saldo_limite?.toString() || "");
   const [diaFechamento, setDiaFechamento] = useState(conta?.dia_fechamento?.toString() || "");

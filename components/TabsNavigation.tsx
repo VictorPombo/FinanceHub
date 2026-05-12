@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListOrdered, CreditCard, FileText, Bot, Tags, Table2 } from "lucide-react";
+import { LayoutDashboard, ListOrdered, CreditCard, FileText, Bot, Tags, Table2, Landmark } from "lucide-react";
 
 export default function TabsNavigation() {
   const pathname = usePathname();
@@ -10,7 +10,8 @@ export default function TabsNavigation() {
   const tabs = [
     { href: "/dashboard/resumo", icon: LayoutDashboard, label: "Resumo", short: "Resumo" },
     { href: "/dashboard/lancamentos", icon: ListOrdered, label: "Lançamentos", short: "Lançar" },
-    { href: "/dashboard/contas", icon: CreditCard, label: "Cartões", short: "Cartões" },
+    { href: "/dashboard/contas", icon: Landmark, label: "Contas Bancárias", short: "Contas" },
+    { href: "/dashboard/cartoes", icon: CreditCard, label: "Cartões", short: "Cartões" },
     { href: "/dashboard/extratos", icon: FileText, label: "Extratos Auto", short: "Extratos" },
     { href: "/dashboard/consultor", icon: Bot, label: "Consultor IA", short: "Consult." },
     { href: "/dashboard/categorias", icon: Tags, label: "Categorias", short: "Categ." },

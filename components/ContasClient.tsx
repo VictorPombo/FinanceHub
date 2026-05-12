@@ -29,6 +29,7 @@ export interface Conta {
 interface Props {
   initialData: Conta[];
   userId: string;
+  pageType: "Contas" | "Cartões";
 }
 
 // ----------------------------------------------------------------------
@@ -283,14 +284,18 @@ function ContaCard({
 // ----------------------------------------------------------------------
 // Componente Principal
 // ----------------------------------------------------------------------
-export default function ContasClient({ initialData, userId }: Props) {
+export default function ContasClient({ initialData, userId, pageType }: Props) {
   const [data, setData] = useState<Conta[]>(initialData);
   const [activeTab, setActiveTab] = useState<"Ativa" | "Arquivada">("Ativa");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingConta, setEditingConta] = useState<Conta | null>(null);
   const supabase = createClient();
 
-  const filteredData = data.filter((c) => c.status === activeTab);
+  const filteredData = data.filter((c) => {
+    const statusMatch = c.status === activeTab;
+    const typeMatch = pageType === "Cartões" ? c.tipo === "Cartão de Crédito" : c.tipo === "Conta Corrente";
+    return statusMatch && typeMatch;
+  });
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Deseja realmente deletar esta conta?")) return;
@@ -341,7 +346,7 @@ export default function ContasClient({ initialData, userId }: Props) {
           }}
           className="flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[0_0_15px_rgba(147,51,234,0.3)] text-sm w-full md:w-max"
         >
-          <Plus className="w-4 h-4" /> Nova Conta / Cartão
+          <Plus className="w-4 h-4" /> Nova {pageType === "Cartões" ? "Fatura / Cartão" : "Conta Bancária"}
         </button>
       </div>
 
@@ -361,9 +366,9 @@ export default function ContasClient({ initialData, userId }: Props) {
       {filteredData.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 glass-card border-dashed border-zinc-700/50">
           <CreditCard className="w-12 h-12 text-zinc-700 mb-4 opacity-70" />
-          <p className="text-base font-bold text-zinc-400">Nenhuma conta encontrada</p>
+          <p className="text-base font-bold text-zinc-400">Nenhuma {pageType === "Cartões" ? "fatura/cartão" : "conta bancária"} encontrada</p>
           <p className="text-zinc-600 text-xs mt-1">
-            Clique em &quot;Nova Conta / Cartão&quot; para adicionar.
+            Clique em &quot;Nova {pageType === "Cartões" ? "Fatura / Cartão" : "Conta Bancária"}&quot; para adicionar.
           </p>
         </div>
       )}
@@ -372,6 +377,7 @@ export default function ContasClient({ initialData, userId }: Props) {
         <ContasModal
           conta={editingConta as any}
           userId={userId}
+          defaultTipo={pageType === "Cartões" ? "Cartão de Crédito" : "Conta Corrente"}
           onClose={() => setIsModalOpen(false)}
           onSave={(saved) => {
             const castedSaved = saved as any as Conta;
