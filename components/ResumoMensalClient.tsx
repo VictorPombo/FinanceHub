@@ -525,7 +525,14 @@ export default function ResumoMensalClient({ rawData, config, contas, user_id }:
                       {/* 1. Select item */}
                       <div>
                         <label className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em] block mb-1">Lançamento</label>
-                        <select value={baixaSelectedId} onChange={e => setBaixaSelectedId(e.target.value)}
+                        <select value={baixaSelectedId} onChange={e => {
+                          const val = e.target.value;
+                          setBaixaSelectedId(val);
+                          if (val) {
+                             const found = pendingItems.find((x:any) => x.id === val);
+                             if (found && found.data) setBaixaDate(found.data);
+                          }
+                        }}
                           className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 text-sm rounded-lg p-2.5 outline-none focus:border-violet-500 transition-colors cursor-pointer">
                           <option value="">Selecione...</option>
                           {pendingItems.map((item: any) => (

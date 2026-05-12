@@ -124,6 +124,10 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
 
         const valor = parseFloat(rawVal);
         if (!isNaN(valor) && valor > 0) {
+          
+          let st = "Em aberto";
+          if (/pago|recebido/i.test(line)) st = "Pago";
+
           results.push({
             descricao: rawDesc.substring(0, 80),
             valor: currentTipo === 'Saída' ? -valor : valor,
@@ -131,6 +135,7 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
             data: `${year}-${month}-${day}`,
             categoria,
             recorrencia,
+            status: st
           });
         }
       }
@@ -192,12 +197,16 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
             if (parts.length === 2) safeDate = `${yearToProcess}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
           }
 
+          let st = tx.status || "Em aberto";
+          const descLower = (tx.descricao || '').toLowerCase();
+          if (descLower.includes('pago') || descLower.includes('recebido')) st = "Pago";
+
           return {
             user_id: user_id,
             descricao: tx.descricao || 'Desconhecido',
             valor: Number(tx.valor),
             data: safeDate,
-            status: "Pago",
+            status: st,
             tipo: tx.tipo,
             categoria: tx.categoria || "Outros",
             recorrencia: tx.recorrencia || "Única",

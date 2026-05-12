@@ -532,10 +532,10 @@ FORMATO DE RESPOSTA:
             
             {/* NOVO CARD: META DE SOBRA */}
             <div className={`glass-card p-4 md:p-5 border-l-4 ${metaSobra === 0 ? 'border-l-zinc-600' : (sobra >= metaSobra ? 'border-l-emerald-500' : 'border-l-rose-500')}`}>
-               <div className="flex justify-between items-start mb-2">
+               <div className="flex justify-between items-start mb-2 group cursor-pointer" onClick={() => { if(!isEditingMeta) { setTempMeta(metaSobra > 0 ? metaSobra.toString() : ""); setIsEditingMeta(true); } }}>
                   <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Meta de Sobra</h3>
                   {!isEditingMeta && (
-                     <PencilLine onClick={() => { setTempMeta(metaSobra > 0 ? metaSobra.toString() : ""); setIsEditingMeta(true); }} className="w-3.5 h-3.5 text-zinc-600 hover:text-violet-400 cursor-pointer transition-colors" />
+                     <PencilLine className="w-3.5 h-3.5 text-zinc-600 group-hover:text-violet-400 transition-colors" />
                   )}
                </div>
                
