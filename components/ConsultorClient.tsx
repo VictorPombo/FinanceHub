@@ -24,7 +24,7 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
   const [activeTab, setActiveTab] = useState<TabType>("Planilha Manual");
   
   const dataDeHoje = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<number>(0); // 0 = Todos
+  const [selectedMonth, setSelectedMonth] = useState<number>(dataDeHoje.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(dataDeHoje.getFullYear());
 
   const [realMonth, setRealMonth] = useState(-1);
@@ -176,9 +176,15 @@ FORMATO DE RESPOSTA:
     if (mesSeguinte > 12) { mesSeguinte = 1; anoSeguinte++; }
     const proxMesKey = `${anoSeguinte}-${String(mesSeguinte).padStart(2, '0')}`;
     
-    // Contas do próximo mês (apenas saídas previstas não pagas)
-    const contasProximoMes = (lancPrevistos || [])
-      .filter(x => getMesAnoKey(x.data) === proxMesKey && x.tipo === 'Saída')
+    // Contas do próximo mês (saídas previstas não pagas e pendentes)
+    const contasPrevistas = (lancPrevistos || []).filter(x => getMesAnoKey(x.data) === proxMesKey && x.tipo === 'Saída');
+    const contasAbertas = allData.filter(x => getMesAnoKey(x.data) === proxMesKey && x.tipo === 'Saída' && x.status !== 'Pago' && x.status !== 'Concluído');
+    
+    // Merge them and remove duplicates by ID (if any)
+    const map = new Map();
+    [...contasPrevistas, ...contasAbertas].forEach(c => map.set(c.id, c));
+    
+    const contasProximoMes = Array.from(map.values())
       .sort((a,b) => Math.abs(Number(b.valor)) - Math.abs(Number(a.valor))); // Ordena pelas mais caras primeiro
 
     let remaining = excesso;
@@ -405,9 +411,9 @@ FORMATO DE RESPOSTA:
       <div className="p-4 md:p-8 flex flex-col xl:flex-row-reverse gap-6 mx-auto w-full max-w-7xl">
         
         {/* THERMOMETER + STATS SIDEBAR */}
-        <div className="w-full xl:w-80 flex flex-col gap-4 shrink-0 z-10 relative">
+        <div className="w-full xl:w-80 flex flex-col gap-4 shrink-0 z-10 xl:sticky xl:top-6 self-start">
           {/* Score */}
-          <div className="glass-card p-6 md:p-8 flex flex-col items-center justify-center text-center xl:sticky top-6">
+          <div className="glass-card p-6 md:p-8 flex flex-col items-center justify-center text-center">
             <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-1">Termômetro Financeiro</h3>
             
             <div className={`text-6xl md:text-7xl font-black font-mono mb-2 mt-4 tracking-tighter ${classifColor}`}>
