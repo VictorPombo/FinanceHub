@@ -616,11 +616,7 @@ FORMATO DE RESPOSTA:
                </p>
             </div>
 
-            <div className="glass-card p-4 md:p-5 border-l-4 border-l-teal-500">
-               <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Fechamento Previsto</h3>
-               <span className="text-xl font-black font-mono tracking-tight text-zinc-200">{formatCurrency(projecaoFinal)}</span>
-               <p className="text-[10px] text-zinc-500 font-medium mt-0.5">{projecaoFinal > 0 ? "No azul" : "Atenção máxima"}</p>
-            </div>
+
             
           </div>
 
