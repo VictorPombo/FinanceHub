@@ -515,11 +515,19 @@ FORMATO DE RESPOSTA:
                               </div>
                            ))}
                         </div>
-                        <div className="mt-4 pt-3 border-t border-emerald-500/20 flex justify-between items-center">
-                           <span className="text-xs text-zinc-400 font-medium">Total Sugerido para Antecipação:</span>
-                           <span className="text-sm font-black font-mono text-emerald-400">
-                              {formatCurrency(sugestoesAntecipacao.reduce((acc, curr) => acc + Math.abs(Number(curr.valor)), 0))}
-                           </span>
+                        <div className="mt-4 pt-3 border-t border-emerald-500/20 flex flex-col gap-2">
+                           <div className="flex justify-between items-center">
+                              <span className="text-xs text-zinc-400 font-medium">Total Sugerido para Antecipação:</span>
+                              <span className="text-sm font-black font-mono text-red-400">
+                                 -{formatCurrency(sugestoesAntecipacao.reduce((acc, curr) => acc + Math.abs(Number(curr.valor)), 0))}
+                              </span>
+                           </div>
+                           <div className="flex justify-between items-center bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
+                              <span className="text-xs text-emerald-500 font-bold uppercase tracking-wider">Sobra Projetada (Pós-Antecipação):</span>
+                              <span className="text-sm font-black font-mono text-emerald-400">
+                                 {formatCurrency(sobra - sugestoesAntecipacao.reduce((acc, curr) => acc + Math.abs(Number(curr.valor)), 0))}
+                              </span>
+                           </div>
                         </div>
                      </>
                   )}
