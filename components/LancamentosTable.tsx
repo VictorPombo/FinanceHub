@@ -22,6 +22,43 @@ const PARCELAMENTO_OPTIONS = [
   "7x", "8x", "9x", "10x", "11x", "12x", "Fixo"
 ];
 
+// Dedicated Desktop Add Row extracted to prevent re-renders
+const DesktopAddRow = ({ tipo, currentTabMonth, currentTabYear, handleAddNew, userCategories }: { tipo: string, currentTabMonth: number, currentTabYear: number, handleAddNew: (f: any) => Promise<boolean>, userCategories: string[] }) => {
+  const [form, setForm] = useState({
+    descricao: "", valor: "", categoria: "Outros", parcelamento: "1x (Única)",
+    data: `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`, status: "Em aberto"
+  });
+
+  const submit = async () => {
+    if (!form.descricao || !form.valor) return; // ignore incomplete
+    const success = await handleAddNew({...form, tipo});
+    if (success) {
+       setForm({ ...form, descricao: "", valor: "" }); // reset
+    }
+  };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") submit();
+  };
+
+  return (
+    <tr className="bg-zinc-900/30 border-b border-zinc-800/40 opacity-80 hover:opacity-100 transition-opacity">
+      <td className="sticky left-0 z-10 bg-[#09090b] text-center w-[50px] border-b border-zinc-800/40">
+         <button onClick={submit} className="p-1 rounded bg-violet-600/20 text-violet-400 hover:bg-violet-600/40 transition flex items-center justify-center mx-auto" title="Salvar Linha">
+            <Plus className="w-3.5 h-3.5" />
+         </button>
+      </td>
+      <td className="px-2 border-b border-zinc-800/20"><input type="text" placeholder="Adicionar descrição..." value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none placeholder-slate-600 py-2" /></td>
+      <td className="px-2 border-b border-zinc-800/20"><input type="number" step="0.01" placeholder="0.00" value={form.valor} onChange={e => setForm({...form, valor: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none placeholder-slate-600 text-right font-mono py-2" /></td>
+      <td className="px-2 border-b border-zinc-800/20"><select value={form.parcelamento} onChange={e => setForm({...form, parcelamento: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2"><option disabled value="">Parc...</option>{PARCELAMENTO_OPTIONS.map(o => <option key={o} value={o} className="bg-zinc-900 text-zinc-200">{o}</option>)}</select></td>
+      <td className="px-2 border-b border-zinc-800/20 bg-zinc-900/20 text-center"><span className="text-xs text-zinc-600">-</span></td>
+      <td className="px-2 border-b border-zinc-800/20"><input type="date" value={form.data} onChange={e => setForm({...form, data: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-xs text-zinc-200 outline-none border-none py-2" style={{colorScheme: 'dark'}} /></td>
+      <td className="px-2 border-b border-zinc-800/20"><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2"><option value="Pago" className="bg-zinc-900 text-zinc-200">Pago</option><option value="Em aberto" className="bg-zinc-900 text-zinc-200">Em aberto</option></select></td>
+      <td className="px-2 border-b border-zinc-800/20"><select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2">{(userCategories && userCategories.length > 0 ? userCategories : []).map(c => <option key={c} value={c} className="bg-zinc-900 text-zinc-200">{c}</option>)}</select></td>
+    </tr>
+  );
+};
+
 export default function LancamentosTable({ initialData, userId, userCategories, onDataChange, currentTabMonth, currentTabYear, tableName, isReadOnly }: Props) {
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null);
@@ -394,42 +431,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
     );
   };
 
-  // Dedicated Desktop Add Row
-  const DesktopAddRow = ({ tipo }: { tipo: string }) => {
-    const [form, setForm] = useState({
-      descricao: "", valor: "", categoria: "Outros", parcelamento: "1x (Única)",
-      data: `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`, status: "Em aberto"
-    });
 
-    const submit = async () => {
-      if (!form.descricao || !form.valor) return; // ignore incomplete
-      const success = await handleAddNew({...form, tipo});
-      if (success) {
-         setForm({ ...form, descricao: "", valor: "" }); // reset
-      }
-    };
-
-    const handleKey = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") submit();
-    };
-
-    return (
-      <tr className="bg-zinc-900/30 border-b border-zinc-800/40 opacity-80 hover:opacity-100 transition-opacity">
-        <td className="sticky left-0 z-10 bg-[#09090b] text-center w-[50px] border-b border-zinc-800/40">
-           <button onClick={submit} className="p-1 rounded bg-violet-600/20 text-violet-400 hover:bg-violet-600/40 transition flex items-center justify-center mx-auto" title="Salvar Linha">
-              <Plus className="w-3.5 h-3.5" />
-           </button>
-        </td>
-        <td className="px-2 border-b border-zinc-800/20"><input type="text" placeholder="Adicionar descrição..." value={form.descricao} onChange={e => setForm({...form, descricao: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none placeholder-slate-600 py-2" /></td>
-        <td className="px-2 border-b border-zinc-800/20"><input type="number" step="0.01" placeholder="0.00" value={form.valor} onChange={e => setForm({...form, valor: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none placeholder-slate-600 text-right font-mono py-2" /></td>
-        <td className="px-2 border-b border-zinc-800/20"><select value={form.parcelamento} onChange={e => setForm({...form, parcelamento: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2"><option disabled value="">Parc...</option>{PARCELAMENTO_OPTIONS.map(o => <option key={o} value={o} className="bg-zinc-900 text-zinc-200">{o}</option>)}</select></td>
-        <td className="px-2 border-b border-zinc-800/20 bg-zinc-900/20 text-center"><span className="text-xs text-zinc-600">-</span></td>
-        <td className="px-2 border-b border-zinc-800/20"><input type="date" value={form.data} onChange={e => setForm({...form, data: e.target.value})} onKeyDown={handleKey} className="w-full bg-transparent text-xs text-zinc-200 outline-none border-none py-2" /></td>
-        <td className="px-2 border-b border-zinc-800/20"><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2"><option value="Pago" className="bg-zinc-900 text-zinc-200">Pago</option><option value="Em aberto" className="bg-zinc-900 text-zinc-200">Em aberto</option></select></td>
-        <td className="px-2 border-b border-zinc-800/20"><select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})} className="w-full bg-transparent text-[13px] text-zinc-200 outline-none border-none py-2">{(userCategories && userCategories.length > 0 ? userCategories : []).map(c => <option key={c} value={c} className="bg-zinc-900 text-zinc-200">{c}</option>)}</select></td>
-      </tr>
-    );
-  };
 
   const entradas = initialData.filter(d => d.tipo === "Entrada");
   const saidas = initialData.filter(d => d.tipo === "Saída");
@@ -516,7 +518,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
                </td>
             </tr>
             {entradas.map((item, i) => renderRow(item, i))}
-            <DesktopAddRow tipo="Entrada" />
+            <DesktopAddRow tipo="Entrada" currentTabMonth={currentTabMonth} currentTabYear={currentTabYear} handleAddNew={handleAddNew} userCategories={userCategories} />
 
             <tr>
                <td className="sticky left-0 bg-[#09090b] z-20 pt-6"></td>
@@ -529,7 +531,7 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
                </td>
             </tr>
             {saidas.map((item, i) => renderRow(item, i))}
-            <DesktopAddRow tipo="Saída" />
+            <DesktopAddRow tipo="Saída" currentTabMonth={currentTabMonth} currentTabYear={currentTabYear} handleAddNew={handleAddNew} userCategories={userCategories} />
             <tr className="h-4"><td colSpan={8}></td></tr>
           </tbody>
         </table>
