@@ -276,6 +276,12 @@ FORMATO DE RESPOSTA:
   else if (score >= 60) { classifText = "BOM"; classifColor = "text-blue-400"; barColor = "bg-blue-500"; }
   else if (score >= 40) { classifText = "REGULAR"; classifColor = "text-amber-400"; barColor = "bg-amber-400"; }
   else { classifText = "CRÍTICO"; classifColor = "text-red-500"; barColor = "bg-red-500"; }
+  
+  // Bonus Meta
+  if (metaSobra > 0 && sobra >= metaSobra) {
+     score = Math.min(100, score + 10);
+     if (score >= 80 && classifText !== "EXCELENTE") { classifText = "EXCELENTE"; classifColor = "text-emerald-400"; barColor = "bg-emerald-500"; }
+  }
 
   // ===== CONSELHOS =====
   const conselhos: { title: string; desc: string; color: string; icon: React.ReactNode }[] = [];
@@ -471,35 +477,12 @@ FORMATO DE RESPOSTA:
                 <TrendArrow current={sobra} previous={sobraPrev} />
               </div>
             )}
-            
-            <div className="mt-2 pt-3 border-t border-zinc-800/60 pb-2">
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1.5">Meta de Sobra (Mínimo Viável)</span>
-              {isEditingMeta ? (
-                 <div className="flex items-center gap-2">
-                    <span className="text-zinc-400 font-bold text-xs">R$</span>
-                    <input 
-                       type="number" 
-                       autoFocus
-                       value={tempMeta}
-                       onChange={(e) => setTempMeta(e.target.value)}
-                       onKeyDown={(e) => e.key === 'Enter' && handleSaveMeta()}
-                       className="bg-zinc-900 border border-violet-500 text-zinc-100 font-black text-sm px-2 py-1 rounded w-full outline-none"
-                    />
-                    <button onClick={handleSaveMeta} className="p-1.5 bg-violet-600 hover:bg-violet-500 rounded text-white"><Save className="w-3.5 h-3.5"/></button>
-                 </div>
-              ) : (
-                 <div className="flex items-center justify-between group cursor-pointer" onClick={() => { setTempMeta(metaSobra > 0 ? metaSobra.toString() : ""); setIsEditingMeta(true); }}>
-                    <span className="text-sm font-black text-violet-400">{formatCurrency(metaSobra)}</span>
-                    <PencilLine className="w-3.5 h-3.5 text-zinc-600 group-hover:text-violet-400 transition-colors" />
-                 </div>
-              )}
-            </div>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col gap-5">
           {/* OTIMIZAÇÃO DE SOBRA (BOLA DE NEVE) */}
-          {excesso > 0 && sugestoesAntecipacao.length > 0 && (
+          {excesso > 0 && (
             <div className="glass-card p-5 md:p-6 border-l-4 border-l-emerald-500 bg-emerald-950/10 shadow-[0_0_30px_rgba(16,185,129,0.05)] relative overflow-hidden">
                <div className="absolute top-0 right-0 p-4 opacity-10">
                   <TrendingUp className="w-24 h-24 text-emerald-500" />
@@ -510,37 +493,80 @@ FORMATO DE RESPOSTA:
                      <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest">Otimização de Sobra</h3>
                   </div>
                   <p className="text-zinc-300 text-sm mb-4 leading-relaxed font-medium">
-                     Sua sobra atual é de <span className="font-bold text-white">{formatCurrency(sobra)}</span>, o que ultrapassa sua meta mínima em <span className="font-bold text-emerald-400">{formatCurrency(excesso)}</span>. 
-                     Para acelerar sua liberdade financeira, sugiro antecipar o pagamento destas contas do mês que vem:
+                     Sua sobra atual é de <span className="font-bold text-white">{formatCurrency(sobra)}</span>, o que ultrapassa sua meta mínima em <span className="font-bold text-emerald-400">{formatCurrency(excesso)}</span>! 
+                     {sugestoesAntecipacao.length > 0 
+                        ? " Para acelerar sua liberdade financeira, sugiro antecipar o pagamento destas contas do mês que vem:"
+                        : " Você não tem despesas pendentes no próximo mês que caibam neste valor. Sugiro investir esse excedente!"}
                   </p>
                   
-                  <div className="flex flex-col gap-2">
-                     {sugestoesAntecipacao.map((s, i) => (
-                        <div key={i} className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl">
-                           <div className="flex items-center gap-3">
-                              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-black">{i+1}</span>
-                              <div>
-                                 <span className="text-xs font-bold text-zinc-200 block">{s.descricao}</span>
-                                 <span className="text-[10px] text-zinc-500">Vencimento: {s.data}</span>
+                  {sugestoesAntecipacao.length > 0 && (
+                     <>
+                        <div className="flex flex-col gap-2">
+                           {sugestoesAntecipacao.map((s, i) => (
+                              <div key={i} className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl">
+                                 <div className="flex items-center gap-3">
+                                    <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-black">{i+1}</span>
+                                    <div>
+                                       <span className="text-xs font-bold text-zinc-200 block">{s.descricao}</span>
+                                       <span className="text-[10px] text-zinc-500">Vencimento: {s.data}</span>
+                                    </div>
+                                 </div>
+                                 <span className="text-red-400 font-mono font-black text-sm">{formatCurrency(Math.abs(Number(s.valor)))}</span>
                               </div>
-                           </div>
-                           <span className="text-red-400 font-mono font-black text-sm">{formatCurrency(Math.abs(Number(s.valor)))}</span>
+                           ))}
                         </div>
-                     ))}
-                  </div>
-                  
-                  <div className="mt-4 pt-3 border-t border-emerald-500/20 flex justify-between items-center">
-                     <span className="text-xs text-zinc-400 font-medium">Total Sugerido para Antecipação:</span>
-                     <span className="text-sm font-black font-mono text-emerald-400">
-                        {formatCurrency(sugestoesAntecipacao.reduce((acc, curr) => acc + Math.abs(Number(curr.valor)), 0))}
-                     </span>
-                  </div>
+                        <div className="mt-4 pt-3 border-t border-emerald-500/20 flex justify-between items-center">
+                           <span className="text-xs text-zinc-400 font-medium">Total Sugerido para Antecipação:</span>
+                           <span className="text-sm font-black font-mono text-emerald-400">
+                              {formatCurrency(sugestoesAntecipacao.reduce((acc, curr) => acc + Math.abs(Number(curr.valor)), 0))}
+                           </span>
+                        </div>
+                     </>
+                  )}
                </div>
             </div>
           )}
 
           {/* KPI GRID */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            
+            {/* NOVO CARD: META DE SOBRA */}
+            <div className={`glass-card p-4 md:p-5 border-l-4 ${metaSobra === 0 ? 'border-l-zinc-600' : (sobra >= metaSobra ? 'border-l-emerald-500' : 'border-l-rose-500')}`}>
+               <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Meta de Sobra</h3>
+                  {!isEditingMeta && (
+                     <PencilLine onClick={() => { setTempMeta(metaSobra > 0 ? metaSobra.toString() : ""); setIsEditingMeta(true); }} className="w-3.5 h-3.5 text-zinc-600 hover:text-violet-400 cursor-pointer transition-colors" />
+                  )}
+               </div>
+               
+               {isEditingMeta ? (
+                  <div className="flex items-center gap-2 mt-1">
+                     <span className="text-zinc-400 font-bold text-xs">R$</span>
+                     <input 
+                        type="number" 
+                        autoFocus
+                        value={tempMeta}
+                        onChange={(e) => setTempMeta(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveMeta()}
+                        className="bg-zinc-900 border border-violet-500 text-zinc-100 font-black text-sm px-2 py-1 rounded w-full outline-none"
+                     />
+                     <button onClick={handleSaveMeta} className="p-1.5 bg-violet-600 hover:bg-violet-500 rounded text-white"><Save className="w-3.5 h-3.5"/></button>
+                  </div>
+               ) : (
+                  <span className={`text-xl md:text-2xl font-black font-mono tracking-tight ${metaSobra > 0 ? 'text-violet-400' : 'text-zinc-600'}`}>
+                    {metaSobra > 0 ? formatCurrency(metaSobra) : 'Não definida'}
+                  </span>
+               )}
+               
+               {metaSobra > 0 && !isEditingMeta && (
+                  <p className="text-[10px] text-zinc-400 mt-1.5 font-bold">
+                    {sobra >= metaSobra ? `🟢 Atingida (+${formatCurrency(excesso)})` : `🔴 Faltam ${formatCurrency(metaSobra - sobra)}`}
+                  </p>
+               )}
+               {metaSobra === 0 && !isEditingMeta && (
+                  <p className="text-[10px] text-zinc-500 mt-1.5 font-medium">Defina um mínimo viável</p>
+               )}
+            </div>
             
             <div className={`glass-card p-4 md:p-5 border-l-4 ${sobra >= 0 ? 'border-l-emerald-500' : 'border-l-rose-500'}`}>
                <h3 className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase mb-2">Situação {selectedMonth === 0 ? 'Anual' : 'do Mês'}</h3>
