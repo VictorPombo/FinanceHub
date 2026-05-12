@@ -35,26 +35,29 @@ export async function POST(req: Request) {
     const base64Image = arrayBufferToBase64(buffer);
     const mimeType = file.type || 'image/jpeg';
 
-    const systemPrompt = `Você é um especialista financeiro focado na leitura de extratos bancários Brasileiros (Itaú, Bradesco, Nubank, etc).
-Sua missão é extrair TODAS as transações de um comprovante, PDF ou imagem para JSON ARRAY.
+    const systemPrompt = `Você é um especialista financeiro focado na extração de dados de Extratos Bancários e Notas Fiscais (NFe, NFCe, Cupons Fiscais).
+Sua missão é extrair TODAS as transações de um comprovante, PDF ou imagem para um JSON ARRAY.
 
 Instruções cruciais de Extração:
-1. SINAL E COR: Valores negativos (-) ou em cor vermelha SÃO SAÍDAS (despesas). Valores sem sinal ou verdes SÃO ENTRADAS (receitas).
-2. LIMPEZA DE NOME: O campo de texto bancário costuma vir sujo. Ignore lixos como "PIX TRANSF", "PAY ", "PAG BOLETO", "QRS", "DEV PIX", "FATURA PAGA". Extraia apenas o recebedor real. Exemplo: "PIX TRANSF EDUARDO06/04" -> "EDUARDO"; "PAG BOLETO CONDOMINIO CYRELA" -> "CONDOMINIO CYRELA".
-3. DATAS: O extrato pode ter datas curtas (ex: 06/04). Infira o ano base a partir da imagem. 
+1. IDENTIFICAÇÃO DO DOCUMENTO: Se for um Extrato, extraia as transações linha a linha. Se for uma Nota Fiscal/Cupom, extraia como uma única transação (ou item a item se fizer sentido), representando o local da compra.
+2. SINAL E TIPO: 
+   - No Extrato: Valores negativos (-) ou em cor vermelha SÃO SAÍDAS (despesas). Valores sem sinal ou verdes SÃO ENTRADAS (receitas).
+   - Na Nota Fiscal (Compra do usuário): O valor total gasto deve ser classificado como "Saída", pois representa uma despesa.
+3. LIMPEZA DE NOME: Ignore lixos bancários como "PIX TRANSF", "PAY ", "PAG BOLETO", "QRS", "DEV PIX". Se for uma Nota Fiscal, a descrição deve ser o nome do estabelecimento (ex: "Supermercado Pão de Açúcar", "Posto Ipiranga") ou o item principal.
+4. DATAS: Em extratos com datas curtas (ex: 06/04), infira o ano base da imagem. Na Nota Fiscal, busque a Data de Emissão.
 
 Retorne EXATAMENTE UM ARRAY JSON onde cada objeto tenha:
 [
   {
-    "descricao": "O recebedor limpo. Max 3 a 4 palavras.",
+    "descricao": "O recebedor limpo ou nome do local da nota. Max 3 a 5 palavras.",
     "valor": 150.50, // APENAS O NUMERO POSITIVO. (Se era -100 no documento, retorne 100).
-    "tipo": "Saída", // 'Saída' para débitos, pagamentos, faturas. 'Entrada' para créditos, devoluções, recebimentos.
+    "tipo": "Saída", // 'Saída' para débitos, pagamentos, faturas, notas fiscais de compra. 'Entrada' para créditos, recebimentos.
     "data": "2026-04-06", // Formato YYYY-MM-DD.
-    "categoria": "Alimentação" // Deduza: 'Alimentação' (OXXO, iFood, Mercado), 'Transporte', 'Moradia' (Condominio, Enel), 'Lazer', 'Saúde', 'Cartões', 'Transferências' ou 'Outros'.
+    "categoria": "Alimentação" // Deduza: 'Alimentação' (OXXO, iFood, Mercado), 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Cartões', 'Transferências' ou 'Outros'.
   }
 ]
 
-Atenção máxima em retornar APENAS O JSON, nenhuma palavra a mais. Se falhar retorne [].`;
+Atenção máxima em retornar APENAS O ARRAY JSON válido, nenhuma palavra a mais. Se não encontrar dados retorne [].`;
 
     let response;
     let attempt = 0;

@@ -14,6 +14,14 @@ interface Props {
   currentTabYear: number;
 }
 
+interface ActionHistory {
+  isEntrada: boolean;
+  index: number;
+  field: string;
+  oldValue: any;
+  item_id: string | undefined;
+}
+
 interface ColDef {
   id: string;
   field: string;
@@ -45,6 +53,8 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
   const [entradas, setEntradas] = useState<any[]>([]);
   const [saidas, setSaidas] = useState<any[]>([]);
 
+  const [historyStack, setHistoryStack] = useState<ActionHistory[]>([]);
+
   useEffect(() => {
     // Initial Hydration focusing on the `ordem` column
     const sortedEntradas = initialData.filter(d => d.tipo === "Entrada").sort((a,b) => (a.ordem || 0) - (b.ordem || 0));
@@ -59,6 +69,35 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
     }
   }, [editingCell]);
 
+  useEffect(() => {
+    const handleUndoKeyDown = async (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+         if (historyStack.length === 0) return;
+         e.preventDefault();
+         const lastAction = historyStack[historyStack.length - 1];
+         
+         const list = lastAction.isEntrada ? [...entradas] : [...saidas];
+         const setter = lastAction.isEntrada ? setEntradas : setSaidas;
+         const targetItem = list[lastAction.index];
+
+         if (!targetItem || !targetItem.id) return;
+         
+         targetItem[lastAction.field] = lastAction.oldValue;
+         setter(list);
+         
+         setHistoryStack(prev => prev.slice(0, -1));
+         
+         const { error } = await supabase.from("duda_lancamentos").update({ [lastAction.field]: lastAction.oldValue }).eq("id", targetItem.id);
+         if (!error) {
+             toast.success("Desfeito! (Control Z)");
+             onDataChange([...entradas, ...saidas]);
+         }
+      }
+    };
+    window.addEventListener('keydown', handleUndoKeyDown);
+    return () => window.removeEventListener('keydown', handleUndoKeyDown);
+  }, [historyStack, entradas, saidas]);
+
   // DRAG AND DROP STATE
   const [draggedCol, setDraggedCol] = useState<{ side: 'left'|'right', index: number } | null>(null);
   const [draggedRow, setDraggedRow] = useState<{ type: 'Entrada'|'Saída', index: number } | null>(null);
@@ -68,6 +107,15 @@ export default function DudaExcelTable({ initialData, userId, userCategories, on
     const list = isEntrada ? entradas : saidas;
     const item = list[index];
     const defaultDate = `${currentTabYear}-${String(currentTabMonth).padStart(2, '0')}-01`;
+
+    const oldValue = item ? item[field] : (field === 'valor' ? 0 : '');
+    setHistoryStack(prev => [...prev, {
+      isEntrada,
+      index,
+      field,
+      oldValue,
+      item_id: item?.id
+    }]);
 
     const updatePayload: any = {};
     if (field === "valor") {

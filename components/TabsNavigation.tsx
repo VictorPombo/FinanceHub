@@ -14,7 +14,6 @@ export default function TabsNavigation() {
     { href: "/dashboard/extratos", icon: FileText, label: "Extratos Auto", short: "Extratos" },
     { href: "/dashboard/consultor", icon: Bot, label: "Consultor IA", short: "Consult." },
     { href: "/dashboard/categorias", icon: Tags, label: "Categorias", short: "Categ." },
-    { href: "/dashboard/duda", icon: Table2, label: "Planilha Excel", short: "Excel" },
   ];
 
   return (
