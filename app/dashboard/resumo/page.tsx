@@ -27,6 +27,12 @@ export default async function ResumoMensalPage() {
     .select("*")
     .eq("user_id", activeUser.id);
 
+  // Fetch Contas
+  const { data: contasRows } = await supabase
+    .from("contas")
+    .select("*")
+    .eq("user_id", activeUser.id);
+
   // Inject logical origem flag, but completely ignore legacy internal origins that Lancamentos itself hides
   const manual = (dudaRows || [])
     .filter(r => r.origem !== "Extrato")  // Filters OUT ghost files from legacy uploads
@@ -41,6 +47,7 @@ export default async function ResumoMensalPage() {
     <ResumoMensalClient 
       rawData={mergedData} 
       config={configRows || null}
+      contas={contasRows || []}
       user_id={activeUser.id} 
     />
   );

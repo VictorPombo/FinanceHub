@@ -14,13 +14,13 @@ import AlertasFinn from "./AlertasFinn";
 
 interface Props {
   rawData: any[];
-  config: { id: string; saldo_inicial: number; saldo_real_banco?: number } | null;
+  config: { id: string; saldo_inicial: number } | null;
+  contas: any[];
   user_id: string;
 }
 
-export default function ResumoMensalClient({ rawData, config, user_id }: Props) {
+export default function ResumoMensalClient({ rawData, config, contas, user_id }: Props) {
   const [saldoInicialStr, setSaldoInicialStr] = useState(config?.saldo_inicial?.toString() || "0");
-  const [saldoRealBancoStr, setSaldoRealBancoStr] = useState(config?.saldo_real_banco?.toString() || "0");
   const [origemFilter, setOrigemFilter] = useState<"Upload IA" | "Manual">("Manual");
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -58,18 +58,20 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
 
   const handleUpdateSaldo = async () => {
     const valIni = Number(saldoInicialStr);
-    const valReal = Number(saldoRealBancoStr);
-    if (isNaN(valIni) || isNaN(valReal)) { toast.error("Valor inválido"); return; }
+    if (isNaN(valIni)) { toast.error("Valor inválido"); return; }
     if (config) {
-      const { error } = await supabase.from("configuracoes").update({ saldo_inicial: valIni, saldo_real_banco: valReal }).eq("id", config.id);
-      if (error) toast.error("Erro ao salvar saldo");
-      else toast.success("Saldo salvo");
+      const { error } = await supabase.from("configuracoes").update({ saldo_inicial: valIni }).eq("id", config.id);
+      if (error) toast.error("Erro ao salvar saldo base");
+      else toast.success("Saldo base salvo");
     } else {
-      const { error } = await supabase.from("configuracoes").insert([{ user_id, saldo_inicial: valIni, saldo_real_banco: valReal }]);
-      if (error) toast.error("Erro ao criar saldo");
-      else toast.success("Saldo inicial criado");
+      const { error } = await supabase.from("configuracoes").insert([{ user_id, saldo_inicial: valIni }]);
+      if (error) toast.error("Erro ao criar saldo base");
+      else toast.success("Saldo inicial base criado");
     }
   };
+
+  const contasCorrentesAtivas = contas.filter(c => c.tipo === "Conta Corrente" && c.status === "Ativa");
+  const saldoRealBanco = contasCorrentesAtivas.reduce((acc, c) => acc + Number(c.saldo_limite), 0);
 
   const processedData = useMemo(() => {
     const filtered = rawData.filter((item: any) => {
@@ -305,10 +307,10 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                </div>
             </div>
 
-            {/* Saldo Inicial e Conciliação */}
+            {/* Saldo Inicial e Conciliação Automática Multi-Contas */}
             <div className="flex flex-col gap-2 bg-zinc-900/60 border border-zinc-800/60 p-3 rounded-xl mt-auto">
-               <div className="flex items-center gap-3">
-                  <div className="flex flex-col flex-1 border-r border-zinc-800/60 pr-3">
+               <div className="flex items-start gap-3">
+                  <div className="flex flex-col border-r border-zinc-800/60 pr-3 w-[40%] shrink-0">
                     <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Saldo Inicial Base</span>
                     <div className="flex items-center gap-1 mt-0.5">
                       <span className="text-[10px] font-mono font-bold text-zinc-400">R$</span>
@@ -317,25 +319,43 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                     </div>
                   </div>
                   <div className="flex flex-col flex-1 pl-1">
-                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Saldo Real Banco</span>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-[10px] font-mono font-bold text-zinc-400">R$</span>
-                      <input type="number" value={saldoRealBancoStr} onChange={(e) => setSaldoRealBancoStr(e.target.value)} onBlur={handleUpdateSaldo}
-                        className="w-full bg-transparent border-b border-zinc-700 outline-none focus:border-violet-500 font-mono text-sm font-black text-zinc-200 transition-colors"/>
+                    <div className="flex items-center justify-between mb-1.5">
+                       <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Bancos Reais</span>
+                       {contasCorrentesAtivas.length > 0 && (
+                           <span className="text-[9px] font-mono font-black text-violet-400 bg-violet-950/40 px-1.5 py-0.5 rounded border border-violet-900/50">Total: {formatCurrency(saldoRealBanco)}</span>
+                       )}
                     </div>
+                    {contasCorrentesAtivas.length === 0 ? (
+                       <span className="text-[9px] text-zinc-500 font-medium">Nenhuma conta cadastrada.</span>
+                    ) : (
+                       <div className="flex flex-col gap-1 max-h-[60px] overflow-y-auto no-scrollbar">
+                         {contasCorrentesAtivas.map((c: any) => (
+                            <div key={c.id} className="flex justify-between items-center bg-zinc-950/40 px-2 py-0.5 rounded border border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                               <div className="flex items-center gap-1.5 truncate">
+                                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.cor || '#a855f7' }}></div>
+                                 <span className="text-[9px] font-bold text-zinc-300 truncate">{c.nome}</span>
+                               </div>
+                               <span className="text-[9px] font-mono font-bold text-zinc-400 shrink-0 ml-2">{formatCurrency(Number(c.saldo_limite))}</span>
+                            </div>
+                         ))}
+                       </div>
+                    )}
                   </div>
                </div>
                
-               {/* Auditoria */}
-               <div className="text-[10px] font-bold mt-1 pt-2 border-t border-zinc-800/60 leading-tight">
+               {/* Auditoria Inteligente */}
+               <div className="text-[9px] font-bold mt-1 pt-2 border-t border-zinc-800/60 leading-tight">
                   {(() => {
-                     const diferenca = currentTotals.acumulado - Number(saldoRealBancoStr);
+                     if (contasCorrentesAtivas.length === 0) {
+                         return <span className="text-zinc-500">Cadastre suas contas bancárias na aba "Cartões/Contas" para habilitar a auditoria cruzada.</span>;
+                     }
+                     const diferenca = currentTotals.acumulado - saldoRealBanco;
                      if (Math.abs(diferenca) < 0.01) {
-                         return <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Auditoria Perfeita. O sistema reflete o banco real.</span>;
+                         return <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Perfeito! O sistema bate centavo por centavo com a soma dos seus bancos.</span>;
                      } else if (diferenca > 0) {
-                         return <span className="text-amber-500">⚠️ O sistema tem {formatCurrency(diferenca)} A MAIS. Esqueceu de lançar despesa?</span>;
+                         return <span className="text-amber-500">⚠️ O sistema tem {formatCurrency(diferenca)} A MAIS. Esqueceu de registrar despesa?</span>;
                      } else {
-                         return <span className="text-rose-500">⚠️ O sistema tem {formatCurrency(Math.abs(diferenca))} A MENOS. Esqueceu de lançar receita?</span>;
+                         return <span className="text-rose-500">⚠️ O sistema tem {formatCurrency(Math.abs(diferenca))} A MENOS. Esqueceu de registrar receita?</span>;
                      }
                   })()}
                </div>
