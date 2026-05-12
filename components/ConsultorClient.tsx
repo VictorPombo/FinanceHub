@@ -43,16 +43,62 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
     setLoadingFinn(true);
     setFinnResponse(null);
     try {
-      const res = await fetch("/api/ask-finn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: config?.id || "anon", dadosFinanceiros: activeTab === "Planilha Manual" ? lancamentos : iaLancamentos })
+      // 1. Get Key
+      const keyRes = await fetch('/api/get-gemini-key');
+      const { key } = await keyRes.json();
+      if (!key) throw new Error("Chave do Gemini não configurada.");
+
+      // 2. Montar o Prompt
+      const systemPrompt = `Você é um consultor financeiro pessoal especializado em finanças pessoais brasileiras. Seu nome é Finn. Você analisa dados reais de extrato bancário, lançamentos manuais e padrões de comportamento financeiro do usuário.
+
+SEU PERFIL:
+- Direto, sem enrolação
+- Usa linguagem simples (sem jargão técnico)
+- Sempre termina com 1 ação concreta que o usuário pode tomar hoje
+- Nunca julga os gastos — apenas apresenta os números e consequências
+- Quando o mês está bom, aproveita para preparar o próximo
+- Quando o mês está ruim, foca no que é controlável agora
+
+REGRAS DE ANÁLISE:
+1. Sempre compare o mês atual com a média dos últimos 3 meses
+2. Classifique despesas em: fixas (condomínio, IPVA, fatura), variáveis controláveis (lazer) e não controláveis (emergências)
+3. Calcule o "índice de fôlego": (receita - despesas_fixas) / receita × 100 — abaixo de 20% = zona de risco
+4. Identifique o "vazamento silencioso": pequenos gastos
+5. Sugira valores claros de antecipação se sobrar dinheiro e o próximo mês estiver pesado.
+
+FORMATO DE RESPOSTA:
+- Comece com 1 linha de diagnóstico direto
+- Máximo 3 insights
+- Termine com "📌 Ação para hoje: [ação]"
+- Se antecipação: 💰 Aproveite agora: [valor] → [o que pagar] → sobra [valor]`;
+
+      const dadosFinanceiros = activeTab === "Planilha Manual" ? lancamentos : iaLancamentos;
+      const promptText = `${systemPrompt}\n\nDADOS DISPONÍVEIS:\n${JSON.stringify(dadosFinanceiros)}\n\nPor favor, analise meu comportamento financeiro baseado nos dados fornecidos e gere seus conselhos.`;
+
+      // 3. Chamada Direta via Browser (SEM TIMEOUT DA VERCEL)
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+      const payload = {
+        contents: [{ role: "user", parts: [{ text: promptText }] }]
+      };
+
+      const res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
       });
+      
       const data = await res.json();
-      if (data.response) setFinnResponse(data.response);
-      else setFinnResponse("Erro ao consultar Finn.");
+      
+      if (!res.ok) {
+         throw new Error(data.error?.message || 'Falha na IA Google.');
+      }
+      
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) setFinnResponse(text);
+      else setFinnResponse("A IA não retornou um conselho válido.");
+      
     } catch (e: any) {
-      setFinnResponse("Erro de rede.");
+      setFinnResponse(`Erro de rede/IA: ${e.message}`);
     } finally {
       setLoadingFinn(false);
     }
