@@ -472,7 +472,7 @@ FORMATO DE RESPOSTA:
               </div>
             )}
             
-            <div className="mt-2 pt-3 border-t border-zinc-800/60">
+            <div className="mt-2 pt-3 border-t border-zinc-800/60 pb-2">
               <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1.5">Meta de Sobra (Mínimo Viável)</span>
               {isEditingMeta ? (
                  <div className="flex items-center gap-2">
