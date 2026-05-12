@@ -14,12 +14,13 @@ import AlertasFinn from "./AlertasFinn";
 
 interface Props {
   rawData: any[];
-  config: { id: string; saldo_inicial: number } | null;
+  config: { id: string; saldo_inicial: number; saldo_real_banco?: number } | null;
   user_id: string;
 }
 
 export default function ResumoMensalClient({ rawData, config, user_id }: Props) {
   const [saldoInicialStr, setSaldoInicialStr] = useState(config?.saldo_inicial?.toString() || "0");
+  const [saldoRealBancoStr, setSaldoRealBancoStr] = useState(config?.saldo_real_banco?.toString() || "0");
   const [origemFilter, setOrigemFilter] = useState<"Upload IA" | "Manual">("Manual");
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -56,14 +57,15 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
   };
 
   const handleUpdateSaldo = async () => {
-    const val = Number(saldoInicialStr);
-    if (isNaN(val)) { toast.error("Valor inválido"); return; }
+    const valIni = Number(saldoInicialStr);
+    const valReal = Number(saldoRealBancoStr);
+    if (isNaN(valIni) || isNaN(valReal)) { toast.error("Valor inválido"); return; }
     if (config) {
-      const { error } = await supabase.from("configuracoes").update({ saldo_inicial: val }).eq("id", config.id);
+      const { error } = await supabase.from("configuracoes").update({ saldo_inicial: valIni, saldo_real_banco: valReal }).eq("id", config.id);
       if (error) toast.error("Erro ao salvar saldo");
       else toast.success("Saldo salvo");
     } else {
-      const { error } = await supabase.from("configuracoes").insert([{ user_id, saldo_inicial: val }]);
+      const { error } = await supabase.from("configuracoes").insert([{ user_id, saldo_inicial: valIni, saldo_real_banco: valReal }]);
       if (error) toast.error("Erro ao criar saldo");
       else toast.success("Saldo inicial criado");
     }
@@ -303,15 +305,39 @@ export default function ResumoMensalClient({ rawData, config, user_id }: Props) 
                </div>
             </div>
 
-            {/* Saldo Inicial - embaixo */}
-            <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 p-2.5 rounded-xl mt-auto">
-               <div className="flex flex-col flex-1">
-                 <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Saldo Inicial Base</span>
-                 <div className="flex items-center gap-1 mt-0.5">
-                   <span className="text-[10px] font-mono font-bold text-zinc-400">R$</span>
-                   <input type="number" value={saldoInicialStr} onChange={(e) => setSaldoInicialStr(e.target.value)} onBlur={handleUpdateSaldo}
-                     className="w-24 bg-transparent border-b border-zinc-700 outline-none focus:border-violet-500 font-mono text-sm font-black text-zinc-200 transition-colors"/>
-                 </div>
+            {/* Saldo Inicial e Conciliação */}
+            <div className="flex flex-col gap-2 bg-zinc-900/60 border border-zinc-800/60 p-3 rounded-xl mt-auto">
+               <div className="flex items-center gap-3">
+                  <div className="flex flex-col flex-1 border-r border-zinc-800/60 pr-3">
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Saldo Inicial Base</span>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[10px] font-mono font-bold text-zinc-400">R$</span>
+                      <input type="number" value={saldoInicialStr} onChange={(e) => setSaldoInicialStr(e.target.value)} onBlur={handleUpdateSaldo}
+                        className="w-full bg-transparent border-b border-zinc-700 outline-none focus:border-violet-500 font-mono text-sm font-black text-zinc-200 transition-colors"/>
+                    </div>
+                  </div>
+                  <div className="flex flex-col flex-1 pl-1">
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.15em]">Saldo Real Banco</span>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[10px] font-mono font-bold text-zinc-400">R$</span>
+                      <input type="number" value={saldoRealBancoStr} onChange={(e) => setSaldoRealBancoStr(e.target.value)} onBlur={handleUpdateSaldo}
+                        className="w-full bg-transparent border-b border-zinc-700 outline-none focus:border-violet-500 font-mono text-sm font-black text-zinc-200 transition-colors"/>
+                    </div>
+                  </div>
+               </div>
+               
+               {/* Auditoria */}
+               <div className="text-[10px] font-bold mt-1 pt-2 border-t border-zinc-800/60 leading-tight">
+                  {(() => {
+                     const diferenca = currentTotals.acumulado - Number(saldoRealBancoStr);
+                     if (Math.abs(diferenca) < 0.01) {
+                         return <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Auditoria Perfeita. O sistema reflete o banco real.</span>;
+                     } else if (diferenca > 0) {
+                         return <span className="text-amber-500">⚠️ O sistema tem {formatCurrency(diferenca)} A MAIS. Esqueceu de lançar despesa?</span>;
+                     } else {
+                         return <span className="text-rose-500">⚠️ O sistema tem {formatCurrency(Math.abs(diferenca))} A MENOS. Esqueceu de lançar receita?</span>;
+                     }
+                  })()}
                </div>
             </div>
           </div>

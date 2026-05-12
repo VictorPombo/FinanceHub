@@ -102,7 +102,7 @@ export default function ExtratosClient({ userId, initialHistory, userCategories 
      else { 
          setHistory([]); 
          toast.success("Todos os registros excluídos!", { id: toastId }); 
-         router.refresh(); // FORCES THE SERVER TO CLEAR CACHE
+         window.location.reload();
      }
   };
 

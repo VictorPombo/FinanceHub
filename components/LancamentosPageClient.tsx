@@ -377,7 +377,11 @@ export default function LancamentosPageClient({ initialData, user_id, userCatego
                  const targetTable = tableName || 'lancamentos';
                  const { error } = await supabase.from(targetTable).delete().eq('user_id', user_id);
                  if (error) { toast.error("Erro.", { id: toastId }); }
-                 else { setData([]); toast.success("Apagado!", { id: toastId }); }
+                 else { 
+                     setData([]); 
+                     toast.success("Apagado!", { id: toastId }); 
+                     window.location.reload();
+                 }
               }}
               className="flex items-center justify-center w-8 h-[28px] bg-red-950/40 hover:bg-red-800 border border-red-900/50 text-red-500 hover:text-white rounded cursor-pointer transition-colors shadow-sm relative group"
             >

@@ -343,7 +343,12 @@ export default function LancamentosTable({ initialData, userId, userCategories, 
               type={type}
               className="w-full h-full border-none outline-none text-sm bg-transparent px-2 text-zinc-200 placeholder-slate-600"
               defaultValue={editValue}
-              onBlur={(e) => updateItem(item.id, field, e.target.value, item.tipo)}
+              onBlur={(e) => {
+                if (type !== "date") updateItem(item.id, field, e.target.value, item.tipo);
+              }}
+              onChange={(e) => {
+                if (type === "date") updateItem(item.id, field, e.target.value, item.tipo);
+              }}
               onKeyDown={(e) => handleKeyDown(e, item.id, field, item.tipo)}
               step={type === "number" ? "0.01" : undefined}
             />

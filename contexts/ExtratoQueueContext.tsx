@@ -58,27 +58,82 @@ export function ExtratoQueueProvider({ children }: { children: React.ReactNode }
     }
 
     setIsUploading(true);
-    toast.success("Extrato em processamento pela IA em 2º Plano! Continue usando o app livremente.", { duration: 4000 });
     
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // 1. Obter a chave com segurança da sessão autenticada (bypassa limite da Vercel)
+      const keyRes = await fetch('/api/get-gemini-key');
+      const { key } = await keyRes.json();
+      if (!key) throw new Error("Chave do Gemini não configurada no servidor.");
+
+      // 2. Converter o arquivo para Base64 diretamente no navegador (suporta arquivos enormes)
+      const buffer = await file.arrayBuffer();
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+      }
+      const base64Data = btoa(binary);
+
+      // 3. Prompt de extração
+      const systemPrompt = `Você é um especialista financeiro focado na extração de dados de Extratos Bancários e Notas Fiscais (NFe, NFCe, Cupons Fiscais).
+Sua missão é extrair TODAS as transações de um comprovante, PDF ou imagem para um JSON ARRAY.
+
+Instruções cruciais de Extração:
+1. IDENTIFICAÇÃO DO DOCUMENTO: Se for um Extrato, extraia as transações linha a linha. Se for uma Nota Fiscal/Cupom, extraia como uma única transação (ou item a item se fizer sentido), representando o local da compra.
+2. SINAL E TIPO: 
+   - No Extrato: Valores negativos (-) ou em cor vermelha SÃO SAÍDAS (despesas). Valores sem sinal ou verdes SÃO ENTRADAS (receitas).
+   - Na Nota Fiscal (Compra do usuário): O valor total gasto deve ser classificado como "Saída", pois representa uma despesa.
+3. LIMPEZA DE NOME: Ignore lixos bancários como "PIX TRANSF", "PAY ", "PAG BOLETO", "QRS", "DEV PIX". Se for uma Nota Fiscal, a descrição deve ser o nome do estabelecimento (ex: "Supermercado Pão de Açúcar", "Posto Ipiranga") ou o item principal.
+4. DATAS: Em extratos com datas curtas (ex: 06/04), infira o ano base da imagem. Na Nota Fiscal, busque a Data de Emissão.
+
+Retorne EXATAMENTE UM ARRAY JSON onde cada objeto tenha:
+[
+  {
+    "descricao": "O recebedor limpo ou nome do local da nota. Max 3 a 5 palavras.",
+    "valor": 150.50, // APENAS O NUMERO POSITIVO. (Se era -100 no documento, retorne 100).
+    "tipo": "Saída", // 'Saída' para débitos, pagamentos, faturas, notas fiscais de compra. 'Entrada' para créditos, recebimentos.
+    "data": "2026-04-06", // Formato YYYY-MM-DD.
+    "categoria": "Alimentação" // Deduza: 'Alimentação' (OXXO, iFood, Mercado), 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Cartões', 'Transferências' ou 'Outros'.
+  }
+]
+
+Atenção máxima em retornar APENAS O ARRAY JSON válido, nenhuma palavra a mais. Se não encontrar dados retorne [].`;
+
+      const payload = {
+        contents: [{
+            role: "user",
+            parts: [
+                { text: systemPrompt },
+                { inlineData: { mimeType: file.type || 'image/jpeg', data: base64Data } }
+            ]
+        }],
+        generationConfig: { responseMimeType: "application/json" }
+      };
+
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
       
-      const res = await fetch('/api/vision/extrato', { method: 'POST', body: formData });
+      // 4. Chamada Direta via Browser (SEM TIMEOUT DA VERCEL)
+      const res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+      });
       
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-         await res.text(); // consume the body
-         throw new Error('A Vercel (servidor) bloqueou seu upload. O arquivo do extrato é tão gigantesco que ultrapassou o limite de megabytes ou causou Timeout. Divida o extrato em meses de 30 dias.');
+      const responseData = await res.json();
+      
+      if (!res.ok) {
+         throw new Error(responseData.error?.message || 'Falha de comunicação com a IA Google.');
       }
 
-      const aiData = await res.json();
-      
-      if (!res.ok || !Array.isArray(aiData)) {
-         throw new Error(aiData.error || 'Falha ao extrair itens.');
+      const responseText = responseData.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      let aiData = [];
+      try {
+         aiData = JSON.parse(responseText);
+      } catch (err) {
+         throw new Error("A IA não retornou um formato válido.");
       }
       
-      if (aiData.length === 0) {
+      if (!Array.isArray(aiData) || aiData.length === 0) {
          toast.error("Nenhuma transação encontrada no arquivo.");
          return;
       }
@@ -108,13 +163,22 @@ export function ExtratoQueueProvider({ children }: { children: React.ReactNode }
       
       {/* Widget Global Visível em todas as telas */}
       {isUploading && (
-         <div className="fixed bottom-24 right-4 md:right-8 bg-[#060b18]/95 backdrop-blur-xl border border-purple-500/50 shadow-[0_0_30px_rgba(147,51,234,0.3)] p-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-2" style={{ position: 'fixed', bottom: '96px', right: '24px', zIndex: 999999 }}>
-           <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
-           <div>
-             <p className="text-sm font-bold text-slate-100">Lendo Extrato (IA)...</p>
-             <p className="text-[11px] text-slate-400 uppercase tracking-widest mt-0.5">Trabalhando no fundo</p>
+         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999999] flex flex-col items-center justify-center animate-in fade-in duration-300">
+           <div className="bg-[#0f172a] border border-violet-500/30 shadow-[0_0_50px_rgba(147,51,234,0.2)] p-10 rounded-3xl flex flex-col items-center gap-6 max-w-md text-center mx-4">
+             <div className="relative">
+               <div className="absolute inset-0 bg-violet-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+               <Loader2 className="w-16 h-16 text-violet-400 animate-spin relative z-10" />
+             </div>
+             <div>
+               <h2 className="text-xl font-black text-slate-100 tracking-tight">Lendo Extrato (IA)</h2>
+               <p className="text-sm text-slate-400 mt-3 font-medium leading-relaxed">
+                 Estamos analisando cada transação do seu documento. Por favor, <b>não feche nem atualize esta aba</b>. 
+                 <br/><br/>
+                 Dependendo do tamanho do arquivo (ex: 30 dias), isso pode demorar um pouquinho!
+               </p>
+             </div>
            </div>
-        </div>
+         </div>
       )}
     </ExtratoQueueContext.Provider>
   );
