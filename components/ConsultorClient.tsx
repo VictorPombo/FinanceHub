@@ -5,8 +5,8 @@ import { formatCurrency, getMesAnoKey } from "@/lib/types";
 import { 
   PiggyBank, ArrowDownWideNarrow, TrendingUp, AlertTriangle, 
   ShoppingCart, ShieldAlert, Award, Bot, PencilLine,
-  Gauge, Calendar, ListOrdered, Repeat, Zap, Target, 
-  ArrowUpRight, ArrowDownRight, Minus, BarChart3, Percent
+  ArrowUpRight, ArrowDownRight, Minus, BarChart3, Percent, CheckCircle, Save,
+  Gauge, ListOrdered, Repeat, Zap, Target
 } from "lucide-react";
 
 interface Props {
@@ -30,11 +30,27 @@ export default function ConsultorClient({ lancamentos, dudaLancamentos, iaLancam
   const [realMonth, setRealMonth] = useState(-1);
   const [realYear, setRealYear] = useState(-1);
 
+  const [metaSobra, setMetaSobra] = useState<number>(0);
+  const [isEditingMeta, setIsEditingMeta] = useState(false);
+  const [tempMeta, setTempMeta] = useState("");
+
   useEffect(() => {
     const dt = new Date();
     setRealMonth(dt.getMonth() + 1);
     setRealYear(dt.getFullYear());
+    
+    const savedMeta = localStorage.getItem("finacihub_meta_sobra");
+    if (savedMeta) {
+       setMetaSobra(Number(savedMeta));
+    }
   }, []);
+
+  const handleSaveMeta = () => {
+    const val = Number(tempMeta.replace(",", ".")) || 0;
+    setMetaSobra(val);
+    localStorage.setItem("finacihub_meta_sobra", val.toString());
+    setIsEditingMeta(false);
+  };
 
   const [loadingFinn, setLoadingFinn] = useState(false);
   const [finnResponse, setFinnResponse] = useState<string | null>(null);
@@ -65,6 +81,7 @@ REGRAS DE ANÁLISE:
 3. Calcule o "índice de fôlego": (receita - despesas_fixas) / receita × 100 — abaixo de 20% = zona de risco
 4. Identifique o "vazamento silencioso": pequenos gastos
 5. Sugira valores claros de antecipação se sobrar dinheiro e o próximo mês estiver pesado.
+6. (MUITO IMPORTANTE): Se o usuário tiver um EXCESSO na meta de sobra (Sobra Atual > Meta de Sobra), você DEVE focar o conselho principal em sugerir a antecipação estratégica de contas do próximo mês, citando as contas que cabem no excesso.
 
 FORMATO DE RESPOSTA:
 - Comece com 1 linha de diagnóstico direto
@@ -73,7 +90,14 @@ FORMATO DE RESPOSTA:
 - Se antecipação: 💰 Aproveite agora: [valor] → [o que pagar] → sobra [valor]`;
 
       const dadosFinanceiros = activeTab === "Planilha Manual" ? lancamentos : iaLancamentos;
-      const promptText = `${systemPrompt}\n\nDADOS DISPONÍVEIS:\n${JSON.stringify(dadosFinanceiros)}\n\nPor favor, analise meu comportamento financeiro baseado nos dados fornecidos e gere seus conselhos.`;
+      
+      // Inject optimization data if applicable
+      let optimizationContext = "";
+      if (excesso > 0 && sugestoesAntecipacao.length > 0) {
+         optimizationContext = `\nCONTEXTO DE OTIMIZAÇÃO: O usuário definiu uma Meta de Sobra de ${formatCurrency(metaSobra)}. A sobra atual é de ${formatCurrency(sobra)}, gerando um EXCESSO de ${formatCurrency(excesso)}. O sistema calculou que ele pode antecipar as seguintes contas do próximo mês com esse excesso: ${JSON.stringify(sugestoesAntecipacao.map(x => ({ descricao: x.descricao, valor: x.valor })))}. Comente e incentive essa antecipação!\n`;
+      }
+
+      const promptText = `${systemPrompt}\n\nDADOS DISPONÍVEIS:\n${JSON.stringify(dadosFinanceiros)}\n${optimizationContext}\nPor favor, analise meu comportamento financeiro baseado nos dados fornecidos e gere seus conselhos.`;
 
       // 3. Chamada Direta via Browser (SEM TIMEOUT DA VERCEL)
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
@@ -140,6 +164,34 @@ FORMATO DE RESPOSTA:
   const entradasPrev = prevData.filter(x => x.tipo === 'Entrada').reduce((a,b) => a + Number(b.valor), 0);
   const saidasPrev = Math.abs(prevData.filter(x => x.tipo === 'Saída').reduce((a,b) => a + Number(b.valor), 0));
   const sobraPrev = entradasPrev - saidasPrev;
+
+  // ===== ANTECIPAÇÃO E OTIMIZAÇÃO DE SOBRA =====
+  const excesso = sobra > metaSobra && metaSobra > 0 ? sobra - metaSobra : 0;
+  
+  const sugestoesAntecipacao = useMemo(() => {
+    if (excesso <= 0 || selectedMonth === 0) return [];
+    
+    let mesSeguinte = selectedMonth + 1;
+    let anoSeguinte = selectedYear;
+    if (mesSeguinte > 12) { mesSeguinte = 1; anoSeguinte++; }
+    const proxMesKey = `${anoSeguinte}-${String(mesSeguinte).padStart(2, '0')}`;
+    
+    // Contas do próximo mês (apenas saídas previstas não pagas)
+    const contasProximoMes = (lancPrevistos || [])
+      .filter(x => getMesAnoKey(x.data) === proxMesKey && x.tipo === 'Saída')
+      .sort((a,b) => Math.abs(Number(b.valor)) - Math.abs(Number(a.valor))); // Ordena pelas mais caras primeiro
+
+    let remaining = excesso;
+    const sugestoes: any[] = [];
+    for (const conta of contasProximoMes) {
+       const val = Math.abs(Number(conta.valor));
+       if (val > 0 && val <= remaining) {
+          sugestoes.push(conta);
+          remaining -= val;
+       }
+    }
+    return sugestoes;
+  }, [excesso, selectedMonth, selectedYear, lancPrevistos]);
 
   // Total historical
   const totalEntradasAll = allData.filter(x => x.tipo === 'Entrada').reduce((a,b) => a + Number(b.valor), 0);
@@ -413,10 +465,74 @@ FORMATO DE RESPOSTA:
                 <TrendArrow current={sobra} previous={sobraPrev} />
               </div>
             )}
+            
+            <div className="mt-2 pt-3 border-t border-zinc-800/60">
+              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1.5">Meta de Sobra (Mínimo Viável)</span>
+              {isEditingMeta ? (
+                 <div className="flex items-center gap-2">
+                    <span className="text-zinc-400 font-bold text-xs">R$</span>
+                    <input 
+                       type="number" 
+                       autoFocus
+                       value={tempMeta}
+                       onChange={(e) => setTempMeta(e.target.value)}
+                       onKeyDown={(e) => e.key === 'Enter' && handleSaveMeta()}
+                       className="bg-zinc-900 border border-violet-500 text-zinc-100 font-black text-sm px-2 py-1 rounded w-full outline-none"
+                    />
+                    <button onClick={handleSaveMeta} className="p-1.5 bg-violet-600 hover:bg-violet-500 rounded text-white"><Save className="w-3.5 h-3.5"/></button>
+                 </div>
+              ) : (
+                 <div className="flex items-center justify-between group cursor-pointer" onClick={() => { setTempMeta(metaSobra > 0 ? metaSobra.toString() : ""); setIsEditingMeta(true); }}>
+                    <span className="text-sm font-black text-violet-400">{formatCurrency(metaSobra)}</span>
+                    <PencilLine className="w-3.5 h-3.5 text-zinc-600 group-hover:text-violet-400 transition-colors" />
+                 </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col gap-5">
+          {/* OTIMIZAÇÃO DE SOBRA (BOLA DE NEVE) */}
+          {excesso > 0 && sugestoesAntecipacao.length > 0 && (
+            <div className="glass-card p-5 md:p-6 border-l-4 border-l-emerald-500 bg-emerald-950/10 shadow-[0_0_30px_rgba(16,185,129,0.05)] relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <TrendingUp className="w-24 h-24 text-emerald-500" />
+               </div>
+               <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                     <CheckCircle className="w-5 h-5 text-emerald-400" />
+                     <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest">Otimização de Sobra</h3>
+                  </div>
+                  <p className="text-zinc-300 text-sm mb-4 leading-relaxed font-medium">
+                     Sua sobra atual é de <span className="font-bold text-white">{formatCurrency(sobra)}</span>, o que ultrapassa sua meta mínima em <span className="font-bold text-emerald-400">{formatCurrency(excesso)}</span>. 
+                     Para acelerar sua liberdade financeira, sugiro antecipar o pagamento destas contas do mês que vem:
+                  </p>
+                  
+                  <div className="flex flex-col gap-2">
+                     {sugestoesAntecipacao.map((s, i) => (
+                        <div key={i} className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-xl">
+                           <div className="flex items-center gap-3">
+                              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-black">{i+1}</span>
+                              <div>
+                                 <span className="text-xs font-bold text-zinc-200 block">{s.descricao}</span>
+                                 <span className="text-[10px] text-zinc-500">Vencimento: {s.data}</span>
+                              </div>
+                           </div>
+                           <span className="text-red-400 font-mono font-black text-sm">{formatCurrency(Math.abs(Number(s.valor)))}</span>
+                        </div>
+                     ))}
+                  </div>
+                  
+                  <div className="mt-4 pt-3 border-t border-emerald-500/20 flex justify-between items-center">
+                     <span className="text-xs text-zinc-400 font-medium">Total Sugerido para Antecipação:</span>
+                     <span className="text-sm font-black font-mono text-emerald-400">
+                        {formatCurrency(sugestoesAntecipacao.reduce((acc, curr) => acc + Math.abs(Number(curr.valor)), 0))}
+                     </span>
+                  </div>
+               </div>
+            </div>
+          )}
+
           {/* KPI GRID */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             
