@@ -347,7 +347,7 @@ export default function ResumoMensalClient({ rawData, config, contas, user_id }:
                <div className="text-[9px] font-bold mt-1 pt-2 border-t border-zinc-800/60 leading-tight">
                   {(() => {
                      if (contasCorrentesAtivas.length === 0) {
-                         return <span className="text-zinc-500">Cadastre suas contas bancárias na aba "Cartões/Contas" para habilitar a auditoria cruzada.</span>;
+                         return <span className="text-zinc-500">Cadastre suas contas bancárias na aba &quot;Cartões/Contas&quot; para habilitar a auditoria cruzada.</span>;
                      }
                      const diferenca = currentTotals.acumulado - saldoRealBanco;
                      if (Math.abs(diferenca) < 0.01) {
